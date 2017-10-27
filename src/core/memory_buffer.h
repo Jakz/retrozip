@@ -3,6 +3,8 @@
 #include "archive.h"
 #include "base/common.h"
 
+template<typename T> class memory_buffer_reference;
+
 class memory_buffer
 {
 private:
@@ -70,6 +72,8 @@ public:
     }
   }*/
   
+  template<typename T> memory_buffer_reference<T> reserve();
+  
   void reserve(size_t size)
   {
     ensure_capacity(_position + size);
@@ -105,3 +109,29 @@ public:
     }
   }
 };
+
+template<typename T>
+class memory_buffer_reference
+{
+private:
+  memory_buffer& _buffer;
+  off_t _position;
+  memory_buffer_reference(memory_buffer& buffer, off_t position) : _buffer(buffer), _position(position) { }
+  
+public:
+  void solve(const T& value)
+  {
+    off_t mark = _buffer.tell();
+    _buffer.seek(_position, Seek::SET);
+    _buffer.write(&value, sizeof(T), 1);
+    _buffer.seek(mark, Seek::SET);
+  }
+
+};
+
+template<typename T> memory_buffer_reference<T> memory_buffer::reserve()
+{
+  off_t mark = tell();
+  reserve(sizeof(T));
+  return memory_buffer_reference<T>(*this, mark);
+}

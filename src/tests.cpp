@@ -198,6 +198,14 @@ TEST_CASE("memory buffer", "[support]") {
     }
   }
   
+  SECTION("write typed") {
+    SECTION("simple write") {
+      memory_buffer b(sizeof(int));
+      memory_buffer_reference<int> ref = b.reserve<int>();
+      ref.solve(0x12345678);
+    }
+  }
+  
   SECTION("read") {
     SECTION("basic read")
     {
