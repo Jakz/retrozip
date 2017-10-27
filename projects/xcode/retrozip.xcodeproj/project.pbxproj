@@ -27,6 +27,8 @@
 		04D118481FA21C5700C59EC3 /* crc32.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 04D118371FA21AF600C59EC3 /* crc32.cpp */; };
 		04D118491FA21C5700C59EC3 /* tests.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 04D1183C1FA21C3C00C59EC3 /* tests.cpp */; };
 		04D1184B1FA21C5700C59EC3 /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 04D118341FA21AA500C59EC3 /* libz.tbd */; };
+		04D118541FA25B4000C59EC3 /* sha1.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 04D118531FA25B4000C59EC3 /* sha1.cpp */; };
+		04D118551FA25B4000C59EC3 /* sha1.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 04D118531FA25B4000C59EC3 /* sha1.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -79,6 +81,7 @@
 		04D1183C1FA21C3C00C59EC3 /* tests.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = tests.cpp; sourceTree = "<group>"; };
 		04D118501FA21C5700C59EC3 /* test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = test; sourceTree = BUILT_PRODUCTS_DIR; };
 		04D118511FA23DD300C59EC3 /* libcorecrypto.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libcorecrypto.tbd; path = usr/lib/system/libcorecrypto.tbd; sourceTree = SDKROOT; };
+		04D118531FA25B4000C59EC3 /* sha1.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = sha1.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -185,8 +188,9 @@
 		04D118361FA21AF600C59EC3 /* hash */ = {
 			isa = PBXGroup;
 			children = (
-				04D118371FA21AF600C59EC3 /* crc32.cpp */,
 				04D118381FA21AF600C59EC3 /* hash.h */,
+				04D118531FA25B4000C59EC3 /* sha1.cpp */,
+				04D118371FA21AF600C59EC3 /* crc32.cpp */,
 				04D118391FA21AF600C59EC3 /* md5.cpp */,
 			);
 			path = hash;
@@ -275,6 +279,7 @@
 				04D118311FA21A4900C59EC3 /* posix.cc in Sources */,
 				04D1182F1FA21A4900C59EC3 /* format.cc in Sources */,
 				04D1182E1FA21A4900C59EC3 /* path.cpp in Sources */,
+				04D118541FA25B4000C59EC3 /* sha1.cpp in Sources */,
 				04D1183A1FA21AF600C59EC3 /* crc32.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -291,6 +296,7 @@
 				04D118461FA21C5700C59EC3 /* format.cc in Sources */,
 				04D118471FA21C5700C59EC3 /* path.cpp in Sources */,
 				04D118481FA21C5700C59EC3 /* crc32.cpp in Sources */,
+				04D118551FA25B4000C59EC3 /* sha1.cpp in Sources */,
 				04D118491FA21C5700C59EC3 /* tests.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

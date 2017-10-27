@@ -48,28 +48,82 @@ constexpr bool IS_LITTLE_ENDIAN_ = true;
 
 namespace hidden
 {
-  struct u16
+  struct u16se
   {
-    u16(::u16 v) : data(v) { }
-    operator ::u16() const { return data; }
+    u16se(u16 v) : data(v) { }
+    operator u16() const { return data; }
+    u16se& operator=(u16 v) { this->data = v; return *this; }
   private:
-    ::u16 data;
+    u16 data;
   };
+  
   struct u16re
   {
-    u16re(::u16 v) : data(v) { }
-    operator ::u16() const
+    u16re(u16 v) { operator=(v); }
+    
+    operator u16() const
     {
-      ::u16 v = ((data & 0xFF) << 8) | ((data & 0xFF00) >> 8);
+      u16 v = ((data & 0xFF) << 8) | ((data & 0xFF00) >> 8);
       return v;
     }
+    
+    u16re& operator=(u16 v)
+    {
+      this->data = ((v & 0xFF) << 8) | ((v >> 8) & 0xFF);
+      return *this;
+    }
+    
   private:
-    ::u16 data;
+    u16 data;
+  };
+  
+  struct u32se
+  {
+    u32se(u32 v) : data(v) { }
+    operator u32() const { return data; }
+    u32se& operator=(u32 v) { this->data = v; return *this; }
+  private:
+    u32 data;
+  };
+  
+  struct u32re
+  {
+    u32re(u32 v) { operator=(v); }
+    
+    operator u32() const
+    {
+      u32 vv =
+        ((data & 0xFF) << 24) |
+        ((data & 0xFF00) << 8) |
+        ((data & 0xFF0000) >> 8) |
+        ((data & 0xFF000000) >> 24);
+      return vv;
+    }
+    
+    u32re& operator=(u32 v)
+    {
+      this->data =
+      ((v & 0xFF) << 24) |
+      ((v & 0xFF00) << 8) |
+      ((v & 0xFF0000) >> 8) |
+      ((v & 0xFF000000) >> 24);
+      
+      return *this;
+    }
+    
+  private:
+    ::u32 data;
   };
 }
 
-using u16le = std::conditional<IS_LITTLE_ENDIAN_, hidden::u16, hidden::u16re>::type;
-using u16be = std::conditional<IS_LITTLE_ENDIAN_, hidden::u16re, hidden::u16>::type;
+using u16le = std::conditional<IS_LITTLE_ENDIAN_, hidden::u16se, hidden::u16re>::type;
+using u16be = std::conditional<IS_LITTLE_ENDIAN_, hidden::u16re, hidden::u16se>::type;
+using u32le = std::conditional<IS_LITTLE_ENDIAN_, hidden::u32se, hidden::u32re>::type;
+using u32be = std::conditional<IS_LITTLE_ENDIAN_, hidden::u32re, hidden::u32se>::type;
+
+using u32se = std::conditional<IS_LITTLE_ENDIAN_, u32le, u32be>::type;
+using u32de = std::conditional<IS_LITTLE_ENDIAN_, u32be, u32le>::type;
+
 
 struct u32_optional
 {
@@ -84,6 +138,38 @@ public:
   void set(u32 data) { this->data = data; }
 };
 
+template<size_t LENGTH>
+struct wrapped_array
+{
+private:
+  std::array<byte, LENGTH> data;
+  
+public:
+  wrapped_array() : data({{0}}) { }
+  wrapped_array(const std::array<byte, LENGTH>& data) : data(data) { }
+  
+  const byte* inner() const { return data.data(); }
+  byte* inner() { return data.data(); }
+  
+  const byte& operator[](size_t index) const { return data[index]; }
+  byte& operator[](size_t index) { return data[index]; }
+  
+  operator std::string() const
+  {
+    constexpr bool uppercase = false;
+    
+    char buf[LENGTH*2+1];
+    for (size_t i = 0; i < LENGTH; i++)
+      sprintf(buf+i*2, uppercase ? "%02X" : "%02x", data[i]);
+    
+    buf[LENGTH*2] = '\0';
+    
+    return std::string(buf);
+  }
+  
+  std::ostream& operator<<(std::ostream& o) const { o << operator std::string(); return o; }
+  bool operator==(const std::string& string) const { return operator std::string() == string; }
+};
 
 constexpr size_t KB16 = 16384;
 

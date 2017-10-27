@@ -7,6 +7,29 @@ TEST_CASE("catch library correctly setup", "[setup]") {
   REQUIRE(true);
 }
 
+TEST_CASE("u32 biendian", "[endianness]") {
+  SECTION("same endianness") {
+    u32 x = 0x12345678;
+    u32se se = 0x12345678;
+    
+    REQUIRE(x == se.operator u32());
+    REQUIRE(memcmp(&x, &se, sizeof(u32)) == 0);
+  }
+  
+  SECTION("reversed endianness") {
+    u32 x = 0x12345678;
+    u32de de = 0x12345678;
+    
+    const byte* p1 = reinterpret_cast<const byte*>(&x);
+    const byte* p2 = reinterpret_cast<const byte*>(&de);
+    
+    REQUIRE(p1[0] == p2[3]);
+    REQUIRE(p1[1] == p2[2]);
+    REQUIRE(p1[2] == p2[1]);
+    REQUIRE(p1[3] == p2[0]);
+  }
+}
+
 TEST_CASE("crc32", "[checksums]") {
   SECTION("crc32-test1") {
     std::string testString = "The quick brown fox jumps over the lazy dog";
@@ -43,5 +66,25 @@ TEST_CASE("md5", "[checksums]") {
     " mollit anim id est laborum";
     std::string md5 = hash::md5_digester::compute(testString.data(), testString.length());
     REQUIRE(md5 == "b69c72d396328f617dbf9ba3ebe7cefc");
+  }
+}
+
+TEST_CASE("sha1", "[checksums]") {
+  SECTION("sha1-test1") {
+    std::string testString = "The quick brown fox jumps over the lazy dog";
+    std::string sha1 = hash::sha1_digester::compute(testString.data(), testString.length());
+    REQUIRE(sha1 == "2fd4e1c67a2d28fced849ee1bb76e7391b93eb12");
+  }
+  
+  SECTION("md5-test2") {
+    std::string testString = "Lorem ipsum dolor sit amet, consectetur adipiscing"
+    " elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+    " Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi"
+    " ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit"
+    " in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur"
+    " sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt"
+    " mollit anim id est laborum";
+    std::string sha1 = hash::sha1_digester::compute(testString.data(), testString.length());
+    REQUIRE(sha1 == "a851751e1e14c39a78f0a4b8debf69dba0b2ae0d");
   }
 }

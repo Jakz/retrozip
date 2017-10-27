@@ -214,7 +214,7 @@ namespace hash
         update(bits, 8);
         
         // Store state in digest
-        encode(digest.data.data(), state, 16);
+        encode(digest.inner(), state, 16);
         
         // Zeroize sensitive information.
         memset(buffer, 0, sizeof(buffer));
@@ -225,19 +225,6 @@ namespace hash
       
       return digest;
     }
-  }
-  
-  md5_t::operator std::string() const
-  {
-    constexpr bool uppercase = false;
-    
-    char buf[33];
-    for (int i=0; i<16; i++)
-      sprintf(buf+i*2, uppercase ? "%02X" : "%02x", data[i]);
-    
-    buf[32] = '\0';
-  
-    return std::string(buf);
   }
   
   void md5_digester::update(const void* data, size_t length)
