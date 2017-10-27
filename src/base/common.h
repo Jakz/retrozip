@@ -198,6 +198,7 @@ struct bit_mask
 };
 
 constexpr size_t KB16 = 16384;
+constexpr size_t KB64 = 16384 << 2;
 
 enum class ZlibResult : int;
 

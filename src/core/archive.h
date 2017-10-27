@@ -47,39 +47,8 @@ enum class Seek
   CUR = SEEK_CUR
 };
 
-class W
-{
-private:
-  off_t position;
-  size_t size;
-  byte* buffer;
-  
-public:
-  W() : position(0), size(0) { }
-  
-  virtual void seek(off_t offset, Seek origin)
-  {
-    switch (origin) {
-      case Seek::CUR: position += offset; position = std::min(0LL, position); break;
-      case Seek::SET: position = offset; break;
-      case Seek::END: position = size - offset; position = std::min(0LL, position); break;
-    }
-  }
-  
-  virtual off_t reserve(size_t v)
-  {
-    assert(position == size);
-    off_t p = tell();
-    position += v;
-    size += v;
-    return p;
-  }
-  
-  virtual off_t tell() const { return position; }
-  
-  virtual void read(void* data, size_t size, size_t count) { position += size*count; }
-  virtual void write(const void* data, size_t size, size_t count) { position += size*count; }
-};
+class memory_buffer;
+using W = memory_buffer;
 
 class Archive
 {

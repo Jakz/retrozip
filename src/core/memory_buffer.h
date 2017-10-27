@@ -13,7 +13,7 @@ private:
   size_t _size;
   
 public:
-  memory_buffer() : memory_buffer(16384)
+  memory_buffer() : memory_buffer(KB16)
   {
     static_assert(sizeof(off_t) == 8, "");
     static_assert(sizeof(size_t) == 8, "");
@@ -83,6 +83,14 @@ public:
     std::copy((const byte*)data, (const byte*)data + (size*count), _data+_position);
     _position += count*size;
     _size = std::max(_size, (size_t)_position);
+  }
+  
+  size_t read(void* data, size_t size, size_t count)
+  {
+    size_t available = std::min(_size - _position, (off_t)size*count);
+    std::copy(_data + _position, _data + _position + available, (byte*)data);
+    _position += available;
+    return available;
   }
   
   void trim()

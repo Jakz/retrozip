@@ -1,5 +1,7 @@
 #include "archive.h"
 
+#include "memory_buffer.h"
+
 Archive::Archive()
 {
   ordering.push(rzip::Section::HEADER);

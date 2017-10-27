@@ -33,6 +33,7 @@ TEST_CASE("u32 biendian", "[endianness]") {
 
 #define WRITE_RANDOM_DATA(dest, name, length) byte name[(length)]; randomize(name, (length)); dest.write(name, 1, (length));
 void randomize(byte* data, size_t len) { for (size_t i = 0; i < len; ++i) { data[i] = rand()%256; } }
+#define READ_DATA(dest, name, length, res) byte name[(length)]; size_t res = dest.read(name, 1, (length));
 
 TEST_CASE("memory buffer", "[support]") {
   SECTION("write") {
@@ -133,8 +134,8 @@ TEST_CASE("memory buffer", "[support]") {
       REQUIRE(b.size() == LEN1 + OFF + LEN2);
       REQUIRE(b.position() == LEN1 + OFF + LEN2);
       
-      REQUIRE(memcmp(b.raw(), temp1, LEN1 + OFF) == 0);
-      REQUIRE(memcmp(b.raw() + LEN1 + OFF, temp2, LEN2) == 0);
+      REQUIRE(std::equal(b.raw(), b.raw() + LEN1 + OFF, temp1));
+      REQUIRE(std::equal(b.raw() + LEN1 + OFF, b.raw() + LEN1 + OFF + LEN2, temp2));
     }
     
     SECTION("seek before start should revert to 0")
@@ -172,13 +173,13 @@ TEST_CASE("memory buffer", "[support]") {
       REQUIRE(b.capacity() == LEN1 + OFF + LEN2);
       REQUIRE(b.size() == LEN1 + OFF + LEN2);
       
-      REQUIRE(memcmp(b.raw(), temp1, LEN1) == 0);
+      REQUIRE(std::equal(b.raw(), b.raw() + LEN1, temp1));
       REQUIRE(memcmp(b.raw() + LEN1 + OFF, temp2, LEN2) == 0);
       
       byte zero[OFF];
       memset(zero, 0, OFF);
       
-      REQUIRE(memcmp(b.raw() + LEN1, zero, OFF) == 0);
+      REQUIRE(std::equal(b.raw() + LEN1, b.raw() + LEN1 + OFF, zero));
     }
     
     SECTION("trim should reduce capacity accordingly")
@@ -194,6 +195,37 @@ TEST_CASE("memory buffer", "[support]") {
       REQUIRE(b.capacity() == LEN);
       REQUIRE(b.size() == LEN);
       REQUIRE(b.position() == LEN);
+    }
+  }
+  
+  SECTION("read") {
+    SECTION("basic read")
+    {
+      constexpr size_t WLEN = 64, RLEN = 32;
+      memory_buffer b(WLEN);
+      
+      WRITE_RANDOM_DATA(b, temp1, WLEN);
+      b.rewind();
+      READ_DATA(b, temp2, RLEN, read2);
+      
+      REQUIRE(b.position() == RLEN);
+      REQUIRE(read2 == RLEN);
+      REQUIRE(std::equal(temp1, temp1+RLEN, temp2));
+    }
+    
+    SECTION("reading more than available should read less data")
+    {
+      constexpr size_t WLEN = 32, RLEN = 48;
+      memory_buffer b(WLEN);
+      
+      WRITE_RANDOM_DATA(b, temp1, WLEN);
+      b.rewind();
+      READ_DATA(b, temp2, RLEN, read2);
+      
+      REQUIRE(b.position() == WLEN);
+      REQUIRE(b.size() == WLEN);
+      REQUIRE(read2 == WLEN);
+      REQUIRE(std::equal(temp1, temp1+WLEN, temp2));
     }
   }
 }
