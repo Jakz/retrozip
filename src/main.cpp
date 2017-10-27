@@ -7,6 +7,8 @@
 //
 
 #include <iostream>
+#include "core/header.h"
+#include "core/archive.h"
 
 int main(int argc, const char * argv[])
 {

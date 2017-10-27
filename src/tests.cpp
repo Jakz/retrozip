@@ -1,6 +1,7 @@
 #define CATCH_CONFIG_MAIN
 #include "libs/catch.h"
 
+#include "core/memory_buffer.h"
 #include "hash/hash.h"
 
 TEST_CASE("catch library correctly setup", "[setup]") {
@@ -27,6 +28,173 @@ TEST_CASE("u32 biendian", "[endianness]") {
     REQUIRE(p1[1] == p2[2]);
     REQUIRE(p1[2] == p2[1]);
     REQUIRE(p1[3] == p2[0]);
+  }
+}
+
+#define WRITE_RANDOM_DATA(dest, name, length) byte name[(length)]; randomize(name, (length)); dest.write(name, 1, (length));
+void randomize(byte* data, size_t len) { for (size_t i = 0; i < len; ++i) { data[i] = rand()%256; } }
+
+TEST_CASE("memory buffer", "[support]") {
+  SECTION("write") {
+    SECTION("write with realloc") {
+      constexpr size_t LEN = 64;
+      memory_buffer b(0);
+      
+      WRITE_RANDOM_DATA(b, temp, LEN);
+      
+      REQUIRE(b.capacity() == LEN);
+      REQUIRE(b.size() == LEN);
+      REQUIRE(b.position() == LEN);
+      REQUIRE(memcmp(b.raw(), temp, LEN) == 0);
+    }
+    
+    SECTION("write without realloc") {
+      constexpr size_t LEN = 64, CAP = 128;
+      memory_buffer b(CAP);
+      
+      WRITE_RANDOM_DATA(b, temp, LEN);
+      
+      REQUIRE(b.capacity() == CAP);
+      REQUIRE(b.size() == LEN);
+      REQUIRE(b.position() == LEN);
+      REQUIRE(memcmp(b.raw(), temp, LEN) == 0);
+    }
+    
+    SECTION("two writes with realloc")
+    {
+      constexpr size_t LEN1 = 64, LEN2 = 32;
+      memory_buffer b(0);
+      
+      WRITE_RANDOM_DATA(b, temp1, LEN1);
+
+      REQUIRE(b.capacity() == LEN1);
+      REQUIRE(b.size() == LEN1);
+      REQUIRE(b.position() == LEN1);
+      REQUIRE(memcmp(b.raw(), temp1, LEN1) == 0);
+
+      WRITE_RANDOM_DATA(b, temp2, LEN2);
+      
+      REQUIRE(b.capacity() == LEN1 + LEN2);
+      REQUIRE(b.size() == LEN1 + LEN2);
+      REQUIRE(b.position() == LEN1 + LEN2);
+      REQUIRE(memcmp(b.raw(), temp1, LEN1) == 0);
+      REQUIRE(memcmp(b.raw()+LEN1, temp2, LEN2) == 0);
+    }
+    
+    SECTION("overwrite with seek from start")
+    {
+      constexpr size_t LEN1 = 64, LEN2 = 32, OFF = 16;
+      memory_buffer b(0);
+      
+      WRITE_RANDOM_DATA(b, temp1, LEN1);
+      b.seek(OFF, Seek::SET);
+      REQUIRE(b.position() == OFF);
+      WRITE_RANDOM_DATA(b, temp2, LEN2);
+      
+      REQUIRE(b.capacity() == LEN1);
+      REQUIRE(b.size() == LEN1);
+      REQUIRE(b.position() == OFF + LEN2);
+      REQUIRE(memcmp(b.raw(), temp1, OFF) == 0);
+      REQUIRE(memcmp(b.raw() + OFF, temp2, LEN2) == 0);
+      REQUIRE(memcmp(b.raw() + OFF + LEN2, temp1 + OFF + LEN2, LEN1 - OFF - LEN2) == 0);
+    }
+    
+    SECTION("overwrite with seek from current")
+    {
+      /* 48 temp1 | 32 temp2 */
+      constexpr size_t LEN1 = 64, LEN2 = 32, OFF = -16;
+      memory_buffer b(0);
+      
+      WRITE_RANDOM_DATA(b, temp1, LEN1);
+      b.seek(OFF, Seek::CUR);
+      REQUIRE(b.position() == LEN1 + OFF);
+      WRITE_RANDOM_DATA(b, temp2, LEN2);
+      
+      REQUIRE(b.capacity() == LEN1 + OFF + LEN2);
+      REQUIRE(b.size() == LEN1 + OFF + LEN2);
+      REQUIRE(b.position() == LEN1 + OFF + LEN2);
+      
+      REQUIRE(memcmp(b.raw(), temp1, LEN1 + OFF) == 0);
+      REQUIRE(memcmp(b.raw() + LEN1 + OFF, temp2, LEN2) == 0);
+    }
+    
+    SECTION("overwrite with negative seek from end")
+    {
+      /* 48 temp1 | 32 temp2 */
+      constexpr size_t LEN1 = 64, LEN2 = 32, OFF = -16;
+      memory_buffer b(0);
+      
+      WRITE_RANDOM_DATA(b, temp1, LEN1);
+      b.seek(OFF, Seek::END);
+      REQUIRE(b.position() == LEN1 + OFF);
+      WRITE_RANDOM_DATA(b, temp2, LEN2);
+      
+      REQUIRE(b.capacity() == LEN1 + OFF + LEN2);
+      REQUIRE(b.size() == LEN1 + OFF + LEN2);
+      REQUIRE(b.position() == LEN1 + OFF + LEN2);
+      
+      REQUIRE(memcmp(b.raw(), temp1, LEN1 + OFF) == 0);
+      REQUIRE(memcmp(b.raw() + LEN1 + OFF, temp2, LEN2) == 0);
+    }
+    
+    SECTION("seek before start should revert to 0")
+    {
+      constexpr size_t LEN = 64, OFF = -128;
+      memory_buffer b(0);
+
+      WRITE_RANDOM_DATA(b, temp1, LEN);
+      b.seek(OFF, Seek::SET);
+      REQUIRE(b.position() == 0);
+    }
+    
+    SECTION("seek past end should increase position but not capacity/size")
+    {
+      constexpr size_t LEN = 64, OFF = 128;
+      memory_buffer b(0);
+      
+      WRITE_RANDOM_DATA(b, temp1, LEN);
+      b.seek(OFF, Seek::END);
+      REQUIRE(b.position() == LEN + OFF);
+      REQUIRE(b.capacity() == LEN);
+      REQUIRE(b.size() == LEN);
+    }
+    
+    SECTION("seek past end should increase capacity/size on write and fill with 0s")
+    {
+      constexpr size_t LEN1 = 64, LEN2 = 32, OFF = 128;
+      memory_buffer b(0);
+      
+      WRITE_RANDOM_DATA(b, temp1, LEN1);
+      b.seek(OFF, Seek::END);
+      WRITE_RANDOM_DATA(b, temp2, LEN2);
+      
+      REQUIRE(b.position() == LEN1 + OFF + LEN2);
+      REQUIRE(b.capacity() == LEN1 + OFF + LEN2);
+      REQUIRE(b.size() == LEN1 + OFF + LEN2);
+      
+      REQUIRE(memcmp(b.raw(), temp1, LEN1) == 0);
+      REQUIRE(memcmp(b.raw() + LEN1 + OFF, temp2, LEN2) == 0);
+      
+      byte zero[OFF];
+      memset(zero, 0, OFF);
+      
+      REQUIRE(memcmp(b.raw() + LEN1, zero, OFF) == 0);
+    }
+    
+    SECTION("trim should reduce capacity accordingly")
+    {
+      constexpr size_t LEN = 64, CAP = 256;
+      memory_buffer b(CAP);
+      
+      WRITE_RANDOM_DATA(b, temp1, LEN);
+      REQUIRE(b.capacity() == CAP);
+      REQUIRE(b.size() == LEN);
+      REQUIRE(b.position() == LEN);
+      b.trim();
+      REQUIRE(b.capacity() == LEN);
+      REQUIRE(b.size() == LEN);
+      REQUIRE(b.position() == LEN);
+    }
   }
 }
 

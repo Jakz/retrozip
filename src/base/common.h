@@ -1,5 +1,6 @@
 #pragma once
 
+#define _FILE_OFFSET_BITS 64
 #include <cstdint>
 #include <cmath>
 
@@ -169,6 +170,31 @@ public:
   
   std::ostream& operator<<(std::ostream& o) const { o << operator std::string(); return o; }
   bool operator==(const std::string& string) const { return operator std::string() == string; }
+};
+
+template<typename T>
+struct bit_mask
+{
+  using utype = typename std::underlying_type<T>::type;
+  utype value;
+  
+  bool isSet(T flag) const { return value & static_cast<utype>(flag); }
+  void set(T flag) { value |= static_cast<utype>(flag); }
+  void reset(T flag) { value &= ~static_cast<utype>(flag); }
+  
+  bit_mask<T>& operator&(T flag)
+  {
+    bit_mask<T> mask;
+    mask.value = this->value & static_cast<utype>(flag);
+    return mask;
+  }
+  
+  bit_mask<T>& operator|(T flag)
+  {
+    bit_mask<T> mask;
+    mask.value = this->value | static_cast<utype>(flag);
+    return mask;
+  }
 };
 
 constexpr size_t KB16 = 16384;
