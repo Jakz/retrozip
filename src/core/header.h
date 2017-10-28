@@ -10,6 +10,7 @@ namespace rzip
   using count_t = u32;
   using length_t = u64;
   using checksum_t = hash::crc32_t;
+  using digester_t = hash::crc32_digester;
   
   static constexpr version_t CURRENT_VERSION = 0x00000001;
   
@@ -38,7 +39,7 @@ namespace rzip
     
     offset_t entryTableOffset;
     offset_t streamTableOffset;
-    offset_t entryFileTableOffset;
+    offset_t entryNameTableOffset;
     
     length_t fileLength;
     checksum_t fileChecksum;

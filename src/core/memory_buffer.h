@@ -1,9 +1,16 @@
 #pragma once
 
-#include "archive.h"
 #include "base/common.h"
 
-template<typename T> class memory_buffer_reference;
+enum class Seek
+{
+  SET = SEEK_SET,
+  END = SEEK_END,
+  CUR = SEEK_CUR
+};
+
+template<typename T> class data_reference;
+template<typename T> class array_reference;
 
 class memory_buffer
 {
@@ -23,6 +30,9 @@ public:
   
   memory_buffer(size_t capacity) : _data(new byte[capacity]), _capacity(capacity), _size(0), _position(0) { }
   ~memory_buffer() { delete [] _data; }
+  
+  bool operator==(const memory_buffer& other) const { return _size == other._size && std::equal(_data, _data+_size, other._data); }
+  bool operator!=(const memory_buffer& other) { return !operator==(other); }
   
   size_t size() const { return _size; }
   size_t capacity() const { return _capacity; }
@@ -54,25 +64,9 @@ public:
       this->_capacity = capacity;
     }
   }
-  
-  /*void reserve(size_t size)
-  {
-    assert(_position == _size);
-    ensure
-    
-    if (size > _capacity - _size)
-    {
-      size_t newCapacity = size + _size;
-      byte* newData = new byte[newCapacity];
-      memset(newData, 0, newCapacity);
-      std::copy(_data, _data+_size, newData);
-      delete[] _data;
-      this->_data = newData;
-      this->_capacity = newCapacity;
-    }
-  }*/
-  
-  template<typename T> memory_buffer_reference<T> reserve();
+
+  template<typename T> data_reference<T> reserve();
+  template<typename T> array_reference<T> reserveArray(size_t size);
   
   void reserve(size_t size)
   {
@@ -89,6 +83,7 @@ public:
     _size = std::max(_size, (size_t)_position);
   }
   
+  template<typename T> size_t read(T& dest) { return read(&dest, sizeof(T), 1); }
   size_t read(void* data, size_t size, size_t count)
   {
     size_t available = std::min(_size - _position, (off_t)size*count);
@@ -108,30 +103,89 @@ public:
       _capacity = _size;
     }
   }
+  
+  bool serialize(const file_handle& file) const
+  {
+    return file.write(_data, 1, _size);
+  }
+  
+  void unserialize(const file_handle& file)
+  {
+    reserve(file.length());
+    _size = _capacity;
+    rewind();
+    file.read(_data, 1, _size);
+  }
 };
 
 template<typename T>
-class memory_buffer_reference
+class data_reference
 {
 private:
-  memory_buffer& _buffer;
+  memory_buffer* _buffer;
   off_t _position;
-  memory_buffer_reference(memory_buffer& buffer, off_t position) : _buffer(buffer), _position(position) { }
+  data_reference(memory_buffer& buffer, off_t position) : _buffer(&buffer), _position(position) { }
   
 public:
-  void solve(const T& value)
+  data_reference() : _buffer(nullptr), _position(0) { }
+  operator off_t() const { return _position; }
+
+  void write(const T& value)
   {
-    off_t mark = _buffer.tell();
-    _buffer.seek(_position, Seek::SET);
-    _buffer.write(&value, sizeof(T), 1);
-    _buffer.seek(mark, Seek::SET);
+    assert(_buffer);
+    off_t mark = _buffer->tell();
+    _buffer->seek(_position, Seek::SET);
+    _buffer->write(&value, sizeof(T), 1);
+    _buffer->seek(mark, Seek::SET);
   }
 
+  friend class memory_buffer;
 };
 
-template<typename T> memory_buffer_reference<T> memory_buffer::reserve()
+template<typename T>
+class array_reference
+{
+private:
+  memory_buffer* _buffer;
+  off_t _position;
+  size_t size;
+  array_reference(memory_buffer& buffer, off_t position, size_t size) : _buffer(&buffer), _position(position) { }
+  
+public:
+  array_reference() : _buffer(nullptr), _position(0) { }
+  operator off_t() const { return _position; }
+  
+  void write(const T& value, size_t index)
+  {
+    assert(_buffer);
+    off_t mark = _buffer->tell();
+    _buffer->seek(_position + sizeof(T)*index, Seek::SET);
+    _buffer->write(&value, sizeof(T), 1);
+    _buffer->seek(mark, Seek::SET);
+  }
+  
+  void read(T& value, size_t index)
+  {
+    assert(_buffer);
+    off_t mark = _buffer->tell();
+    _buffer->seek(_position + sizeof(T)*index, Seek::SET);
+    _buffer->read(value);
+    _buffer->seek(mark, Seek::SET);
+  }
+  
+  friend class memory_buffer;
+};
+
+template<typename T> data_reference<T> memory_buffer::reserve()
 {
   off_t mark = tell();
   reserve(sizeof(T));
-  return memory_buffer_reference<T>(*this, mark);
+  return data_reference<T>(*this, mark);
+}
+
+template<typename T> array_reference<T> memory_buffer::reserveArray(size_t size)
+{
+  off_t mark = tell();
+  reserve(sizeof(T)*size);
+  return array_reference<T>(*this, mark, size);
 }

@@ -198,12 +198,65 @@ TEST_CASE("memory buffer", "[support]") {
     }
   }
   
-  SECTION("write typed") {
+  SECTION("write with references") {
     SECTION("simple write") {
+      int c = 0x12345678, d;
       memory_buffer b(sizeof(int));
-      memory_buffer_reference<int> ref = b.reserve<int>();
-      ref.solve(0x12345678);
+      data_reference<int> ref = b.reserve<int>();
+      ref.write(c);
+      
+      REQUIRE(b.position() == sizeof(int));
+      
+      b.rewind();
+      b.read(d);
+      
+      REQUIRE(b.position() == sizeof(int));
+      REQUIRE(d == c);
     }
+    
+    SECTION("write after normal write") {
+      constexpr size_t LEN = 64;
+      int c = 0x12345678, d;
+      memory_buffer b(sizeof(int));
+      data_reference<int> ref = b.reserve<int>();
+      
+      WRITE_RANDOM_DATA(b, temp, LEN);
+      
+      ref.write(c);
+      
+      REQUIRE(b.position() == sizeof(int) + LEN);
+      
+      b.rewind();
+      b.read(d);
+      
+      REQUIRE(b.position() == sizeof(int));
+      REQUIRE(d == c);
+    }
+
+    SECTION("write/read array") {
+      constexpr size_t LEN = 16;
+      memory_buffer b(LEN*sizeof(int));
+      array_reference<int> aref = b.reserveArray<int>(LEN);
+      
+      REQUIRE(b.capacity() == LEN*sizeof(int));
+      
+      for (int i = 0; i < LEN; ++i)
+        aref.write(i*3, i);
+      
+      REQUIRE(b.size() == LEN*sizeof(int));
+      REQUIRE(b.position() == LEN*sizeof(int));
+      
+      b.rewind();
+      
+      for (int i = 0; i < LEN; ++i)
+      {
+        int j;
+        aref.read(j, i);
+        REQUIRE(j == i*3);
+      }
+    }
+    
+    
   }
   
   SECTION("read") {
@@ -235,6 +288,29 @@ TEST_CASE("memory buffer", "[support]") {
       REQUIRE(read2 == WLEN);
       REQUIRE(std::equal(temp1, temp1+WLEN, temp2));
     }
+  }
+  
+  SECTION("serialization") {
+    constexpr size_t LEN = 128;
+    memory_buffer b(LEN);
+      
+    WRITE_RANDOM_DATA(b, temp1, LEN);
+    
+    {
+      file_handle out("test.bin", file_mode::WRITING);
+      b.serialize(out);
+    }
+    
+    {
+      file_handle in("test.bin", file_mode::READING);
+      REQUIRE(in.length() == LEN);
+      
+      memory_buffer v(LEN);
+      v.unserialize(in);
+      
+      REQUIRE(b == v);
+    }
+    
   }
 }
 

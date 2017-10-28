@@ -18,7 +18,7 @@ namespace header
 class Entry
 {
 private:
-  rzip::TableEntry _tableEntry;
+  mutable rzip::TableEntry _tableEntry;
 
   path _path;
   std::string _name;
@@ -29,7 +29,9 @@ public:
   const path& path() const { return _path; }
   const std::string& name() const { return _name; }
   
-  rzip::TableEntry& tableEntry() { return _tableEntry; }
+  rzip::count_t payloadLength() const { return 0 ; }
+  
+  rzip::TableEntry& tableEntry() const { return _tableEntry; }
 };
 
 class Stream
@@ -40,12 +42,6 @@ public:
   Stream() { }
 };
 
-enum class Seek
-{
-  SET = SEEK_SET,
-  END = SEEK_END,
-  CUR = SEEK_CUR
-};
 
 class memory_buffer;
 using W = memory_buffer;
