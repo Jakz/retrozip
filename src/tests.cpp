@@ -2,7 +2,9 @@
 #include "libs/catch.h"
 
 #include "core/memory_buffer.h"
+#include "core/data_source.h"
 #include "hash/hash.h"
+
 
 TEST_CASE("catch library correctly setup", "[setup]") {
   REQUIRE(true);
@@ -311,6 +313,22 @@ TEST_CASE("memory buffer", "[support]") {
       REQUIRE(b == v);
     }
     
+  }
+}
+
+TEST_CASE("streams", "[stream]") {
+  SECTION("basic pipe test") {
+    constexpr size_t LEN = 256;
+    memory_data_source source;
+    memory_data_sink sink;
+    
+    WRITE_RANDOM_DATA(source.data(), test, LEN);
+    source.data().rewind();
+    
+    data_pipe pipe = data_pipe(&source, &sink, 8);
+    pipe.process();
+    
+    REQUIRE(source.data() == sink.data());
   }
 }
 

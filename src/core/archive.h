@@ -1,8 +1,8 @@
 #pragma once
 
 #include "base/common.h"
-#include "base/path.h"
 
+#include "data_source.h"
 #include "header.h"
 #include <queue>
 
@@ -20,13 +20,12 @@ class Entry
 private:
   mutable rzip::TableEntry _tableEntry;
 
-  path _path;
+  std::unique_ptr<data_source> _source;
   std::string _name;
   
 public:
-  Entry(const class path& path, const std::string& name) : _path(path), _name(name) { }
+  Entry(const std::string& name, data_source* source) : _source(source), _name(name) { }
   
-  const path& path() const { return _path; }
   const std::string& name() const { return _name; }
   
   rzip::count_t payloadLength() const { return 0 ; }
@@ -37,9 +36,14 @@ public:
 class Stream
 {
 private:
-  
+  mutable rzip::StreamEntry _streamEntry;
+
 public:
   Stream() { }
+  
+  rzip::count_t payloadLength() const { return 0 ; }
+  
+  rzip::StreamEntry& streamEntry() const { return _streamEntry; }
 };
 
 

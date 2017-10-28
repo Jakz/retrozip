@@ -39,7 +39,8 @@ namespace rzip
     
     offset_t entryTableOffset;
     offset_t streamTableOffset;
-    offset_t entryNameTableOffset;
+    offset_t nameTableOffset;
+    count_t nameTableLength;
     
     length_t fileLength;
     checksum_t fileChecksum;
@@ -74,6 +75,8 @@ namespace rzip
     
     offset_t payload;
     count_t payloadLength;
+    
+    offset_t entryNameOffset;
   } __attribute__((packed));
   
   enum class StreamType : u32;

@@ -17,9 +17,11 @@ class memory_buffer
 private:
   byte* _data;
 
-  off_t _position;
+  mutable off_t _position;
   size_t _capacity;
   size_t _size;
+  
+  bool _dataOwned;
   
 public:
   memory_buffer() : memory_buffer(KB16)
@@ -28,8 +30,17 @@ public:
     static_assert(sizeof(size_t) == 8, "");
   }
   
-  memory_buffer(size_t capacity) : _data(new byte[capacity]), _capacity(capacity), _size(0), _position(0) { }
-  ~memory_buffer() { delete [] _data; }
+  memory_buffer(byte* data, size_t length, bool copy) : _data(data), _capacity(length), _size(length), _position(0), _dataOwned(copy)
+  {
+    if (copy)
+    {
+      _data = new byte[length];
+      std::copy(data, data + length, _data);
+    }
+  }
+  
+  memory_buffer(size_t capacity) : _data(new byte[capacity]), _capacity(capacity), _size(0), _position(0), _dataOwned(true) { }
+  ~memory_buffer() { if (_dataOwned) delete [] _data; }
   
   bool operator==(const memory_buffer& other) const { return _size == other._size && std::equal(_data, _data+_size, other._data); }
   bool operator!=(const memory_buffer& other) { return !operator==(other); }
@@ -41,6 +52,7 @@ public:
   
   off_t tell() const { return _position; }
   
+  void seek(off_t offset) { seek(offset, Seek::SET); }
   void seek(off_t offset, Seek origin)
   {
     switch (origin) {
@@ -56,6 +68,7 @@ public:
   {
     if (capacity > _capacity)
     {
+      //TODO: this may fail and must be managed
       byte* newData = new byte[capacity];
       memset(newData, 0, capacity);
       std::copy(_data, _data+_size, newData);
@@ -74,17 +87,19 @@ public:
     _position += size;
   }
   
-  void write(const void* data, size_t size, size_t count)
+  template<typename T> size_t write(const T& src) { return write(&src, sizeof(T), 1); }
+  size_t write(const void* data, size_t size, size_t count)
   {
     ensure_capacity(_position + (size*count));
 
     std::copy((const byte*)data, (const byte*)data + (size*count), _data+_position);
     _position += count*size;
     _size = std::max(_size, (size_t)_position);
+    return count*size;
   }
   
-  template<typename T> size_t read(T& dest) { return read(&dest, sizeof(T), 1); }
-  size_t read(void* data, size_t size, size_t count)
+  template<typename T> size_t read(T& dest) const { return read(&dest, sizeof(T), 1); }
+  size_t read(void* data, size_t size, size_t count) const
   {
     size_t available = std::min(_size - _position, (off_t)size*count);
     std::copy(_data + _position, _data + _position + available, (byte*)data);

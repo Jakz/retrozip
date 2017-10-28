@@ -48,6 +48,7 @@ template<typename WW> void Archive::write(W& w)
         
       case rzip::Section::ENTRY_TABLE:
       {
+        /* save offset to the entry table and store it into header */
         refs.entryTable = w.reserveArray<rzip::TableEntry>(header.entryCount);
         header.entryTableOffset = refs.entryTable;
         break;
@@ -55,6 +56,7 @@ template<typename WW> void Archive::write(W& w)
         
       case rzip::Section::STREAM_TABLE:
       {
+        /* save offset to the stream table and store it into header */
         refs.streamTable = w.reserveArray<rzip::StreamEntry>(header.streamCount);
         header.streamTableOffset = refs.streamTable;
         break;
@@ -80,6 +82,53 @@ template<typename WW> void Archive::write(W& w)
         
         w.reserve(length);
         break;
+      }
+        
+      case rzip::Section::STREAM_PAYLOAD:
+      {
+        off_t base = w.tell();
+        off_t length = 0;
+        
+        /* for each entry we get the payload length to compute each payload
+         offset inside the file, we also compute the total entry payload
+         length to reserve it
+         */
+        for (const Stream& stream : streams)
+        {
+          rzip::StreamEntry& sentry = stream.streamEntry();
+          sentry.payload = base + length;
+          sentry.payloadLength = stream.payloadLength();
+          
+          length += sentry.payloadLength;
+        }
+        
+        w.reserve(length);
+        break;
+      }
+        
+      case rzip::Section::FILE_NAME_TABLE:
+      {
+        off_t base = w.tell();
+        off_t offset = w.tell();
+        
+        header.nameTableOffset = base;
+        
+        for (const Entry& entry : entries)
+        {
+          entry.tableEntry().entryNameOffset = offset;
+          w.write(entry.name().c_str(), 1, entry.name().length());
+          w.write((char)'\0');
+          
+          offset = w.tell();
+        }
+        
+        header.nameTableLength = static_cast<rzip::count_t>(offset - base);
+        break;
+      }
+        
+      case rzip::Section::STREAM_DATA:
+      {
+        /* main stream writing */
       }
     }
   }
