@@ -383,7 +383,7 @@ TEST_CASE("streams", "[stream]") {
       REQUIRE(value == filter.get());
     }
     
-    SECTION("sha1") {
+    /*SECTION("sha1") {
       constexpr size_t LEN = 256;
       memory_data_source source;
       memory_data_sink sink;
@@ -400,7 +400,7 @@ TEST_CASE("streams", "[stream]") {
       pipe.process();
       
       REQUIRE(value == filter.get());
-    }
+    }*/
   }
 }
 
@@ -450,7 +450,7 @@ TEST_CASE("sha1", "[checksums]") {
     REQUIRE(sha1 == "2fd4e1c67a2d28fced849ee1bb76e7391b93eb12");
   }
   
-  SECTION("md5-test2") {
+  SECTION("sha1-test2") {
     std::string testString = "Lorem ipsum dolor sit amet, consectetur adipiscing"
     " elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
     " Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi"
@@ -459,6 +459,44 @@ TEST_CASE("sha1", "[checksums]") {
     " sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt"
     " mollit anim id est laborum";
     std::string sha1 = hash::sha1_digester::compute(testString.data(), testString.length());
+    REQUIRE(sha1 == "a851751e1e14c39a78f0a4b8debf69dba0b2ae0d");
+  }
+  
+  SECTION("1 byte length") {
+    byte data[1] = { 'a' };
+    std::string sha1 = hash::sha1_digester::compute(data, 1);
+    REQUIRE(sha1 == "86f7e437faa5a7fce15d1ddcb9eaeaea377667b8");
+  }
+  
+  SECTION("1 block length") {
+    std::string testString = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    REQUIRE(testString.length() == 64);
+    std::string sha1 = hash::sha1_digester::compute(testString.data(), testString.length());
+    REQUIRE(sha1 == "ce4303f6b22257d9c9cf314ef1dee4707c6e1c13");
+  }
+  
+  SECTION("partial unaligned updates")
+  {
+    std::string testString = "Lorem ipsum dolor sit amet, consectetur adipiscing"
+    " elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+    " Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi"
+    " ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit"
+    " in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur"
+    " sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt"
+    " mollit anim id est laborum";
+    const size_t length = testString.length();
+    size_t available = testString.length();
+    
+    hash::sha1_digester digester;
+    printf(">>>>>>>>>>>>>>>>> Testing\n");
+    while (available > 0)
+    {
+      size_t current = support::random((u32)std::min(available+1, 64UL));
+      digester.update(testString.data() + (length - available), current);
+      available -= current;
+    }
+    
+    std::string sha1 = digester.get();
     REQUIRE(sha1 == "a851751e1e14c39a78f0a4b8debf69dba0b2ae0d");
   }
 }

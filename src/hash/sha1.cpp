@@ -137,7 +137,7 @@ namespace hash
       u32 block[BLOCK_INTS];
       
       size_t toFillBuffer = BLOCK_BYTES - bufferSize;
-      
+           
       while (length >= toFillBuffer)
       {
         if (toFillBuffer == BLOCK_BYTES)
@@ -148,18 +148,19 @@ namespace hash
           buffer_to_block(buffer, block);
           bufferSize = 0;
         }
-          
+        
         transform(digest, block);
         
         length -= toFillBuffer;
         bdata += toFillBuffer;
+        toFillBuffer = BLOCK_BYTES;
       }
       
-      assert(bufferSize == 0);
+      assert(length + bufferSize < BLOCK_BYTES);
       if (length > 0)
       {
-        memcpy(buffer, bdata, length);
-        bufferSize = length;
+        memcpy(buffer + bufferSize, bdata, length);
+        bufferSize += length;
       }
     }
     
