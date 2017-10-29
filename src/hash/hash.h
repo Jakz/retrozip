@@ -20,6 +20,8 @@ namespace hash
     crc32_t update(const void* data, size_t length, crc32_t previous);
     
   public:
+    using computed_type = crc32_t;
+    
     crc32_digester() : value(0) { precomputeLUT(); }
     void update(const void* data, size_t length);
     crc32_t get() const { return value; }
@@ -95,6 +97,8 @@ namespace hash
     hidden::MD5 impl;
     
   public:
+    using computed_type = md5_t;
+    
     md5_digester() { }
     void update(const void* data, size_t length);
     md5_t get() { return impl.finalize(); }
@@ -164,6 +168,9 @@ namespace hash
     hidden::SHA1 impl;
     
   public:
+    using computed_type = sha1_t;
+
+    
     sha1_digester() { }
     void update(const void* data, size_t length) { impl.update(data, length); }
     sha1_t get() { return impl.finalize(); }

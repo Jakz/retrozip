@@ -6,7 +6,7 @@ class data_source
 {
   
 public:
-  virtual size_t length() const = 0;
+  virtual bool eos() const = 0;
 
   virtual size_t read(void* dest, size_t size, size_t count) const = 0;
   template<typename T> size_t read(T& dest) const { return read(&dest, sizeof(T), 1); }
@@ -22,7 +22,8 @@ public:
   memory_data_source(byte* data, size_t length, bool copy = false) : _data(data, length, copy) { }
   memory_buffer& data() { return _data; }
   
-  size_t length() const override { return _data.size(); }
+  bool eos() const override { return _data.position() == _data.size(); }
+  size_t length() const { return _data.size(); }
   size_t read(void* dest, size_t size, size_t count) const override { return _data.read(dest, size, count); }
 };
 
@@ -67,7 +68,8 @@ public:
   void stepInput()
   {
     /* available data to read is minimum between free room in buffer and remaining data */
-    size_t available = std::min(_bufferSize - _bufferPosition, _source->length() - _done);
+    //size_t available = std::min(_bufferSize - _bufferPosition, _source->length() - _done);
+    size_t available = _bufferSize - _bufferPosition;
 
     if (available > 0)
     {
@@ -95,7 +97,7 @@ public:
   
   void process()
   {
-    while (_done < _source->length())
+    while (!_source->eos())
     {
       stepInput();
       stepOutput();

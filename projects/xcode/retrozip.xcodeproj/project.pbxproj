@@ -90,6 +90,7 @@
 		04D118501FA21C5700C59EC3 /* test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = test; sourceTree = BUILT_PRODUCTS_DIR; };
 		04D118511FA23DD300C59EC3 /* libcorecrypto.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libcorecrypto.tbd; path = usr/lib/system/libcorecrypto.tbd; sourceTree = SDKROOT; };
 		04D118531FA25B4000C59EC3 /* sha1.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = sha1.cpp; sourceTree = "<group>"; };
+		04DA99D51FA6338600B83C76 /* filters.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = filters.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -119,6 +120,7 @@
 				04360FA71FA366040096F199 /* archive.h */,
 				04ADC1391FA376F300FF8D25 /* archive.cpp */,
 				04CAF3401FA4C87400259DCE /* data_source.h */,
+				04DA99D51FA6338600B83C76 /* filters.h */,
 				04360FA61FA2E3A20096F199 /* header.h */,
 				0451D6BF1FA424D300DFBA90 /* stream.h */,
 			);

@@ -9,6 +9,7 @@
 #include <iostream>
 #include "core/header.h"
 #include "core/archive.h"
+#include "core/filters.h"
 
 int main(int argc, const char * argv[])
 {

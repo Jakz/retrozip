@@ -3,6 +3,7 @@
 
 #include "core/memory_buffer.h"
 #include "core/data_source.h"
+#include "core/filters.h"
 #include "hash/hash.h"
 
 
@@ -329,6 +330,27 @@ TEST_CASE("streams", "[stream]") {
     pipe.process();
     
     REQUIRE(source.data() == sink.data());
+  }
+  
+  SECTION("filters") {
+    SECTION("crc32") {
+      constexpr size_t LEN = 256;
+      memory_data_source source;
+      memory_data_sink sink;
+      filters::crc32_filter filter = filters::crc32_filter(&source);
+      hash::crc32_digester digester;
+      
+      WRITE_RANDOM_DATA(source.data(), test, LEN);
+      source.data().rewind();
+      
+      digester.update(test, LEN);
+      hash::crc32_t value = digester.get();
+      
+      data_pipe pipe = data_pipe(&filter, &sink, 30);
+      pipe.process();
+      
+      REQUIRE(value == filter.get());
+    }
   }
 }
 
