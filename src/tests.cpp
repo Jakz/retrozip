@@ -7,6 +7,18 @@
 #include "hash/hash.h"
 
 
+#include <random>
+
+namespace support {
+  u32 random(u32 modulo)
+  {
+    static std::random_device device;
+    static std::default_random_engine engine(device());
+    return engine() % modulo;
+  }
+}
+
+
 TEST_CASE("catch library correctly setup", "[setup]") {
   REQUIRE(true);
 }
@@ -35,7 +47,7 @@ TEST_CASE("u32 biendian", "[endianness]") {
 }
 
 #define WRITE_RANDOM_DATA(dest, name, length) byte name[(length)]; randomize(name, (length)); dest.write(name, 1, (length));
-void randomize(byte* data, size_t len) { for (size_t i = 0; i < len; ++i) { data[i] = rand()%256; } }
+void randomize(byte* data, size_t len) { for (size_t i = 0; i < len; ++i) { data[i] = support::random(256); } }
 #define READ_DATA(dest, name, length, res) byte name[(length)]; size_t res = dest.read(name, 1, (length));
 
 TEST_CASE("memory buffer", "[support]") {
@@ -345,6 +357,44 @@ TEST_CASE("streams", "[stream]") {
       
       digester.update(test, LEN);
       hash::crc32_t value = digester.get();
+      
+      data_pipe pipe = data_pipe(&filter, &sink, 30);
+      pipe.process();
+      
+      REQUIRE(value == filter.get());
+    }
+    
+    SECTION("md5") {
+      constexpr size_t LEN = 256;
+      memory_data_source source;
+      memory_data_sink sink;
+      filters::md5_filter filter = filters::md5_filter(&source);
+      hash::md5_digester digester;
+      
+      WRITE_RANDOM_DATA(source.data(), test, LEN);
+      source.data().rewind();
+      
+      digester.update(test, LEN);
+      hash::md5_t value = digester.get();
+      
+      data_pipe pipe = data_pipe(&filter, &sink, 30);
+      pipe.process();
+      
+      REQUIRE(value == filter.get());
+    }
+    
+    SECTION("sha1") {
+      constexpr size_t LEN = 256;
+      memory_data_source source;
+      memory_data_sink sink;
+      filters::sha1_filter filter = filters::sha1_filter(&source);
+      hash::sha1_digester digester;
+      
+      WRITE_RANDOM_DATA(source.data(), test, LEN);
+      source.data().rewind();
+      
+      digester.update(test, LEN);
+      hash::sha1_t value = digester.get();
       
       data_pipe pipe = data_pipe(&filter, &sink, 30);
       pipe.process();
