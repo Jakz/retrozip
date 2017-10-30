@@ -43,8 +43,10 @@ TEST_CASE("optional", "[optional values]") {
 
 TEST_CASE("biendian integers", "[endianness]") {
   SECTION("u32 same endianness") {
-    u32 x = 0x12345678;
-    u32se se = 0x12345678;
+    constexpr u32 VALUE = 0x12345678;
+
+    u32 x = VALUE;
+    u32se se = VALUE;
     
     REQUIRE(x == se.operator u32());
     REQUIRE(memcmp(&x, &se, sizeof(u32)) == 0);
@@ -63,24 +65,57 @@ TEST_CASE("biendian integers", "[endianness]") {
     REQUIRE(p1[3] == p2[0]);
   }
   
+  SECTION("u32 same endianness from memory")
+  {
+    byte buffer[] = { 0x12, 0x34, 0x56, 0x78 };
+    u32se x;
+    
+    memcpy(&x, buffer, sizeof(u32se));
+    
+    u32 y = x;
+    
+    REQUIRE(memcmp(buffer, &y, sizeof(u32)) == 0);
+  }
+  
+  SECTION("u32 reversed endianness from memory")
+  {
+    byte buffer[] = { 0x12, 0x34, 0x56, 0x78 };
+    u32de x;
+    
+    memcpy(&x, buffer, sizeof(u32de));
+    
+    u32 y = x;
+    
+    const byte* p = reinterpret_cast<const byte*>(&y);
+    REQUIRE(buffer[0] == p[3]);
+    REQUIRE(buffer[1] == p[2]);
+    REQUIRE(buffer[2] == p[1]);
+    REQUIRE(buffer[3] == p[0]);
+  }
+  
   SECTION("u16 same endianness") {
-    u16 x = 0x123;
-    u16se se = 0x1234;
+    constexpr u16 VALUE = 0x1234;
+
+    u16 x = VALUE;
+    u16se se = VALUE;
     
     REQUIRE(x == se.operator u16());
     REQUIRE(memcmp(&x, &se, sizeof(u16)) == 0);
   }
   
   SECTION("u16 reversed endianness") {
-    u16 x = 0x1234;
-    u16de de = 0x1234;
+    constexpr u16 VALUE = 0x1234;
+    
+    u16 x = VALUE;
+    u16de de = VALUE;
     
     const byte* p1 = reinterpret_cast<const byte*>(&x);
     const byte* p2 = reinterpret_cast<const byte*>(&de);
     
-    REQUIRE(p1[0] == p2[1]);
     REQUIRE(p1[1] == p2[0]);
+    REQUIRE(p1[0] == p2[1]);
   }
+
 }
 
 #define WRITE_RANDOM_DATA(dest, name, length) byte name[(length)]; randomize(name, (length)); dest.write(name, 1, (length));

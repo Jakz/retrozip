@@ -80,6 +80,7 @@ namespace hidden
   
   struct u32se
   {
+    u32se() { }
     u32se(u32 v) : data(v) { }
     operator u32() const { return data; }
     u32se& operator=(u32 v) { this->data = v; return *this; }
@@ -89,6 +90,7 @@ namespace hidden
   
   struct u32re
   {
+    u32re() { }
     u32re(u32 v) { operator=(v); }
     
     operator u32() const
