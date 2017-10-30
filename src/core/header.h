@@ -54,6 +54,9 @@ namespace rzip
     hash::crc32_t crc32;
     hash::md5_t md5;
     hash::sha1_t sha1;
+    
+    DigestInfo() : crc32(0), md5({0}), sha1({0}) { }
+    DigestInfo(hash::crc32_t crc32, const hash::md5_t& md5, const hash::sha1_t& sha1) : crc32(crc32), md5(md5), sha1(sha1) { }
   };
   
   enum class StorageMode : u32;

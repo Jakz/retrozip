@@ -4,8 +4,10 @@
 #include "core/memory_buffer.h"
 #include "core/data_source.h"
 #include "core/filters.h"
+#include "core/file_data_source.h"
 #include "zip/zip_mutator.h"
 #include "hash/hash.h"
+
 
 
 #include <random>
@@ -341,6 +343,28 @@ TEST_CASE("streams", "[stream]") {
     
     data_pipe pipe = data_pipe(&source, &sink, 8);
     pipe.process();
+    
+    REQUIRE(source == sink);
+  }
+  
+  SECTION("file data source/sink") {
+    constexpr size_t LEN = 1024;
+    memory_buffer source, sink;
+    
+    WRITE_RANDOM_DATA(source, test, LEN);
+    source.rewind();
+    
+    {
+      file_data_sink fileSink("test.bin");
+      data_pipe pipe(&source, &fileSink, 64);
+      pipe.process();
+    }
+    
+    {
+      file_data_source fileSource("test.bin");
+      data_pipe pipe(&fileSource, &sink, 64);
+      pipe.process();
+    }
     
     REQUIRE(source == sink);
   }

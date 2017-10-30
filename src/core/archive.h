@@ -17,6 +17,9 @@ namespace header
 
 class Entry
 {
+public:
+  using ref = size_t;
+  
 private:
   mutable rzip::TableEntry _tableEntry;
 
@@ -35,8 +38,13 @@ public:
 
 class Stream
 {
+public:
+  using ref = size_t;
+  
 private:
   mutable rzip::StreamEntry _streamEntry;
+  
+  std::vector<Entry::ref> entries;
 
 public:
   Stream() { }
@@ -46,6 +54,14 @@ public:
   rzip::StreamEntry& streamEntry() const { return _streamEntry; }
 };
 
+struct ArchiveOptions
+{
+  bool computeCRC32;
+  bool computeMD5;
+  bool computeSHA1;
+  
+  ArchiveOptions() : computeCRC32(true), computeMD5(true), computeSHA1(true) { }
+};
 
 class memory_buffer;
 using W = memory_buffer;
@@ -63,5 +79,7 @@ private:
 public:
   Archive();
   template<typename WW> void write(W& w);
+  
+  Stream& streamByRef(Stream::ref ref) { return streams[ref]; }
 };
 

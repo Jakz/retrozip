@@ -85,6 +85,7 @@ public:
   static bool read(void* dest, size_t size, size_t count, const file_handle& handle) { return handle.read(dest, size, count); }
   static bool write(const void* src, size_t size, size_t count, const file_handle& handle) { return handle.write(src, size, count); }
   
+  file_handle(const class path& path) : path(path), file(nullptr) { }
   file_handle(const class path& path, file_mode mode, bool readOnly = false) : file(nullptr), path(path)
   {
     open(path, mode);
@@ -98,18 +99,16 @@ public:
   template <typename T> bool write(const T& src) const { return write(&src, sizeof(T), 1); }
   template <typename T> bool read(T& dst) const { return read(&dst, sizeof(T), 1); }
   
-  bool write(const void* ptr, size_t size, size_t count) const {
+  size_t write(const void* ptr, size_t size, size_t count) const {
     assert(file);
     size_t r = fwrite(ptr, size, count, file);
-    bool success = r == count;
-    return success;
+    return r;
   }
   
-  bool read(void* ptr, size_t size, size_t count) const {
+  size_t read(void* ptr, size_t size, size_t count) const {
     assert(file);
     size_t r = fread(ptr, size, count, file);
-    bool success = r == count;
-    return success;
+    return r;
   }
   
   void seek(long offset, int origin) const {
