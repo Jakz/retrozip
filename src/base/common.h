@@ -113,7 +113,7 @@ namespace hidden
     }
     
   private:
-    ::u32 data;
+    u32 data;
   };
 }
 
@@ -122,21 +122,46 @@ using u16be = std::conditional<IS_LITTLE_ENDIAN_, hidden::u16re, hidden::u16se>:
 using u32le = std::conditional<IS_LITTLE_ENDIAN_, hidden::u32se, hidden::u32re>::type;
 using u32be = std::conditional<IS_LITTLE_ENDIAN_, hidden::u32re, hidden::u32se>::type;
 
+using u16se = std::conditional<IS_LITTLE_ENDIAN_, u16le, u16be>::type;
+using u16de = std::conditional<IS_LITTLE_ENDIAN_, u16be, u16le>::type;
 using u32se = std::conditional<IS_LITTLE_ENDIAN_, u32le, u32be>::type;
 using u32de = std::conditional<IS_LITTLE_ENDIAN_, u32be, u32le>::type;
 
-
-struct u32_optional
+template<typename T>
+struct optional
 {
 private:
-  u64 data;
+  T _data;
+  bool _isPresent;
   
 public:
-  u32_optional() : data(0xFFFFFFFFFFFFFFFFLL) { }
-  u32_optional(u32 data) : data(data) { }
+  optional(T data) : _data(data), _isPresent(true) { }
+  optional() : _data(), _isPresent(false) { }
   
-  bool isPresent() const { return (data & 0xFFFFFFFF) != 0; }
-  void set(u32 data) { this->data = data; }
+  bool isPresent() const { return _isPresent; }
+  void set(T data) { this->_data = data; _isPresent = true; }
+  void clear() { _isPresent = false; }
+  
+  T get() const { assert(_isPresent); return _data; }
+};
+
+
+template<>
+struct optional<u32>
+{
+private:
+  static constexpr u64 EMPTY_VALUE = 0xFFFFFFFFFFFFFFFFLL;
+  u64 _data;
+  
+public:
+  optional<u32>() : _data(EMPTY_VALUE) { }
+  optional<u32>(u32 data) : _data(data) { }
+  
+  bool isPresent() const { return ((_data >> 32) & 0xFFFFFFFF) == 0; }
+  void set(u32 data) { this->_data = data; }
+  void clear() { this->_data = EMPTY_VALUE; }
+  
+  u32 get() const { return _data & 0xFFFFFFFF; }
 };
 
 template<size_t LENGTH>

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "header.h"
+#include "hash/hash.h"
 
 namespace filters
 {
@@ -61,8 +61,12 @@ namespace filters
       
       return read;
     }
+    
+    hash::crc32_t crc32() { assert(_crc32enabled); return _crc32.get(); }
+    hash::md5_t md5() { assert(_md5enabled); return _md5.get(); }
+    hash::sha1_t sha1() { assert(_sha1enabled); return _sha1.get(); }
 
-    rzip::DigestInfo digest() const
+    /*rzip::DigestInfo digest() const
     {
       rzip::DigestInfo digest;
       
@@ -71,7 +75,7 @@ namespace filters
       if (_sha1enabled) digest.sha1 = _sha1.get();
       
       return digest;
-    }
+    }*/
     
     bool eos() const override { return _source->eos(); }
 

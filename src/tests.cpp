@@ -26,8 +26,23 @@ TEST_CASE("catch library correctly setup", "[setup]") {
   REQUIRE(true);
 }
 
-TEST_CASE("u32 biendian", "[endianness]") {
-  SECTION("same endianness") {
+TEST_CASE("optional", "[optional values]") {
+  SECTION("u32") {
+    constexpr u32 VALUE = 0x12345678;
+    
+    optional<u32> value;
+    REQUIRE(!value.isPresent());
+    value.set(VALUE);
+    REQUIRE(value.isPresent());
+    REQUIRE(value.get() == VALUE);
+    value.clear();
+    REQUIRE(!value.isPresent());
+
+  }
+}
+
+TEST_CASE("biendian integers", "[endianness]") {
+  SECTION("u32 same endianness") {
     u32 x = 0x12345678;
     u32se se = 0x12345678;
     
@@ -35,7 +50,7 @@ TEST_CASE("u32 biendian", "[endianness]") {
     REQUIRE(memcmp(&x, &se, sizeof(u32)) == 0);
   }
   
-  SECTION("reversed endianness") {
+  SECTION("u32 reversed endianness") {
     u32 x = 0x12345678;
     u32de de = 0x12345678;
     
@@ -46,6 +61,25 @@ TEST_CASE("u32 biendian", "[endianness]") {
     REQUIRE(p1[1] == p2[2]);
     REQUIRE(p1[2] == p2[1]);
     REQUIRE(p1[3] == p2[0]);
+  }
+  
+  SECTION("u16 same endianness") {
+    u16 x = 0x123;
+    u16se se = 0x1234;
+    
+    REQUIRE(x == se.operator u16());
+    REQUIRE(memcmp(&x, &se, sizeof(u16)) == 0);
+  }
+  
+  SECTION("u16 reversed endianness") {
+    u16 x = 0x1234;
+    u16de de = 0x1234;
+    
+    const byte* p1 = reinterpret_cast<const byte*>(&x);
+    const byte* p2 = reinterpret_cast<const byte*>(&de);
+    
+    REQUIRE(p1[0] == p2[1]);
+    REQUIRE(p1[1] == p2[0]);
   }
 }
 
