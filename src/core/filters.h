@@ -78,6 +78,49 @@ namespace filters
     }*/
     
     bool eos() const override { return _source->eos(); }
+  };
+  
+  class data_read_counter : public data_filter
+  {
+  private:
+    const data_source* _source;
+    mutable size_t _count;
+    
+  public:
+    data_read_counter(const data_source* source) : _source(source), _count(0) { }
+    
+    void reset() { _count = 0; }
+    size_t count() const { return _count; }
+    
+    bool eos() const override { return _source->eos(); }
+    
+    size_t read(void* dest, size_t size, size_t count) const override
+    {
+      size_t read = _source->read(dest, size, count);
+      _count += read;
+      return read;
+    }
+    
+  };
+  
+  class data_write_counter : public data_sink
+  {
+  private:
+    data_sink* _sink;
+    mutable size_t _count;
+    
+  public:
+    data_write_counter(data_sink* sink) : _sink(sink), _count(0) { }
+    
+    void reset() { _count = 0; }
+    size_t count() const { return _count; }
+    
+    size_t write(const void* src, size_t size, size_t count) override
+    {
+      size_t written = _sink->write(src, size, count);
+      _count += written;
+      return written;
+    }
 
   };
 };

@@ -416,6 +416,36 @@ TEST_CASE("streams", "[stream]") {
     REQUIRE(source == sink);
   }
   
+  SECTION("data read counter") {
+    constexpr size_t LEN = 2048;
+    memory_buffer source;
+    memory_buffer sink;
+    filters::data_read_counter counter(&source);
+    
+    WRITE_RANDOM_DATA(source, test, LEN);
+    source.rewind();
+    
+    data_pipe pipe = data_pipe(&counter, &sink, 8);
+    pipe.process();
+
+    REQUIRE(counter.count() == LEN);
+  }
+  
+  SECTION("data write counter") {
+    constexpr size_t LEN = 2048;
+    memory_buffer source;
+    memory_buffer sink;
+    filters::data_write_counter counter(&sink);
+    
+    WRITE_RANDOM_DATA(source, test, LEN);
+    source.rewind();
+    
+    data_pipe pipe = data_pipe(&source, &counter, 8);
+    pipe.process();
+    
+    REQUIRE(counter.count() == LEN);
+  }
+  
   SECTION("file data source/sink") {
     constexpr size_t LEN = 1024;
     memory_buffer source, sink;
