@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/data_source.h"
+#include "core/data_pipe.h"
 
 #include <zlib.h>
 

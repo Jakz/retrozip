@@ -29,6 +29,4 @@ namespace filters
   using crc32_filter = digest_filter<hash::crc32_digester>;
   using md5_filter = digest_filter<hash::md5_digester>;
   using sha1_filter = digest_filter<hash::sha1_digester>;
-  
-  
 };

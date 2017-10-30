@@ -1,6 +1,7 @@
 #pragma once
 
 #include "base/common.h"
+#include "data_source.h"
 
 enum class Seek
 {
@@ -12,7 +13,7 @@ enum class Seek
 template<typename T> class data_reference;
 template<typename T> class array_reference;
 
-class memory_buffer
+class memory_buffer : public data_source, public data_sink
 {
 private:
   byte* _data;
@@ -51,6 +52,8 @@ public:
   
   bool operator==(const memory_buffer& other) const { return _size == other._size && std::equal(_data, _data+_size, other._data); }
   bool operator!=(const memory_buffer& other) { return !operator==(other); }
+
+  bool eos() const override { return _size == _position; }
   
   size_t size() const { return _size; }
   size_t capacity() const { return _capacity; }
@@ -95,7 +98,7 @@ public:
   }
   
   template<typename T> size_t write(const T& src) { return write(&src, sizeof(T), 1); }
-  size_t write(const void* data, size_t size, size_t count)
+  size_t write(const void* data, size_t size, size_t count) override
   {
     ensure_capacity(_position + (size*count));
 
@@ -106,7 +109,7 @@ public:
   }
   
   template<typename T> size_t read(T& dest) const { return read(&dest, sizeof(T), 1); }
-  size_t read(void* data, size_t size, size_t count) const
+  size_t read(void* data, size_t size, size_t count) const override
   {
     size_t available = std::min(_size - _position, (off_t)size*count);
     std::copy(_data + _position, _data + _position + available, (byte*)data);
@@ -138,6 +141,36 @@ public:
     rewind();
     file.read(_data, 1, _size);
   }
+  
+  /* orthogonal interface meant to let client data write directly to data buffer 
+     through pointer without random access
+   */
+  bool empty() const { return _size == 0; }
+  bool full() const { return _size == _capacity; }
+  size_t available() const { return _capacity - _size; }
+  size_t used() const { return _size; }
+  
+  void resize(size_t newCapacity)
+  {
+    if (newCapacity > _capacity)
+    {
+      assert(_dataOwned);
+      //TODO: this may fail and must be managed
+      _data = (byte*)realloc(_data, newCapacity);
+      _capacity = newCapacity;
+    }
+  }
+  
+  void advance(size_t offset) { _size += offset; }
+  void consume(size_t amount)
+  {
+    if (_size != amount)
+      memmove(_data, _data + amount, _size - amount);
+    _size -= amount;
+  }
+  
+  byte* head() { return _data; }
+  byte* tail() { return _data + _size; }
 };
 
 template<typename T>

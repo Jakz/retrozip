@@ -333,28 +333,28 @@ TEST_CASE("memory buffer", "[support]") {
 TEST_CASE("streams", "[stream]") {
   SECTION("basic pipe test") {
     constexpr size_t LEN = 256;
-    memory_data_source source;
-    memory_data_sink sink;
+    memory_buffer source;
+    memory_buffer sink;
     
-    WRITE_RANDOM_DATA(source.data(), test, LEN);
-    source.data().rewind();
+    WRITE_RANDOM_DATA(source, test, LEN);
+    source.rewind();
     
     data_pipe pipe = data_pipe(&source, &sink, 8);
     pipe.process();
     
-    REQUIRE(source.data() == sink.data());
+    REQUIRE(source == sink);
   }
   
   SECTION("filters") {
     SECTION("crc32") {
       constexpr size_t LEN = 256;
-      memory_data_source source;
-      memory_data_sink sink;
+      memory_buffer source;
+      memory_buffer sink;
       filters::crc32_filter filter = filters::crc32_filter(&source);
       hash::crc32_digester digester;
       
-      WRITE_RANDOM_DATA(source.data(), test, LEN);
-      source.data().rewind();
+      WRITE_RANDOM_DATA(source, test, LEN);
+      source.rewind();
       
       digester.update(test, LEN);
       hash::crc32_t value = digester.get();
@@ -367,13 +367,13 @@ TEST_CASE("streams", "[stream]") {
     
     SECTION("md5") {
       constexpr size_t LEN = 256;
-      memory_data_source source;
-      memory_data_sink sink;
+      memory_buffer source;
+      memory_buffer sink;
       filters::md5_filter filter = filters::md5_filter(&source);
       hash::md5_digester digester;
       
-      WRITE_RANDOM_DATA(source.data(), test, LEN);
-      source.data().rewind();
+      WRITE_RANDOM_DATA(source, test, LEN);
+      source.rewind();
       
       digester.update(test, LEN);
       hash::md5_t value = digester.get();
@@ -386,13 +386,13 @@ TEST_CASE("streams", "[stream]") {
     
     SECTION("sha1") {
       constexpr size_t LEN = 256;
-      memory_data_source source;
-      memory_data_sink sink;
+      memory_buffer source;
+      memory_buffer sink;
       filters::sha1_filter filter = filters::sha1_filter(&source);
       hash::sha1_digester digester;
       
-      WRITE_RANDOM_DATA(source.data(), test, LEN);
-      source.data().rewind();
+      WRITE_RANDOM_DATA(source, test, LEN);
+      source.rewind();
       
       digester.update(test, LEN);
       hash::sha1_t value = digester.get();
@@ -407,29 +407,29 @@ TEST_CASE("streams", "[stream]") {
   SECTION("mutator") {
     SECTION("deflate/inflate") {
       constexpr size_t LEN = 1 << 20;
-      memory_data_sink sink;
+      memory_buffer sink;
       
       byte* testData = new byte[LEN];
       for (size_t i = 0; i < LEN; ++i)
         testData[i] = (i/8) % 256;
       
-      memory_data_source source(testData, LEN);
+      memory_buffer source(testData, LEN);
 
       compression::zip_mutator deflater = compression::zip_mutator(&source, &sink, 1024, 1024);
       deflater.process();
       
-      REQUIRE(deflater.zstream().total_out == sink.data().size());
+      REQUIRE(deflater.zstream().total_out == sink.size());
       
-      memory_data_source source2(sink.data().raw(), sink.data().size());
-      memory_data_sink sink2;
+      memory_buffer source2(sink.raw(), sink.size());
+      memory_buffer sink2;
       
-      REQUIRE(source2.data().size() == sink.data().size());
+      REQUIRE(source2.size() == sink.size());
       
       compression::inflate_mutator inflater = compression::inflate_mutator(&source2, &sink2, 1024, 1024);
       
       inflater.process();
             
-      REQUIRE(sink2.data() == source.data());
+      REQUIRE(sink2 == source);
     }
   }
 }
