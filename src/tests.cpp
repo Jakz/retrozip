@@ -4,6 +4,7 @@
 #include "core/memory_buffer.h"
 #include "core/data_source.h"
 #include "core/filters.h"
+#include "zip/zip_mutator.h"
 #include "hash/hash.h"
 
 
@@ -383,7 +384,7 @@ TEST_CASE("streams", "[stream]") {
       REQUIRE(value == filter.get());
     }
     
-    /*SECTION("sha1") {
+    SECTION("sha1") {
       constexpr size_t LEN = 256;
       memory_data_source source;
       memory_data_sink sink;
@@ -400,7 +401,36 @@ TEST_CASE("streams", "[stream]") {
       pipe.process();
       
       REQUIRE(value == filter.get());
-    }*/
+    }
+  }
+  
+  SECTION("mutator") {
+    SECTION("deflate/inflate") {
+      constexpr size_t LEN = 1 << 20;
+      memory_data_sink sink;
+      
+      byte* testData = new byte[LEN];
+      for (size_t i = 0; i < LEN; ++i)
+        testData[i] = (i/8) % 256;
+      
+      memory_data_source source(testData, LEN);
+
+      compression::zip_mutator deflater = compression::zip_mutator(&source, &sink, 1024, 1024);
+      deflater.process();
+      
+      REQUIRE(deflater.zstream().total_out == sink.data().size());
+      
+      memory_data_source source2(sink.data().raw(), sink.data().size());
+      memory_data_sink sink2;
+      
+      REQUIRE(source2.data().size() == sink.data().size());
+      
+      compression::inflate_mutator inflater = compression::inflate_mutator(&source2, &sink2, 1024, 1024);
+      
+      inflater.process();
+            
+      REQUIRE(sink2.data() == source.data());
+    }
   }
 }
 
@@ -475,6 +505,13 @@ TEST_CASE("sha1", "[checksums]") {
     REQUIRE(sha1 == "ce4303f6b22257d9c9cf314ef1dee4707c6e1c13");
   }
   
+  SECTION("1 block less 1 byte length") {
+    std::string testString = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde";
+    REQUIRE(testString.length() == 63);
+    std::string sha1 = hash::sha1_digester::compute(testString.data(), testString.length());
+    REQUIRE(sha1 == "ef717286343f6da3f4e6f68c6de02a5148a801c4");
+  }
+  
   SECTION("partial unaligned updates")
   {
     std::string testString = "Lorem ipsum dolor sit amet, consectetur adipiscing"
@@ -488,7 +525,6 @@ TEST_CASE("sha1", "[checksums]") {
     size_t available = testString.length();
     
     hash::sha1_digester digester;
-    printf(">>>>>>>>>>>>>>>>> Testing\n");
     while (available > 0)
     {
       size_t current = support::random((u32)std::min(available+1, 64UL));

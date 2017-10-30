@@ -12,12 +12,12 @@ namespace args
 
 namespace exceptions
 {
-  class rsk_exception : public std::exception
+  class rzip_exception : public std::exception
   {
     
   };
   
-  class file_not_found : public rsk_exception
+  class file_not_found : public rzip_exception
   {
   private:
     path path;
@@ -28,7 +28,7 @@ namespace exceptions
     const char* what() const noexcept override { return path.c_str(); }
   };
   
-  class path_non_relative : public rsk_exception
+  class path_non_relative : public rzip_exception
   {
   private:
     path parent;
@@ -40,7 +40,7 @@ namespace exceptions
     const char* what() const noexcept override { return parent.c_str(); }
   };
   
-  class error_opening_file : public rsk_exception
+  class error_opening_file : public rzip_exception
   {
   private:
     path path;
@@ -51,7 +51,7 @@ namespace exceptions
     const char* what() const noexcept override { return path.c_str(); }
   };
   
-  class error_reading_from_file : public rsk_exception
+  class error_reading_from_file : public rzip_exception
   {
   private:
     path path;
@@ -62,7 +62,7 @@ namespace exceptions
     const char* what() const noexcept override { return path.c_str(); }
   };
   
-  class parse_help_request : public rsk_exception
+  class parse_help_request : public rzip_exception
   {
   private:
     const args::ArgumentParser& parser;
@@ -70,5 +70,15 @@ namespace exceptions
   public:
     parse_help_request(const args::ArgumentParser& parser) : parser(parser) { }
     const char* what() const noexcept override { return nullptr; }
+  };
+  
+  class not_enough_memory : public rzip_exception
+  {
+  private:
+    const std::string source;
+    
+  public:
+    not_enough_memory(const std::string& source) : source(source) { }
+    const char* what() const noexcept override { return source.c_str(); }
   };
 }

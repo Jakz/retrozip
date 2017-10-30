@@ -30,6 +30,13 @@ public:
     static_assert(sizeof(size_t) == 8, "");
   }
   
+  memory_buffer(const byte* data, size_t length) : _capacity(length), _size(length), _position(0), _dataOwned(true)
+  {
+    _data = new byte[length];
+    std::copy(data, data + length, _data);
+  }
+
+  
   memory_buffer(byte* data, size_t length, bool copy) : _data(data), _capacity(length), _size(length), _position(0), _dataOwned(copy)
   {
     if (copy)

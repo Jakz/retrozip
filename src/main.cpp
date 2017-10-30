@@ -10,6 +10,7 @@
 #include "core/header.h"
 #include "core/archive.h"
 #include "core/filters.h"
+#include "zip/zip_mutator.h"
 
 int main(int argc, const char * argv[])
 {
