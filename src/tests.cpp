@@ -581,7 +581,8 @@ TEST_CASE("streams", "[stream]") {
       memory_buffer source(testData, LEN);
       delete [] testData;
       
-      compression::deflate_source deflated(&source, 1024);
+      buffered_source_filter<compression::deflater_filter> deflated(&source, 1024);
+      
       memory_buffer sink;
 
       passthrough_pipe pipe(&deflated, &sink, 200);
@@ -594,9 +595,9 @@ TEST_CASE("streams", "[stream]") {
       
       REQUIRE(source2.size() == sink.size());
       
-      compression::inflate_source inflater(&source2, 1024);
+      buffered_sink_filter<compression::inflater_filter> inflater(&sink2, 1024);
       
-      passthrough_pipe pipe2(&inflater, &sink2, 200);
+      passthrough_pipe pipe2(&source2, &inflater, 200);
 
       pipe2.process();
       

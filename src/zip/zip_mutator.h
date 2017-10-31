@@ -14,11 +14,127 @@ protected:
   bool _started;
   bool _finished;
   
+  virtual bool isEnded() const = 0;
+  
   virtual void init() = 0;
   virtual void process() = 0;
+  virtual void finalize() = 0;
   
 public:
   buffered_filter(size_t inBufferSize, size_t outBufferSize) : _in(inBufferSize), _out(outBufferSize), _started(false), _finished(false) { }
+};
+
+template<typename F>
+class buffered_source_filter : public data_source, public F
+{
+private:
+  data_source* _source;
+  
+protected:
+  bool isEnded() const override { return _source->eos(); }
+  
+  void fetchInput()
+  {
+    if (!this->_in.full())
+    {
+      size_t effective = _source->read(this->_in.tail(), this->_in.available());
+      this->_in.advance(effective);
+    }
+  }
+  
+  size_t dumpOutput(byte* dest, size_t length)
+  {
+    if (!this->_out.empty())
+    {
+      size_t effective = std::min(this->_out.used(), length);
+      std::copy(this->_out.head(), this->_out.head() + effective, dest);
+      this->_out.consume(effective);
+      return effective;
+    }
+    
+    return 0;
+  }
+  
+public:
+  template<typename... Args> buffered_source_filter(data_source* source, Args... args) : _source(source), F(args...) { }
+  
+  bool eos() const override { return _source->eos() && this->_out.empty() && this->_in.empty() && this->_finished; }
+  
+  size_t read(byte* dest, size_t amount) override
+  {
+    if (!this->_started)
+    {
+      this->init();
+      this->_started = true;
+    }
+    
+    fetchInput();
+    if (!this->_finished && (!this->_in.empty() || !this->_out.full()))
+      this->process();
+    size_t effective = dumpOutput(dest, amount);
+    
+    if (eos())
+      this->finalize();
+    
+    return effective;
+  }
+};
+
+template<typename F>
+class buffered_sink_filter : public data_sink, public F
+{
+private:
+  bool _isEnded;
+  data_sink* _sink;
+  
+protected:
+  bool isEnded() const override { return _isEnded; }
+  
+  size_t fetchInput(const byte* src, size_t length)
+  {
+    if (!this->_in.full())
+    {
+      size_t effective = std::min(this->_in.available(), length);
+      std::copy(src, src + effective, this->_in.tail());
+      this->_in.advance(effective);
+      return effective;
+    }
+    
+    return 0;
+  }
+  
+  void dumpOutput()
+  {
+    if (!this->_out.empty())
+    {
+      size_t effective = _sink->write(this->_out.head(), this->_out.used());
+      this->_out.consume(effective);
+    }
+  }
+  
+public:
+  template<typename... Args> buffered_sink_filter(data_sink* sink, Args... args) : _sink(sink), F(args...) { }
+  
+  void eos() override { _isEnded = true; }
+  
+  size_t write(const byte* src, size_t amount) override
+  {
+    if (!this->_started)
+    {
+      this->init();
+      this->_started = true;
+    }
+    
+    size_t effective = fetchInput(src, amount);
+    if (!this->_finished && (!this->_in.empty() || !this->_out.full()))
+      this->process();
+    dumpOutput();
+    
+    if (_isEnded && this->_in.empty() && this->_out.empty() && this->_finished)
+      this->finalize();
+    
+    return effective;
+  }
 };
 
 
@@ -40,6 +156,11 @@ namespace compression
     Strategy strategy;
     
     DeflateOptions() : level(Z_DEFAULT_COMPRESSION), windowSize(15), memLevel(8), strategy(Strategy::DEFAULT) { }
+    
+    int init(z_streamp stream)
+    {
+      return deflateInit2(stream, level, Z_DEFLATED, -windowSize, memLevel, (int)strategy);
+    }
   };
   
   struct InflateOptions
@@ -47,41 +168,40 @@ namespace compression
     int windowSize;
     
     InflateOptions() : windowSize(15) { }
+    
+    int init(z_streamp stream)
+    {
+      return inflateInit2(stream, -windowSize);
+    }
   };
   
-  class deflater_filter : public buffered_filter
+  using zlib_compute_function = int(*)(z_streamp, int);
+  using zlib_end_function = int(*)(z_streamp);
+  
+  template<zlib_compute_function computer, zlib_end_function finalizer, typename OPTIONS>
+  class zlib_filter : public buffered_filter
   {
   private:
     z_stream _stream;
-    DeflateOptions _options;
+    OPTIONS _options;
     
     int _result;
     int _failed;
     
   protected:
-    deflater_filter(size_t bufferSize) : buffered_filter(bufferSize, bufferSize) { }
+    zlib_filter(size_t bufferSize) : buffered_filter(bufferSize, bufferSize) { }
     
     void init() override;
     void process() override;
+    void finalize() override;
+    
+  public:
+    const z_stream& zstream() { return _stream; }
   };
   
-  inline void deflater_filter::init()
-  {
-    _stream.zalloc = Z_NULL;
-    _stream.zfree = Z_NULL;
-    _stream.opaque = Z_NULL;
-    
-    _stream.total_out = 0;
-    _stream.total_in = 0;
-    
-    _result = deflateInit2(&_stream, _options.level, Z_DEFLATED, -_options.windowSize, _options.memLevel, (int)_options.strategy);
-    assert(_result == Z_OK);
-    
-    _failed = false;
-    _started = true;
-  }
-  
-  inline void deflater_filter::process() { }
+  using deflater_filter = zlib_filter<deflate, deflateEnd, DeflateOptions>;
+  using inflater_filter = zlib_filter<inflate, inflateEnd, InflateOptions>;
+
   
   class deflate_source : public data_source
   {

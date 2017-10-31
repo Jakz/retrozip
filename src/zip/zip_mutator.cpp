@@ -18,6 +18,89 @@ const char* zlib_result_mnemonic(int result)
   }
 }
 
+#pragma mark deflate_filter
+template<zlib_compute_function computer, zlib_end_function finalizer, typename OPTIONS>
+void zlib_filter<computer, finalizer, OPTIONS>::init()
+{
+  _stream.zalloc = Z_NULL;
+  _stream.zfree = Z_NULL;
+  _stream.opaque = Z_NULL;
+  
+  _stream.total_out = 0;
+  _stream.total_in = 0;
+  
+  _result = _options.init(&_stream);
+  assert(_result == Z_OK);
+  
+  _failed = false;
+  _started = true;
+}
+
+template<zlib_compute_function computer, zlib_end_function finalizer, typename OPTIONS>
+void zlib_filter<computer, finalizer, OPTIONS>::finalize()
+{
+
+}
+
+template<zlib_compute_function computer, zlib_end_function finalizer, typename OPTIONS>
+void zlib_filter<computer, finalizer, OPTIONS>::process()
+{
+  _stream.avail_in = static_cast<uInt>(_in.used());
+  _stream.next_in = _in.head();
+  
+  _stream.avail_out = static_cast<uInt>(_out.available());
+  _stream.next_out = _out.tail();
+  
+  _result = computer(&_stream, isEnded() ? Z_FINISH : Z_NO_FLUSH);
+  
+  size_t consumed = _in.used() - _stream.avail_in;
+  size_t produced = _out.available() - _stream.avail_out;
+  
+  _in.consume(consumed);
+  _out.advance(produced);
+  
+  //if (_result >= 0)
+  //  printf("Zipped %lu bytes into %lu bytes (in: %lu out: %lu) (%s)\n", consumed, produced, _stream.total_in, _stream.total_out, zlib_result_mnemonic(_result));
+  
+  switch (_result)
+  {
+    case Z_BUF_ERROR:
+    {
+      _out.resize(_out.size()*2);
+      break;
+    }
+      
+    case Z_STREAM_END:
+    {
+      //printf("Stream end\n");
+      break;
+    }
+      
+    case Z_NEED_DICT:
+    case Z_ERRNO:
+    case Z_STREAM_ERROR:
+    case Z_DATA_ERROR:
+    case Z_MEM_ERROR:
+    {
+      printf("Failed status: %s\n", zlib_result_mnemonic(_result));
+      assert(false);
+      _failed = true;
+      _finished = true;
+    }
+      
+    default:
+      break;
+  }
+  
+  _finished = _result == Z_STREAM_END;
+  
+  if (_finished)
+    finalizer(&_stream);
+}
+
+template class compression::zlib_filter<deflate, deflateEnd, DeflateOptions>;
+template class compression::zlib_filter<inflate, inflateEnd, InflateOptions>;
+
 #pragma mark deflate_source
 void deflate_source::fetchInput()
   {
