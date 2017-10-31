@@ -29,7 +29,7 @@ public:
     
     if (available > 0)
     {
-      size_t effective = _source->read(_buffer.tail(), 1, available);
+      size_t effective = _source->read(_buffer.tail(), available);
       _buffer.advance(effective);
     }
   }
@@ -39,7 +39,7 @@ public:
     /* if there is data to process */
     if (!_buffer.empty())
     {
-      size_t effective = _sink->write(_buffer.head(), 1, _buffer.used());
+      size_t effective = _sink->write(_buffer.head(), _buffer.used());
       
       /* TODO: circular buffer would be better? */
       /* we processed less data than total available, so we shift remaining */
@@ -49,7 +49,7 @@ public:
   
   void process() override
   {
-    while (!_source->eos())
+    while (!_source->eos() || !_buffer.empty())
     {
       stepInput();
       stepOutput();
@@ -78,7 +78,7 @@ public:
   {
     if (!_in.full())
     {
-      size_t effective = _source->read(_in.tail(), 1, _in.available());
+      size_t effective = _source->read(_in.tail(), _in.available());
       _in.advance(effective);
     }
   }
@@ -87,7 +87,7 @@ public:
   {
     if (!_out.empty())
     {
-      size_t effective = _sink->write(_out.head(), 1, _out.used());
+      size_t effective = _sink->write(_out.head(), _out.used());
       _out.consume(effective);
     }
   }

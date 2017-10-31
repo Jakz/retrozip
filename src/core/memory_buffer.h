@@ -98,7 +98,7 @@ public:
   }
   
   template<typename T> size_t write(const T& src) { return write(&src, sizeof(T), 1); }
-  size_t write(const void* data, size_t size, size_t count) override
+  size_t write(const void* data, size_t size, size_t count)
   {
     ensure_capacity(_position + (size*count));
 
@@ -109,7 +109,7 @@ public:
   }
   
   template<typename T> size_t read(T& dest) { return read(&dest, sizeof(T), 1); }
-  size_t read(void* data, size_t size, size_t count) override
+  size_t read(void* data, size_t size, size_t count)
   {
     size_t available = std::min(_size - _position, (off_t)size*count);
     std::copy(_data + _position, _data + _position + available, (byte*)data);
@@ -149,6 +149,16 @@ public:
   bool full() const { return _size == _capacity; }
   size_t available() const { return _capacity - _size; }
   size_t used() const { return _size; }
+  
+  size_t read(void* data, size_t amount) override
+  {
+    return read(data, 1, amount);
+  }
+  
+  size_t write(const void* data, size_t amount)
+  {
+    return write(data, 1, amount);
+  }
   
   void resize(size_t newCapacity)
   {

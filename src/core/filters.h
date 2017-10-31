@@ -5,18 +5,18 @@
 class data_filter
 {
 public:
-  virtual void process(const void* data, size_t size, size_t count, size_t effective) = 0;
+  virtual void process(const void* data, size_t amount, size_t effective) = 0;
 };
 
 class lambda_data_filter : data_filter
 {
 public:
-  using lambda_t = std::function<void(const void*, size_t, size_t, size_t)>;
+  using lambda_t = std::function<void(const void*, size_t, size_t)>;
 private:
-  std::function<void(const void*, size_t, size_t, size_t)> _lambda;
+  std::function<void(const void*, size_t, size_t)> _lambda;
 public:
   lambda_data_filter(lambda_t lambda) : _lambda(lambda) { }
-  void process(const void* data, size_t size, size_t count, size_t effective) override final { _lambda(data, size, count, effective); }
+  void process(const void* data, size_t amount, size_t effective) override final { _lambda(data, amount, effective); }
 };
 
 template<typename T>
@@ -30,10 +30,10 @@ public:
   
   bool eos() const override { return _source->eos(); }
   
-  size_t read(void* dest, size_t size, size_t count) override
+  size_t read(void* dest, size_t amount) override
   {
-    size_t read = _source->read(dest, size, count);
-    /*_filter->*/this->process(dest, size, count, read);
+    size_t read = _source->read(dest, amount);
+    /*_filter->*/this->process(dest, amount, read);
     return read;
   }
 };
@@ -47,10 +47,10 @@ protected:
 public:
   sink_filter(data_sink* sink/*, data_filter* filter*/) : _sink(sink)/*, _filter(filter)*/ { }
   
-  size_t write(const void* src, size_t size, size_t count) override
+  size_t write(const void* src, size_t amount) override
   {
-    size_t written = _sink->write(src, size, count);
-    /*_filter->*/this->process(src, size, count, written);
+    size_t written = _sink->write(src, amount);
+    /*_filter->*/this->process(src, amount, written);
     return written;
   }
 };
@@ -67,7 +67,7 @@ namespace filters
   public:
     digest_filter() : _callback([](const typename D::computed_type&){}), _digester() { }
     
-    void process(const void* data, size_t size, size_t count, size_t effective) override
+    void process(const void* data, size_t amount, size_t effective) override
     {
       _digester.update((byte*)data, effective);
     }
@@ -97,7 +97,7 @@ namespace filters
     _crc32enabled(crc32), _md5enabled(md5), _sha1enabled(sha1)
     { }
 
-    void process(const void* data, size_t size, size_t count, size_t effective) override
+    void process(const void* data, size_t amount, size_t effective) override
     {
       if (_crc32enabled) _crc32.update((byte*)data, effective);
       if (_md5enabled) _md5.update((byte*)data, effective);
@@ -120,7 +120,7 @@ namespace filters
     void reset() { _count = 0; }
     size_t count() const { return _count; }
         
-    void process(const void* data, size_t size, size_t count, size_t effective) override
+    void process(const void* data, size_t amount, size_t effective) override
     {
       _count += effective;
     }

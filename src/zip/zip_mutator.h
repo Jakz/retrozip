@@ -99,7 +99,7 @@ namespace compression
     deflate_source(data_source* source, size_t bufferSize);
     
     bool eos() const override;
-    size_t read(void* dest, size_t size, size_t count) override;
+    size_t read(void* dest, size_t amount) override;
     
     const z_stream& zstream() { return _stream; }
   };
@@ -127,7 +127,7 @@ namespace compression
     inflate_source(data_source* source, size_t bufferSize);
     
     bool eos() const override;
-    size_t read(void* dest, size_t size, size_t count) override;
+    size_t read(void* dest, size_t amount) override;
     
     const z_stream& zstream() { return _stream; }
   };

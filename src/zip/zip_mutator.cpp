@@ -182,7 +182,7 @@ void deflate_source::fetchInput()
   {
     if (!_in.full())
     {
-      size_t effective = _source->read(_in.tail(), 1, _in.available());
+      size_t effective = _source->read(_in.tail(), _in.available());
       _in.advance(effective);
     }
   }
@@ -210,7 +210,7 @@ bool deflate_source::eos() const
   return _in.empty() && _out.empty() && _finished;
 }
 
-size_t deflate_source::read(void* dest, size_t size, size_t count)
+size_t deflate_source::read(void* dest, size_t amount)
 {
   if (!_started)
   {
@@ -278,7 +278,7 @@ size_t deflate_source::read(void* dest, size_t size, size_t count)
       deflateEnd(&_stream);
   }
   
-  return dumpOutput((byte*)dest, size*count);
+  return dumpOutput((byte*)dest, amount);
 }
 
 #pragma mark inflate_source
@@ -286,7 +286,7 @@ void inflate_source::fetchInput()
 {
   if (!_in.full())
   {
-    size_t effective = _source->read(_in.tail(), 1, _in.available());
+    size_t effective = _source->read(_in.tail(), _in.available());
     _in.advance(effective);
   }
 }
@@ -314,7 +314,7 @@ bool inflate_source::eos() const
   return _in.empty() && _out.empty() && _finished;
 }
 
-size_t inflate_source::read(void* dest, size_t size, size_t count)
+size_t inflate_source::read(void* dest, size_t amount)
 {
   if (!_started)
   {
@@ -382,6 +382,6 @@ size_t inflate_source::read(void* dest, size_t size, size_t count)
       inflateEnd(&_stream);
   }
 
-  return dumpOutput((byte*)dest, size*count);
+  return dumpOutput((byte*)dest, amount);
 }
 

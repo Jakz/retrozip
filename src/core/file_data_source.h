@@ -24,9 +24,9 @@ public:
     return _handle.tell() == _handle.length();
   }
   
-  size_t read(void* dest, size_t size, size_t count) override
+  size_t read(void* dest, size_t amount) override
   {
-    return _handle.read(dest, size, count);
+    return _handle.read(dest, 1, amount);
   }
 };
 
@@ -45,9 +45,9 @@ public:
     _handle.open(_path, file_mode::WRITING);
   }
   
-  size_t write(const void* src, size_t size, size_t count)
+  size_t write(const void* src, size_t amount)
   {
-    return _handle.write(src, size, count);
+    return _handle.write(src, 1, amount);
   }
 
 };

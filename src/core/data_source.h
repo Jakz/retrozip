@@ -7,7 +7,7 @@ class data_source
 public:
   virtual bool eos() const = 0;
 
-  virtual size_t read(void* dest, size_t size, size_t count) = 0;
+  virtual size_t read(void* dest, size_t amount) = 0;
   template<typename T> size_t read(T& dest) const { return read(&dest, sizeof(T), 1); }
 };
 
@@ -33,7 +33,7 @@ public:
   
   bool eos() const override { return _it == _sources.end(); }
   
-  size_t read(void* dest, size_t size, size_t count) override
+  size_t read(void* dest, size_t amount) override
   {
     if (_pristine)
     {
@@ -41,7 +41,7 @@ public:
       _pristine = false;
     }
     
-    size_t effective = (*_it)->read(dest, size, count);
+    size_t effective = (*_it)->read(dest, amount);
     if ((*_it)->eos())
     {
       _onEnd(*_it);
@@ -57,7 +57,7 @@ class data_sink
 {
   
 public:
-  virtual size_t write(const void* src, size_t size, size_t count) = 0;
+  virtual size_t write(const void* src, size_t amount) = 0;
 };
 
 struct data_buffer
