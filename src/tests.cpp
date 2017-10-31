@@ -403,6 +403,19 @@ TEST_CASE("memory buffer", "[support]") {
 
 #pragma mark streams
 TEST_CASE("streams", "[stream]") {
+  SECTION("single pipe") {
+    constexpr size_t LEN = 256;
+    memory_buffer source;
+    memory_buffer sink;
+    
+    WRITE_RANDOM_DATA_AND_REWIND(source, test, LEN);
+    
+    passthrough_pipe pipe = passthrough_pipe(&source, &sink, 8);
+    pipe.process();
+    
+    REQUIRE(source == sink);
+  }
+  
   SECTION("basic pipe test") {
     constexpr size_t LEN = 256;
     memory_buffer source;
@@ -557,32 +570,63 @@ TEST_CASE("streams", "[stream]") {
     }
   }
   
-  SECTION("mutator") {
-    SECTION("deflate/inflate") {
-      constexpr size_t LEN = 1 << 20;
-      memory_buffer sink;
+  SECTION("compression") {
+    SECTION("deflate/inflate source") {
+      constexpr size_t LEN = 1 << 18;
       
       byte* testData = new byte[LEN];
       for (size_t i = 0; i < LEN; ++i)
         testData[i] = (i/8) % 256;
       
       memory_buffer source(testData, LEN);
-
-      compression::zip_mutator deflater = compression::zip_mutator(&source, &sink, 1024, 1024);
-      deflater.process();
+      delete [] testData;
       
-      REQUIRE(deflater.zstream().total_out == sink.size());
+      compression::deflate_source deflated(&source, 1024);
+      memory_buffer sink;
+
+      passthrough_pipe pipe(&deflated, &sink, 200);
+      pipe.process();
+
+      REQUIRE(deflated.zstream().total_out == sink.size());
       
       memory_buffer source2(sink.raw(), sink.size());
       memory_buffer sink2;
       
       REQUIRE(source2.size() == sink.size());
       
-      compression::inflate_mutator inflater = compression::inflate_mutator(&source2, &sink2, 1024, 1024);
+      compression::inflate_source inflater(&source2, 1024);
       
-      inflater.process();
-            
+      passthrough_pipe pipe2(&inflater, &sink2, 200);
+
+      pipe2.process();
+      
       REQUIRE(sink2 == source);
+    }
+    
+    SECTION("chained deflate/inflate")
+    {
+      constexpr size_t LEN = 1 << 18;
+      
+      byte* testData = new byte[LEN];
+      for (size_t i = 0; i < LEN; ++i)
+        testData[i] = (i/8) % 256;
+      
+      memory_buffer source(testData, LEN);
+      delete [] testData;
+      
+      compression::deflate_source deflater(&source, 1024);
+      compression::inflate_source inflater(&deflater, 512);
+      
+      memory_buffer sink;
+      
+      passthrough_pipe pipe(&inflater, &sink, 1024);
+      pipe.process();
+      
+      REQUIRE(deflater.zstream().total_in == source.size());
+      REQUIRE(deflater.zstream().total_out == inflater.zstream().total_in);
+      REQUIRE(inflater.zstream().total_out == source.size());
+      
+      REQUIRE(source == sink);
     }
   }
 }

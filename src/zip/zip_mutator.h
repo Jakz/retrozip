@@ -32,8 +32,8 @@ namespace compression
     
     InflateOptions() : windowSize(15) { }
   };
-
-  class deflate_mutator : public data_mutator
+  
+ /* class deflate_mutator : public data_mutator
   {
   private:
     DeflateOptions _options;
@@ -73,5 +73,62 @@ namespace compression
     bool mutate() override;
   };
   
-  using zip_mutator = deflate_mutator;
+  using zip_mutator = deflate_mutator;*/
+  
+  
+  class deflate_source : public data_source
+  {
+  private:
+    data_source* _source;
+    memory_buffer _in, _out;
+    
+    DeflateOptions _options;
+    
+    bool _finished;
+    bool _started;
+    bool _failed;
+    int _result;
+    
+    z_stream _stream;
+    
+  private:
+    void fetchInput();
+    size_t dumpOutput(byte* dest, size_t length);
+    
+  public:
+    deflate_source(data_source* source, size_t bufferSize);
+    
+    bool eos() const override;
+    size_t read(void* dest, size_t size, size_t count) override;
+    
+    const z_stream& zstream() { return _stream; }
+  };
+  
+  class inflate_source : public data_source
+  {
+  private:
+    data_source* _source;
+    memory_buffer _in, _out;
+    
+    InflateOptions _options;
+    
+    bool _finished;
+    bool _started;
+    bool _failed;
+    int _result;
+    
+    z_stream _stream;
+    
+  private:
+    void fetchInput();
+    size_t dumpOutput(byte* dest, size_t length);
+    
+  public:
+    inflate_source(data_source* source, size_t bufferSize);
+    
+    bool eos() const override;
+    size_t read(void* dest, size_t size, size_t count) override;
+    
+    const z_stream& zstream() { return _stream; }
+  };
 }
