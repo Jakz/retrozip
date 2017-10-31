@@ -571,7 +571,8 @@ TEST_CASE("streams", "[stream]") {
   }
   
   SECTION("compression") {
-    SECTION("deflate/inflate source") {
+    /*SECTION("deflate/inflate source") {
+      
       constexpr size_t LEN = 1 << 18;
       
       byte* testData = new byte[LEN];
@@ -604,7 +605,7 @@ TEST_CASE("streams", "[stream]") {
       REQUIRE(sink2 == source);
     }
     
-    SECTION("chained deflate/inflate")
+    SECTION("chained deflate/inflate on source")
     {
       constexpr size_t LEN = 1 << 18;
       
@@ -615,12 +616,37 @@ TEST_CASE("streams", "[stream]") {
       memory_buffer source(testData, LEN);
       delete [] testData;
       
-      compression::deflate_source deflater(&source, 1024);
-      compression::inflate_source inflater(&deflater, 512);
+      buffered_source_filter<compression::deflater_filter> deflater(&source, 1024);
+      buffered_source_filter<compression::inflater_filter> inflater(&deflater, 512);
       
       memory_buffer sink;
       
       passthrough_pipe pipe(&inflater, &sink, 1024);
+      pipe.process();
+      
+      REQUIRE(deflater.zstream().total_in == source.size());
+      REQUIRE(deflater.zstream().total_out == inflater.zstream().total_in);
+      REQUIRE(inflater.zstream().total_out == source.size());
+      
+      REQUIRE(source == sink);
+    }*/
+    
+    SECTION("chained deflate/inflate on sink")
+    {
+      constexpr size_t LEN = 1 << 18;
+      
+      byte* testData = new byte[LEN];
+      for (size_t i = 0; i < LEN; ++i)
+        testData[i] = (i/8) % 256;
+      
+      memory_buffer source(testData, LEN);
+      delete [] testData;
+      
+      memory_buffer sink;
+      buffered_sink_filter<compression::inflater_filter> inflater(&sink, 512);
+      buffered_sink_filter<compression::deflater_filter> deflater(&inflater, 1024);
+      
+      passthrough_pipe pipe(&source, &deflater, 1024);
       pipe.process();
       
       REQUIRE(deflater.zstream().total_in == source.size());

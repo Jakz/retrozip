@@ -59,8 +59,8 @@ void zlib_filter<computer, finalizer, OPTIONS>::process()
   _in.consume(consumed);
   _out.advance(produced);
   
-  //if (_result >= 0)
-  //  printf("Zipped %lu bytes into %lu bytes (in: %lu out: %lu) (%s)\n", consumed, produced, _stream.total_in, _stream.total_out, zlib_result_mnemonic(_result));
+  if (_result >= 0)
+    printf("%s %lu bytes into %lu bytes (in: %lu out: %lu) (%s)\n", std::is_same<OPTIONS, DeflateOptions>::value ? "Zipped" : "Unzipped", consumed, produced, _stream.total_in, _stream.total_out, zlib_result_mnemonic(_result));
   
   switch (_result)
   {
@@ -170,8 +170,8 @@ size_t deflate_source::read(byte* dest, size_t amount)
     _in.consume(consumed);
     _out.advance(produced);
     
-    //if (_result >= 0)
-    //  printf("Zipped %lu bytes into %lu bytes (in: %lu out: %lu) (%s)\n", consumed, produced, _stream.total_in, _stream.total_out, zlib_result_mnemonic(_result));
+    if (_result >= 0)
+      printf("Zipped %lu bytes into %lu bytes (in: %lu out: %lu) (%s)\n", consumed, produced, _stream.total_in, _stream.total_out, zlib_result_mnemonic(_result));
 
     switch (_result)
     {
