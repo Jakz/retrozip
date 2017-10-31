@@ -170,17 +170,17 @@ template<size_t LENGTH>
 struct wrapped_array
 {
 private:
-  std::array<byte, LENGTH> data;
+  std::array<byte, LENGTH> _data;
   
 public:
-  wrapped_array() : data({{0}}) { }
-  wrapped_array(const std::array<byte, LENGTH>& data) : data(data) { }
+  wrapped_array() : _data({{0}}) { }
+  wrapped_array(const std::array<byte, LENGTH>& data) : _data(data) { }
   
-  const byte* inner() const { return data.data(); }
-  byte* inner() { return data.data(); }
+  const byte* inner() const { return _data.data(); }
+  byte* inner() { return _data.data(); }
   
-  const byte& operator[](size_t index) const { return data[index]; }
-  byte& operator[](size_t index) { return data[index]; }
+  const byte& operator[](size_t index) const { return _data[index]; }
+  byte& operator[](size_t index) { return _data[index]; }
   
   operator std::string() const
   {
@@ -188,7 +188,7 @@ public:
     
     char buf[LENGTH*2+1];
     for (size_t i = 0; i < LENGTH; i++)
-      sprintf(buf+i*2, uppercase ? "%02X" : "%02x", data[i]);
+      sprintf(buf+i*2, uppercase ? "%02X" : "%02x", _data[i]);
     
     buf[LENGTH*2] = '\0';
     

@@ -20,65 +20,65 @@ namespace exceptions
   class file_not_found : public rzip_exception
   {
   private:
-    path path;
+    path _path;
     
   public:
-    file_not_found(const class path& path) : path(path) { }
+    file_not_found(const class path& path) : _path(path) { }
 
-    const char* what() const noexcept override { return path.c_str(); }
+    const char* what() const noexcept override { return _path.c_str(); }
   };
   
   class path_non_relative : public rzip_exception
   {
   private:
-    path parent;
-    path children;
+    path _parent;
+    path _children;
     
   public:
-    path_non_relative(const path& parent, const path& children) : parent(parent), children(children) { }
+    path_non_relative(const path& parent, const path& children) : _parent(parent), _children(children) { }
     
-    const char* what() const noexcept override { return parent.c_str(); }
+    const char* what() const noexcept override { return _parent.c_str(); }
   };
   
   class error_opening_file : public rzip_exception
   {
   private:
-    path path;
+    path _path;
     
   public:
-    error_opening_file(const class path& path) : path(path) { }
+    error_opening_file(const class path& path) : _path(path) { }
     
-    const char* what() const noexcept override { return path.c_str(); }
+    const char* what() const noexcept override { return _path.c_str(); }
   };
   
   class error_reading_from_file : public rzip_exception
   {
   private:
-    path path;
+    path _path;
     
   public:
-    error_reading_from_file(const class path& path) : path(path) { }
+    error_reading_from_file(const class path& path) : _path(path) { }
     
-    const char* what() const noexcept override { return path.c_str(); }
+    const char* what() const noexcept override { return _path.c_str(); }
   };
   
   class parse_help_request : public rzip_exception
   {
   private:
-    const args::ArgumentParser& parser;
+    const args::ArgumentParser& _parser;
     
   public:
-    parse_help_request(const args::ArgumentParser& parser) : parser(parser) { }
+    parse_help_request(const args::ArgumentParser& parser) : _parser(parser) { }
     const char* what() const noexcept override { return nullptr; }
   };
   
   class not_enough_memory : public rzip_exception
   {
   private:
-    const std::string source;
+    const std::string _source;
     
   public:
-    not_enough_memory(const std::string& source) : source(source) { }
-    const char* what() const noexcept override { return source.c_str(); }
+    not_enough_memory(const std::string& source) : _source(source) { }
+    const char* what() const noexcept override { return _source.c_str(); }
   };
 }

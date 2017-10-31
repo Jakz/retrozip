@@ -4,7 +4,7 @@
 
 class data_filter
 {
-public:
+protected:
   virtual void process(const void* data, size_t amount, size_t effective) = 0;
 };
 
@@ -12,10 +12,10 @@ class lambda_data_filter : data_filter
 {
 public:
   using lambda_t = std::function<void(const void*, size_t, size_t)>;
+  lambda_data_filter(lambda_t lambda) : _lambda(lambda) { }
 private:
   std::function<void(const void*, size_t, size_t)> _lambda;
-public:
-  lambda_data_filter(lambda_t lambda) : _lambda(lambda) { }
+protected:
   void process(const void* data, size_t amount, size_t effective) override final { _lambda(data, amount, effective); }
 };
 
@@ -46,6 +46,8 @@ protected:
   data_filter* _filter;
 public:
   sink_filter(data_sink* sink/*, data_filter* filter*/) : _sink(sink)/*, _filter(filter)*/ { }
+  
+  void eos() override { _sink->eos(); }
   
   size_t write(const void* src, size_t amount) override
   {

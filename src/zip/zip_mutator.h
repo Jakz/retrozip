@@ -5,6 +5,22 @@
 
 #include <zlib.h>
 
+class buffered_filter
+{
+protected:
+  memory_buffer _in;
+  memory_buffer _out;
+  
+  bool _started;
+  bool _finished;
+  
+  virtual void init() = 0;
+  virtual void process() = 0;
+  
+public:
+  buffered_filter(size_t inBufferSize, size_t outBufferSize) : _in(inBufferSize), _out(outBufferSize), _started(false), _finished(false) { }
+};
+
 
 namespace compression
 {
@@ -33,48 +49,39 @@ namespace compression
     InflateOptions() : windowSize(15) { }
   };
   
- /* class deflate_mutator : public data_mutator
+  class deflater_filter : public buffered_filter
   {
   private:
+    z_stream _stream;
     DeflateOptions _options;
-    z_stream _stream;
     
     int _result;
-    bool _failed;
-    bool _finished;
+    int _failed;
     
-  public:
-    deflate_mutator(data_source* source, data_sink* sink, size_t inBufferSize, size_t outBufferSize);
+  protected:
+    deflater_filter(size_t bufferSize) : buffered_filter(bufferSize, bufferSize) { }
     
-    const z_stream& zstream() { return _stream; }
-    
-    void initialize() override;
-    void finalize() override;
-    bool mutate() override;
+    void init() override;
+    void process() override;
   };
   
-  class inflate_mutator : public data_mutator
+  inline void deflater_filter::init()
   {
-  private:
-    InflateOptions _options;
-    z_stream _stream;
+    _stream.zalloc = Z_NULL;
+    _stream.zfree = Z_NULL;
+    _stream.opaque = Z_NULL;
     
-    int _result;
-    bool _failed;
-    bool _finished;
+    _stream.total_out = 0;
+    _stream.total_in = 0;
     
-  public:
-    inflate_mutator(data_source* source, data_sink* sink, size_t inBufferSize, size_t outBufferSize);
+    _result = deflateInit2(&_stream, _options.level, Z_DEFLATED, -_options.windowSize, _options.memLevel, (int)_options.strategy);
+    assert(_result == Z_OK);
     
-    const z_stream& zstream() { return _stream; }
-    
-    void initialize() override;
-    void finalize() override;
-    bool mutate() override;
-  };
+    _failed = false;
+    _started = true;
+  }
   
-  using zip_mutator = deflate_mutator;*/
-  
+  inline void deflater_filter::process() { }
   
   class deflate_source : public data_source
   {

@@ -31,6 +31,9 @@ public:
     {
       size_t effective = _source->read(_buffer.tail(), available);
       _buffer.advance(effective);
+      
+      if (_source->eos())
+        _sink->eos();
     }
   }
   

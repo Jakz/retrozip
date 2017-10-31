@@ -58,6 +58,7 @@ class data_sink
   
 public:
   virtual size_t write(const void* src, size_t amount) = 0;
+  virtual void eos() = 0;
 };
 
 struct data_buffer
@@ -76,4 +77,57 @@ struct data_buffer
   
   virtual byte* head() = 0;
   virtual byte* tail() = 0;
+};
+
+
+class log_data_source : public data_source
+{
+private:
+  size_t _length;
+  size_t _position;
+  size_t _maxAvailable;
+  mutable bool _isEos;
+  
+public:
+  log_data_source(size_t length, size_t maxAvailable) : _length(length), _position(0), _maxAvailable(maxAvailable), _isEos(false) { }
+  
+  bool eos() const override
+  {
+    bool wasEos = _isEos;
+    _isEos = _position == _length;
+    
+    if (_isEos && !wasEos)
+      printf("data_source::eos()\n");
+    
+    return _isEos;
+  }
+  
+  size_t read(void* dest, size_t amount) override
+  {
+    size_t available = std::min(_maxAvailable, std::min(amount, _length - _position));
+    printf("data_source::read(%lu) (%lu)\n", amount, available);
+    _position += available;
+    return available;
+  }
+};
+
+class log_data_sink : public data_sink
+{
+private:
+  size_t _maxAvailable;
+
+public:
+  log_data_sink(size_t maxAvailable) : _maxAvailable(maxAvailable) { }
+  
+  void eos() override
+  {
+    printf("data_sink::eos()\n");
+  }
+  
+  size_t write(const void* src, size_t amount) override
+  {
+    size_t available = std::min(amount, _maxAvailable);
+    printf("data_sink::write(%lu) (%lu)\n", amount, available);
+    return available;
+  }
 };

@@ -53,6 +53,7 @@ public:
   bool operator==(const memory_buffer& other) const { return _size == other._size && std::equal(_data, _data+_size, other._data); }
   bool operator!=(const memory_buffer& other) { return !operator==(other); }
 
+  void eos() override { }
   bool eos() const override { return _size == _position; }
   
   size_t size() const { return _size; }
@@ -155,7 +156,7 @@ public:
     return read(data, 1, amount);
   }
   
-  size_t write(const void* data, size_t amount)
+  size_t write(const void* data, size_t amount) override
   {
     return write(data, 1, amount);
   }

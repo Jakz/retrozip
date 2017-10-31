@@ -39,13 +39,15 @@ private:
 public:
   file_data_sink(path path, bool waitForOpen = false) : _path(path), _handle(waitForOpen ? file_handle(path) : file_handle(path, file_mode::WRITING)) { }
   
+  void eos() override { /* do nothing */ }
+  
   void open()
   {
     assert(!_handle);
     _handle.open(_path, file_mode::WRITING);
   }
   
-  size_t write(const void* src, size_t amount)
+  size_t write(const void* src, size_t amount) override
   {
     return _handle.write(src, 1, amount);
   }
