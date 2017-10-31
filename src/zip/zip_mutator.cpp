@@ -51,7 +51,7 @@ bool deflate_source::eos() const
   return _in.empty() && _out.empty() && _finished;
 }
 
-size_t deflate_source::read(void* dest, size_t amount)
+size_t deflate_source::read(byte* dest, size_t amount)
 {
   if (!_started)
   {
@@ -119,7 +119,7 @@ size_t deflate_source::read(void* dest, size_t amount)
       deflateEnd(&_stream);
   }
   
-  return dumpOutput((byte*)dest, amount);
+  return dumpOutput(dest, amount);
 }
 
 #pragma mark inflate_source
@@ -155,7 +155,7 @@ bool inflate_source::eos() const
   return _in.empty() && _out.empty() && _finished;
 }
 
-size_t inflate_source::read(void* dest, size_t amount)
+size_t inflate_source::read(byte* dest, size_t amount)
 {
   if (!_started)
   {
@@ -223,6 +223,6 @@ size_t inflate_source::read(void* dest, size_t amount)
       inflateEnd(&_stream);
   }
 
-  return dumpOutput((byte*)dest, amount);
+  return dumpOutput(dest, amount);
 }
 

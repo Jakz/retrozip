@@ -151,12 +151,12 @@ public:
   size_t available() const { return _capacity - _size; }
   size_t used() const { return _size; }
   
-  size_t read(void* data, size_t amount) override
+  size_t read(byte* data, size_t amount) override
   {
     return read(data, 1, amount);
   }
   
-  size_t write(const void* data, size_t amount) override
+  size_t write(const byte* data, size_t amount) override
   {
     return write(data, 1, amount);
   }

@@ -7,7 +7,7 @@ class data_source
 public:
   virtual bool eos() const = 0;
 
-  virtual size_t read(void* dest, size_t amount) = 0;
+  virtual size_t read(byte* dest, size_t amount) = 0;
   template<typename T> size_t read(T& dest) const { return read(&dest, sizeof(T), 1); }
 };
 
@@ -33,7 +33,7 @@ public:
   
   bool eos() const override { return _it == _sources.end(); }
   
-  size_t read(void* dest, size_t amount) override
+  size_t read(byte* dest, size_t amount) override
   {
     if (_pristine)
     {
@@ -57,7 +57,7 @@ class data_sink
 {
   
 public:
-  virtual size_t write(const void* src, size_t amount) = 0;
+  virtual size_t write(const byte* src, size_t amount) = 0;
   virtual void eos() = 0;
 };
 
@@ -102,7 +102,7 @@ public:
     return _isEos;
   }
   
-  size_t read(void* dest, size_t amount) override
+  size_t read(byte* dest, size_t amount) override
   {
     size_t available = std::min(_maxAvailable, std::min(amount, _length - _position));
     printf("data_source::read(%lu) (%lu)\n", amount, available);
@@ -124,7 +124,7 @@ public:
     printf("data_sink::eos()\n");
   }
   
-  size_t write(const void* src, size_t amount) override
+  size_t write(const byte* src, size_t amount) override
   {
     size_t available = std::min(amount, _maxAvailable);
     printf("data_sink::write(%lu) (%lu)\n", amount, available);
