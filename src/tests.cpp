@@ -420,7 +420,7 @@ TEST_CASE("streams", "[stream]") {
     constexpr size_t LEN = 2048;
     memory_buffer source;
     memory_buffer sink;
-    filters::data_read_counter counter(&source);
+    filters::source_filter<filters::data_counter> counter(&source);
     
     WRITE_RANDOM_DATA(source, test, LEN);
     source.rewind();
@@ -435,7 +435,7 @@ TEST_CASE("streams", "[stream]") {
     constexpr size_t LEN = 2048;
     memory_buffer source;
     memory_buffer sink;
-    filters::data_write_counter counter(&sink);
+    filters::sink_filter<filters::data_counter> counter(&sink);
     
     WRITE_RANDOM_DATA(source, test, LEN);
     source.rewind();
@@ -473,7 +473,7 @@ TEST_CASE("streams", "[stream]") {
       constexpr size_t LEN = 256;
       memory_buffer source;
       memory_buffer sink;
-      filters::crc32_filter filter = filters::crc32_filter(&source);
+      filters::source_filter<filters::crc32_filter> filter(&source);
       hash::crc32_digester digester;
       
       WRITE_RANDOM_DATA(source, test, LEN);
@@ -492,7 +492,7 @@ TEST_CASE("streams", "[stream]") {
       constexpr size_t LEN = 256;
       memory_buffer source;
       memory_buffer sink;
-      filters::md5_filter filter = filters::md5_filter(&source);
+      filters::source_filter<filters::md5_filter> filter(&source);
       hash::md5_digester digester;
       
       WRITE_RANDOM_DATA(source, test, LEN);
@@ -511,7 +511,7 @@ TEST_CASE("streams", "[stream]") {
       constexpr size_t LEN = 256;
       memory_buffer source;
       memory_buffer sink;
-      filters::sha1_filter filter = filters::sha1_filter(&source);
+      filters::source_filter<filters::sha1_filter> filter(&source);
       hash::sha1_digester digester;
       
       WRITE_RANDOM_DATA(source, test, LEN);

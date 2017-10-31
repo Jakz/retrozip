@@ -44,7 +44,7 @@ namespace compression
     bool _finished;
     
   public:
-    deflate_mutator(const data_source* source, data_sink* sink, size_t inBufferSize, size_t outBufferSize);
+    deflate_mutator(data_source* source, data_sink* sink, size_t inBufferSize, size_t outBufferSize);
     
     const z_stream& zstream() { return _stream; }
     
@@ -64,7 +64,7 @@ namespace compression
     bool _finished;
     
   public:
-    inflate_mutator(const data_source* source, data_sink* sink, size_t inBufferSize, size_t outBufferSize);
+    inflate_mutator(data_source* source, data_sink* sink, size_t inBufferSize, size_t outBufferSize);
     
     const z_stream& zstream() { return _stream; }
     

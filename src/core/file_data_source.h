@@ -24,7 +24,7 @@ public:
     return _handle.tell() == _handle.length();
   }
   
-  size_t read(void* dest, size_t size, size_t count) const override
+  size_t read(void* dest, size_t size, size_t count) override
   {
     return _handle.read(dest, size, count);
   }

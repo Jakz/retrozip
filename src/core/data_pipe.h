@@ -7,13 +7,13 @@
 class data_pipe
 {
 private:
-  const data_source* _source;
+  data_source* _source;
   data_sink* _sink;
   
   memory_buffer _buffer;
 
 public:
-  data_pipe(const data_source* source, data_sink* sink, size_t bufferSize) : _source(source), _sink(sink), _buffer(bufferSize)
+  data_pipe(data_source* source, data_sink* sink, size_t bufferSize) : _source(source), _sink(sink), _buffer(bufferSize)
   { }
   
   void stepInput()
@@ -55,7 +55,7 @@ public:
 class data_mutator
 {
 protected:
-  const data_source* _source;
+  data_source* _source;
   data_sink* _sink;
   
   memory_buffer _in, _out;
@@ -66,7 +66,7 @@ protected:
   virtual void finalize() = 0;
   
 public:
-  data_mutator(const data_source* source, data_sink* sink, size_t inBufferSize, size_t outBufferSize) :
+  data_mutator(data_source* source, data_sink* sink, size_t inBufferSize, size_t outBufferSize) :
   _source(source), _sink(sink), _in(inBufferSize), _out(outBufferSize) { }
 
   void stepInput()

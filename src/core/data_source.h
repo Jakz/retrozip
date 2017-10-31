@@ -7,7 +7,7 @@ class data_source
 public:
   virtual bool eos() const = 0;
 
-  virtual size_t read(void* dest, size_t size, size_t count) const = 0;
+  virtual size_t read(void* dest, size_t size, size_t count) = 0;
   template<typename T> size_t read(T& dest) const { return read(&dest, sizeof(T), 1); }
 };
 

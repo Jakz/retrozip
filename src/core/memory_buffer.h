@@ -108,8 +108,8 @@ public:
     return count*size;
   }
   
-  template<typename T> size_t read(T& dest) const { return read(&dest, sizeof(T), 1); }
-  size_t read(void* data, size_t size, size_t count) const override
+  template<typename T> size_t read(T& dest) { return read(&dest, sizeof(T), 1); }
+  size_t read(void* data, size_t size, size_t count) override
   {
     size_t available = std::min(_size - _position, (off_t)size*count);
     std::copy(_data + _position, _data + _position + available, (byte*)data);

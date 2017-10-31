@@ -18,7 +18,7 @@ const char* zlib_result_mnemonic(int result)
   }
 }
 
-deflate_mutator::deflate_mutator(const data_source* source, data_sink* sink, size_t inBufferSize, size_t outBufferSize) :
+deflate_mutator::deflate_mutator(data_source* source, data_sink* sink, size_t inBufferSize, size_t outBufferSize) :
   data_mutator(source, sink, inBufferSize, outBufferSize)
 {
   
@@ -100,7 +100,7 @@ bool deflate_mutator::mutate()
 
 
 
-inflate_mutator::inflate_mutator(const data_source* source, data_sink* sink, size_t inBufferSize, size_t outBufferSize) :
+inflate_mutator::inflate_mutator(data_source* source, data_sink* sink, size_t inBufferSize, size_t outBufferSize) :
 data_mutator(source, sink, inBufferSize, outBufferSize)
 {
   
