@@ -6,6 +6,11 @@
 
 class data_pipe
 {
+  virtual void process() = 0;
+};
+
+class passthrough_pipe : public data_pipe
+{
 private:
   data_source* _source;
   data_sink* _sink;
@@ -13,7 +18,7 @@ private:
   memory_buffer _buffer;
 
 public:
-  data_pipe(data_source* source, data_sink* sink, size_t bufferSize) : _source(source), _sink(sink), _buffer(bufferSize)
+  passthrough_pipe(data_source* source, data_sink* sink, size_t bufferSize) : _source(source), _sink(sink), _buffer(bufferSize)
   { }
   
   void stepInput()
@@ -42,7 +47,7 @@ public:
     }
   }
   
-  void process()
+  void process() override
   {
     while (!_source->eos())
     {
@@ -52,7 +57,7 @@ public:
   }
 };
 
-class data_mutator
+class data_mutator : public data_pipe
 {
 protected:
   data_source* _source;
@@ -87,7 +92,7 @@ public:
     }
   }
   
-  void process()
+  void process() override
   {
     initialize();
     

@@ -2,50 +2,61 @@
 
 #include "hash/hash.h"
 
+class data_filter
+{
+public:
+  virtual void process(const void* data, size_t size, size_t count, size_t effective) = 0;
+};
+
+class lambda_data_filter : data_filter
+{
+public:
+  using lambda_t = std::function<void(const void*, size_t, size_t, size_t)>;
+private:
+  std::function<void(const void*, size_t, size_t, size_t)> _lambda;
+public:
+  lambda_data_filter(lambda_t lambda) : _lambda(lambda) { }
+  void process(const void* data, size_t size, size_t count, size_t effective) override final { _lambda(data, size, count, effective); }
+};
+
+template<typename T>
+class source_filter : public data_source, public T
+{
+protected:
+  data_source* _source;
+  //data_filter* _filter;
+public:
+  source_filter(data_source* source/*, data_filter* filter*/) : _source(source)/*, _filter(filter)*/ { }
+  
+  bool eos() const override { return _source->eos(); }
+  
+  size_t read(void* dest, size_t size, size_t count) override
+  {
+    size_t read = _source->read(dest, size, count);
+    /*_filter->*/this->process(dest, size, count, read);
+    return read;
+  }
+};
+
+template<typename T>
+class sink_filter : public data_sink, public T
+{
+protected:
+  data_sink* _sink;
+  data_filter* _filter;
+public:
+  sink_filter(data_sink* sink/*, data_filter* filter*/) : _sink(sink)/*, _filter(filter)*/ { }
+  
+  size_t write(const void* src, size_t size, size_t count) override
+  {
+    size_t written = _sink->write(src, size, count);
+    /*_filter->*/this->process(src, size, count, written);
+    return written;
+  }
+};
+
 namespace filters
 {
-  class data_filter
-  {
-  public:
-    virtual void process(const void* data, size_t size, size_t count, size_t effective) = 0;
-  };
-  
-  template<typename T>
-  class source_filter : public data_source, public T
-  {
-  protected:
-    data_source* _source;
-    //data_filter* _filter;
-  public:
-    source_filter(data_source* source/*, data_filter* filter*/) : _source(source)/*, _filter(filter)*/ { }
-    
-    bool eos() const override { return _source->eos(); }
-    
-    size_t read(void* dest, size_t size, size_t count) override
-    {
-      size_t read = _source->read(dest, size, count);
-      /*_filter->*/this->process(dest, size, count, read);
-      return read;
-    }
-  };
-  
-  template<typename T>
-  class sink_filter : public data_sink, public T
-  {
-  protected:
-    data_sink* _sink;
-    data_filter* _filter;
-  public:
-    sink_filter(data_sink* sink/*, data_filter* filter*/) : _sink(sink)/*, _filter(filter)*/ { }
-    
-    size_t write(const void* src, size_t size, size_t count) override
-    {
-      size_t written = _sink->write(src, size, count);
-      /*_filter->*/this->process(src, size, count, written);
-      return written;
-    }
-  };
-  
   template<typename D>
   class digest_filter : public data_filter
   {

@@ -118,6 +118,7 @@ TEST_CASE("biendian integers", "[endianness]") {
 
 }
 
+#define WRITE_RANDOM_DATA_AND_REWIND(dest, name, length) byte name[(length)]; randomize(name, (length)); dest.write(name, 1, (length)); dest.rewind();
 #define WRITE_RANDOM_DATA(dest, name, length) byte name[(length)]; randomize(name, (length)); dest.write(name, 1, (length));
 void randomize(byte* data, size_t len) { for (size_t i = 0; i < len; ++i) { data[i] = support::random(256); } }
 #define READ_DATA(dest, name, length, res) byte name[(length)]; size_t res = dest.read(name, 1, (length));
@@ -129,7 +130,7 @@ TEST_CASE("memory buffer", "[support]") {
       memory_buffer b(0);
       
       WRITE_RANDOM_DATA(b, temp, LEN);
-      
+
       REQUIRE(b.capacity() == LEN);
       REQUIRE(b.size() == LEN);
       REQUIRE(b.position() == LEN);
@@ -308,6 +309,7 @@ TEST_CASE("memory buffer", "[support]") {
       data_reference<int> ref = b.reserve<int>();
       
       WRITE_RANDOM_DATA(b, temp, LEN);
+      b.seek(0, Seek::END);
       
       ref.write(c);
       
@@ -352,8 +354,7 @@ TEST_CASE("memory buffer", "[support]") {
       constexpr size_t WLEN = 64, RLEN = 32;
       memory_buffer b(WLEN);
       
-      WRITE_RANDOM_DATA(b, temp1, WLEN);
-      b.rewind();
+      WRITE_RANDOM_DATA_AND_REWIND(b, temp1, WLEN);
       READ_DATA(b, temp2, RLEN, read2);
       
       REQUIRE(b.position() == RLEN);
@@ -366,8 +367,7 @@ TEST_CASE("memory buffer", "[support]") {
       constexpr size_t WLEN = 32, RLEN = 48;
       memory_buffer b(WLEN);
       
-      WRITE_RANDOM_DATA(b, temp1, WLEN);
-      b.rewind();
+      WRITE_RANDOM_DATA_AND_REWIND(b, temp1, WLEN);
       READ_DATA(b, temp2, RLEN, read2);
       
       REQUIRE(b.position() == WLEN);
@@ -401,67 +401,100 @@ TEST_CASE("memory buffer", "[support]") {
   }
 }
 
+#pragma mark streams
 TEST_CASE("streams", "[stream]") {
   SECTION("basic pipe test") {
     constexpr size_t LEN = 256;
     memory_buffer source;
     memory_buffer sink;
     
-    WRITE_RANDOM_DATA(source, test, LEN);
-    source.rewind();
+    WRITE_RANDOM_DATA_AND_REWIND(source, test, LEN);
     
-    data_pipe pipe = data_pipe(&source, &sink, 8);
+    passthrough_pipe pipe = passthrough_pipe(&source, &sink, 8);
     pipe.process();
     
     REQUIRE(source == sink);
+  }
+  
+  SECTION("multiple sources") {
+    constexpr size_t LEN1 = 1024, LEN2 = 512;
+    memory_buffer source1, source2;
+    memory_buffer sink;
+    multiple_data_source multiple_source({&source1, &source2});
+    
+    WRITE_RANDOM_DATA_AND_REWIND(source1, test1, LEN1);
+    WRITE_RANDOM_DATA_AND_REWIND(source2, test2, LEN2);
+
+    passthrough_pipe pipe(&multiple_source, &sink, 30);
+    pipe.process();
+    
+    REQUIRE(sink.size() == LEN1 + LEN2);
+    REQUIRE(std::equal(sink.raw(), sink.raw() + LEN1, source1.raw()));
+    REQUIRE(std::equal(sink.raw() + LEN1, sink.raw() + LEN1 + LEN2, source2.raw()));
   }
   
   SECTION("data read counter") {
     constexpr size_t LEN = 2048;
     memory_buffer source;
     memory_buffer sink;
-    filters::source_filter<filters::data_counter> counter(&source);
+    source_filter<filters::data_counter> counter(&source);
     
-    WRITE_RANDOM_DATA(source, test, LEN);
-    source.rewind();
+    WRITE_RANDOM_DATA_AND_REWIND(source, test, LEN);
     
-    data_pipe pipe = data_pipe(&counter, &sink, 8);
+    passthrough_pipe pipe = passthrough_pipe(&counter, &sink, 8);
     pipe.process();
 
     REQUIRE(counter.count() == LEN);
+    REQUIRE(sink.size() == LEN);
   }
   
   SECTION("data write counter") {
     constexpr size_t LEN = 2048;
     memory_buffer source;
     memory_buffer sink;
-    filters::sink_filter<filters::data_counter> counter(&sink);
+    sink_filter<filters::data_counter> counter(&sink);
     
-    WRITE_RANDOM_DATA(source, test, LEN);
-    source.rewind();
+    WRITE_RANDOM_DATA_AND_REWIND(source, test, LEN);
     
-    data_pipe pipe = data_pipe(&source, &counter, 8);
+    passthrough_pipe pipe = passthrough_pipe(&source, &counter, 8);
     pipe.process();
     
     REQUIRE(counter.count() == LEN);
+    REQUIRE(sink.size() == LEN);
+  }
+  
+  SECTION("data counter on both ends") {
+    constexpr size_t LEN = 2048;
+    memory_buffer source;
+    memory_buffer sink;
+    sink_filter<filters::data_counter> sinkCounter(&sink);
+    source_filter<filters::data_counter> sourceCounter(&source);
+    
+    WRITE_RANDOM_DATA_AND_REWIND(source, test, LEN);
+    
+    passthrough_pipe pipe = passthrough_pipe(&sourceCounter, &sinkCounter, 8);
+    pipe.process();
+    
+    REQUIRE(sinkCounter.count() == LEN);
+    REQUIRE(sourceCounter.count() == LEN);
+    REQUIRE(sink.size() == LEN);
   }
   
   SECTION("file data source/sink") {
     constexpr size_t LEN = 1024;
     memory_buffer source, sink;
     
-    WRITE_RANDOM_DATA(source, test, LEN);
-    source.rewind();
+    WRITE_RANDOM_DATA_AND_REWIND(source, test, LEN);
     
     {
       file_data_sink fileSink("test.bin");
-      data_pipe pipe(&source, &fileSink, 64);
+      passthrough_pipe pipe(&source, &fileSink, 64);
       pipe.process();
     }
     
     {
       file_data_source fileSource("test.bin");
-      data_pipe pipe(&fileSource, &sink, 64);
+      passthrough_pipe pipe(&fileSource, &sink, 64);
       pipe.process();
     }
     
@@ -473,16 +506,15 @@ TEST_CASE("streams", "[stream]") {
       constexpr size_t LEN = 256;
       memory_buffer source;
       memory_buffer sink;
-      filters::source_filter<filters::crc32_filter> filter(&source);
+      source_filter<filters::crc32_filter> filter(&source);
       hash::crc32_digester digester;
       
-      WRITE_RANDOM_DATA(source, test, LEN);
-      source.rewind();
+      WRITE_RANDOM_DATA_AND_REWIND(source, test, LEN);
       
       digester.update(test, LEN);
       hash::crc32_t value = digester.get();
       
-      data_pipe pipe = data_pipe(&filter, &sink, 30);
+      passthrough_pipe pipe(&filter, &sink, 30);
       pipe.process();
       
       REQUIRE(value == filter.get());
@@ -492,16 +524,15 @@ TEST_CASE("streams", "[stream]") {
       constexpr size_t LEN = 256;
       memory_buffer source;
       memory_buffer sink;
-      filters::source_filter<filters::md5_filter> filter(&source);
+      source_filter<filters::md5_filter> filter(&source);
       hash::md5_digester digester;
       
-      WRITE_RANDOM_DATA(source, test, LEN);
-      source.rewind();
+      WRITE_RANDOM_DATA_AND_REWIND(source, test, LEN);
       
       digester.update(test, LEN);
       hash::md5_t value = digester.get();
       
-      data_pipe pipe = data_pipe(&filter, &sink, 30);
+      passthrough_pipe pipe(&filter, &sink, 30);
       pipe.process();
       
       REQUIRE(value == filter.get());
@@ -511,16 +542,15 @@ TEST_CASE("streams", "[stream]") {
       constexpr size_t LEN = 256;
       memory_buffer source;
       memory_buffer sink;
-      filters::source_filter<filters::sha1_filter> filter(&source);
+      source_filter<filters::sha1_filter> filter(&source);
       hash::sha1_digester digester;
       
-      WRITE_RANDOM_DATA(source, test, LEN);
-      source.rewind();
+      WRITE_RANDOM_DATA_AND_REWIND(source, test, LEN);
       
       digester.update(test, LEN);
       hash::sha1_t value = digester.get();
       
-      data_pipe pipe = data_pipe(&filter, &sink, 30);
+      passthrough_pipe pipe(&filter, &sink, 30);
       pipe.process();
       
       REQUIRE(value == filter.get());
@@ -557,6 +587,7 @@ TEST_CASE("streams", "[stream]") {
   }
 }
 
+#pragma mark hashes
 TEST_CASE("crc32", "[checksums]") {
   SECTION("crc32-test1") {
     std::string testString = "The quick brown fox jumps over the lazy dog";

@@ -11,6 +11,48 @@ public:
   template<typename T> size_t read(T& dest) const { return read(&dest, sizeof(T), 1); }
 };
 
+class multiple_data_source : public data_source
+{
+private:
+  using iterator = std::vector<data_source*>::const_iterator;
+  
+  bool _pristine;
+  std::function<void(data_source*)> _onBegin;
+  std::function<void(data_source*)> _onEnd;
+  
+  std::vector<data_source*> _sources;
+  iterator _it;
+  
+public:
+  multiple_data_source(const std::vector<data_source*>& sources) :
+  _pristine(true), _sources(sources), _it(_sources.begin()),
+  _onBegin([](data_source*){}), _onEnd([](data_source*){}) {}
+  
+  void setOnBegin(std::function<void(data_source*)> onBegin) { this->_onBegin = onBegin; }
+  void setOnEnd(std::function<void(data_source*)> onEnd) { this->_onEnd = onEnd; }
+  
+  bool eos() const override { return _it == _sources.end(); }
+  
+  size_t read(void* dest, size_t size, size_t count) override
+  {
+    if (_pristine)
+    {
+      _onBegin(*_it);
+      _pristine = false;
+    }
+    
+    size_t effective = (*_it)->read(dest, size, count);
+    if ((*_it)->eos())
+    {
+      _onEnd(*_it);
+      ++_it;
+      _pristine = true;
+    }
+    
+    return effective;
+  }
+};
+
 class data_sink
 {
   
