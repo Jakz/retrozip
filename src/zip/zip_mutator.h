@@ -11,17 +11,17 @@ protected:
   memory_buffer _in;
   memory_buffer _out;
   
+  
   bool _started;
   bool _finished;
-  
-  virtual bool isEnded() const = 0;
+  bool _isEnded;
   
   virtual void init() = 0;
   virtual void process() = 0;
   virtual void finalize() = 0;
   
 public:
-  buffered_filter(size_t inBufferSize, size_t outBufferSize) : _in(inBufferSize), _out(outBufferSize), _started(false), _finished(false) { }
+  buffered_filter(size_t inBufferSize, size_t outBufferSize) : _in(inBufferSize), _out(outBufferSize), _started(false), _finished(false), _isEnded(false) { }
 };
 
 template<typename F>
@@ -31,19 +31,27 @@ private:
   data_source* _source;
   
 protected:
-  bool isEnded() const override { return _source->eos(); }
   
   void fetchInput()
   {
+    TRACE("%p: source_filter::fetchInput()", this);
+    
     if (!this->_in.full())
     {
       size_t effective = _source->read(this->_in.tail(), this->_in.available());
-      this->_in.advance(effective);
+      
+      if (effective != END_OF_STREAM)
+        this->_in.advance(effective);
+      else
+        this->_isEnded = true;
+        
     }
   }
   
   size_t dumpOutput(byte* dest, size_t length)
   {
+    TRACE("%p: source_filter::dumpOutput(%lu)", this, length);
+    
     if (!this->_out.empty())
     {
       size_t effective = std::min(this->_out.used(), length);
@@ -58,8 +66,6 @@ protected:
 public:
   template<typename... Args> buffered_source_filter(data_source* source, Args... args) : _source(source), F(args...) { }
   
-  bool eos() const override { return _source->eos() && this->_out.empty() && this->_in.empty() && this->_finished; }
-  
   size_t read(byte* dest, size_t amount) override
   {
     if (!this->_started)
@@ -69,14 +75,21 @@ public:
     }
     
     fetchInput();
+    
     if (!this->_finished && (!this->_in.empty() || !this->_out.full()))
       this->process();
+    
     size_t effective = dumpOutput(dest, amount);
     
-    if (eos())
+    if (this->_isEnded)
+    {
       this->finalize();
+    }
     
-    return effective;
+    if (effective == 0 && this->_isEnded && this->_in.empty() && this->_out.empty() && this->_finished)
+      return END_OF_STREAM;
+    else
+      return effective;
   }
 };
 
@@ -84,11 +97,9 @@ template<typename F>
 class buffered_sink_filter : public data_sink, public F
 {
 private:
-  bool _isEnded;
   data_sink* _sink;
   
 protected:
-  bool isEnded() const override { return _isEnded; }
   
   size_t fetchInput(const byte* src, size_t length)
   {
@@ -121,7 +132,7 @@ protected:
   }
   
 public:
-  template<typename... Args> buffered_sink_filter(data_sink* sink, Args... args) : _isEnded(false), _sink(sink), F(args...) { }
+  template<typename... Args> buffered_sink_filter(data_sink* sink, Args... args) : _sink(sink), F(args...) { }
   
   size_t write(const byte* src, size_t amount) override
   {
@@ -141,14 +152,14 @@ public:
     }
     else
     {
-      _isEnded = true;
+      this->_isEnded = true;
       while (!this->_finished)
         this->process();
       while (dumpOutput() != END_OF_STREAM) ;
       effective = END_OF_STREAM;
     }
     
-    if (_isEnded && this->_in.empty() && this->_out.empty() && this->_finished)
+    if (this->_isEnded && this->_in.empty() && this->_out.empty() && this->_finished)
     {
       this->finalize();
     }

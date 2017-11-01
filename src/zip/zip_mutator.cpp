@@ -45,29 +45,35 @@ void zlib_filter<computer, finalizer, OPTIONS>::finalize()
 template<zlib_compute_function computer, zlib_end_function finalizer, typename OPTIONS>
 void zlib_filter<computer, finalizer, OPTIONS>::process()
 {
+  TRACE("%p: %s_filter::process()", this, std::is_same<OPTIONS, DeflateOptions>::value ? "deflater" : "inflater");
+
   _stream.avail_in = static_cast<uInt>(_in.used());
   _stream.next_in = _in.head();
   
   _stream.avail_out = static_cast<uInt>(_out.available());
   _stream.next_out = _out.tail();
   
-  _result = computer(&_stream, isEnded() ? Z_FINISH : Z_NO_FLUSH);
+  _result = computer(&_stream, this->_isEnded ? Z_FINISH : Z_NO_FLUSH);
   
   size_t consumed = _in.used() - _stream.avail_in;
   size_t produced = _out.available() - _stream.avail_out;
   
-  _in.consume(consumed);
-  _out.advance(produced);
+  if (consumed) //TODO: not necessary, used to skip tracing, just forward 0 in case
+    _in.consume(consumed);
   
-  /*if (_result >= 0)
-    printf("%s %lu bytes into %lu bytes (in: %lu out: %lu) (%s)\n",
-           std::is_same<OPTIONS, DeflateOptions>::value ? "Zipped" : "Unzipped",
+  if (produced)
+    _out.advance(produced);
+  
+  if (_result >= 0)
+    TRACE("%p: %s %lu bytes into %lu bytes (in: %lu out: %lu) (%s)\n",
+           this,
+           std::is_same<OPTIONS, DeflateOptions>::value ? "zipped" : "unzipped",
            consumed,
            produced,
            _stream.total_in,
            _stream.total_out,
            zlib_result_mnemonic(_result)
-    );*/
+    );
   
   switch (_result)
   {
@@ -89,7 +95,7 @@ void zlib_filter<computer, finalizer, OPTIONS>::process()
     case Z_DATA_ERROR:
     case Z_MEM_ERROR:
     {
-      //printf("Failed status: %s\n", zlib_result_mnemonic(_result));
+      printf("Failed status: %s\n", zlib_result_mnemonic(_result));
       assert(false);
       _failed = true;
       _finished = true;

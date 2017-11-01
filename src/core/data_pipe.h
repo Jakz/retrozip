@@ -34,6 +34,7 @@ public:
   
   void stepInput()
   {
+    TRACE("%p: pipe::stepInput", this);
     /* available data to read is minimum between free room in buffer and remaining data */
     //size_t available = std::min(_bufferSize - _bufferPosition, _source->length() - _done);
     size_t available = _buffer.available();
@@ -46,14 +47,18 @@ public:
       {
         assert(_state == state::OPENED);
         _state = state::END_OF_INPUT;
+        TRACE("pipe::stepInput() state: OPEN -> END_OF_INPUT");
+
       }
-      else
+      else if (effective) //TODO: not necessary, used to skip tracing, just forward 0 in case
         _buffer.advance(effective);
     }
   }
   
   void stepOutput()
   {
+    TRACE("%p: pipe::stepOutput", this);
+    
     /* if there is data to process */
     if (!_buffer.empty())
     {
@@ -63,13 +68,26 @@ public:
       /* we processed less data than total available, so we shift remaining */
       _buffer.consume(effective);
       
-      if (effective == END_OF_STREAM)
+      if (effective == END_OF_STREAM && _state == state::NOTIFIED_SINK)
+      {
         _state = state::CLOSED;
+        TRACE("pipe::stepOutput() state: NOTIFIED_SINK -> CLOSED");
+      }
     }
     else if (_buffer.empty() && _state == state::END_OF_INPUT)
     {
       size_t effective = _sink->write(nullptr, END_OF_STREAM);
-      _state = effective != END_OF_STREAM ? state::NOTIFIED_SINK : state::CLOSED;
+      
+      if (effective != END_OF_STREAM && _state == state::END_OF_INPUT)
+      {
+        TRACE("pipe::stepOutput() state: END_OF_INPUT -> NOTIFIED_SINK");
+        _state = state::NOTIFIED_SINK;
+      }
+      else if (effective == END_OF_STREAM && (_state == state::NOTIFIED_SINK || _state == state::END_OF_INPUT))
+      {
+        TRACE("pipe::stepOutput() state: NOTIFIED_SINK -> CLOSED");
+        _state = state::CLOSED;
+      }
     }
   }
   
@@ -79,15 +97,11 @@ public:
     {
       if (_state == state::OPENED)
         stepInput();
-      
-      if (_source->eos() && _state == state::OPENED)
-      {
-        //LOG("pipe::source::eos() state: OPENED -> END_OF_INPUT");
-        _state = state::END_OF_INPUT;
-      }
-      
+
       stepOutput();
     }
+    
+    TRACE("pipe::process() pipe cloed");
   }
 };
 

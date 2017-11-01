@@ -7,8 +7,6 @@ constexpr size_t END_OF_STREAM = 0xFFFFFFFFFFFFFFFFLL;
 class data_source
 {
 public:
-  virtual bool eos() const = 0;
-
   virtual size_t read(byte* dest, size_t amount) = 0;
   template<typename T> size_t read(T& dest) const { return read(&dest, sizeof(T), 1); }
 };
@@ -33,8 +31,6 @@ public:
   void setOnBegin(std::function<void(data_source*)> onBegin) { this->_onBegin = onBegin; }
   void setOnEnd(std::function<void(data_source*)> onEnd) { this->_onEnd = onEnd; }
   
-  bool eos() const override { return _it == _sources.end(); }
-  
   size_t read(byte* dest, size_t amount) override
   {
     if (_it == _sources.end())
@@ -45,12 +41,17 @@ public:
       _pristine = false;
     }
     
-    size_t effective = (*_it)->read(dest, amount);
-    if ((*_it)->eos())
+    size_t effective = END_OF_STREAM;
+    while (effective == END_OF_STREAM && _it != _sources.end())
     {
-      _onEnd(*_it);
-      ++_it;
-      _pristine = true;
+      effective = (*_it)->read(dest, amount);
+      
+      if (effective == END_OF_STREAM)
+      {
+        _onEnd(*_it);
+        ++_it;
+        _pristine = true;
+      }
     }
     
     return effective;
@@ -95,19 +96,11 @@ private:
 public:
   log_data_source(size_t length, size_t maxAvailable) : _length(length), _position(0), _maxAvailable(maxAvailable), _isEos(false) { }
   
-  bool eos() const override
-  {
-    bool wasEos = _isEos;
-    _isEos = _position == _length;
-    
-    if (_isEos && !wasEos)
-      printf("data_source::eos()\n");
-    
-    return _isEos;
-  }
-  
   size_t read(byte* dest, size_t amount) override
   {
+    if (_position == _length)
+      return END_OF_STREAM;
+    
     size_t available = std::min(_maxAvailable, std::min(amount, _length - _position));
     printf("data_source::read(%lu) (%lu)\n", amount, available);
     _position += available;

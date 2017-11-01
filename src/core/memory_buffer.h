@@ -52,8 +52,6 @@ public:
   
   bool operator==(const memory_buffer& other) const { return _size == other._size && std::equal(_data, _data+_size, other._data); }
   bool operator!=(const memory_buffer& other) { return !operator==(other); }
-
-  bool eos() const override { return _size == _position; }
   
   size_t size() const { return _size; }
   size_t capacity() const { return _capacity; }
@@ -152,15 +150,29 @@ public:
   
   size_t read(byte* data, size_t amount) override
   {
+    if (_size == _position)
+    {
+      TRACE("%p: memory_buffer::read EOS", this);
+      return END_OF_STREAM;
+    }
+    
+    //TRACE("buffer read %lu (position: %lu/%lu)", amount, _size, _position);
+    TRACE("%p: memory_buffer::read %lu (size: %lu/%lu)", this, amount, _position, _capacity);
     return read(data, 1, amount);
   }
   
   size_t write(const byte* data, size_t amount) override
   {
     if (amount != END_OF_STREAM)
+    {
+      TRACE("%p: memory_buffer::write %lu (size: %lu/%lu)", this, amount, amount+_size, _capacity);
       return write(data, 1, amount);
+    }
     else
+    {
+      TRACE("%p: memory_buffer::read write EOS -> EOS", this);
       return END_OF_STREAM;
+    }
   }
   
   void resize(size_t newCapacity)
@@ -174,12 +186,18 @@ public:
     }
   }
   
-  void advance(size_t offset) { _size += offset; }
+  void advance(size_t offset)
+  {
+    _size += offset;
+    TRACE("%p: memory_buffer::advance %lu (%lu/%lu)", this, offset, _size, _capacity);
+  }
+  
   void consume(size_t amount)
   {
     if (_size != amount)
       memmove(_data, _data + amount, _size - amount);
     _size -= amount;
+    TRACE("%p: memory_buffer::consume %lu (%lu/%lu)", this, amount, _size, _capacity);
   }
   
   byte* head() { return _data; }

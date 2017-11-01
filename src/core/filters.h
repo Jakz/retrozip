@@ -27,9 +27,7 @@ protected:
   //data_filter* _filter;
 public:
   source_filter(data_source* source/*, data_filter* filter*/) : _source(source)/*, _filter(filter)*/ { }
-  
-  bool eos() const override { return _source->eos(); }
-  
+    
   size_t read(byte* dest, size_t amount) override
   {
     size_t read = _source->read(dest, amount);
@@ -69,7 +67,8 @@ namespace filters
     
     void process(const byte* data, size_t amount, size_t effective) override
     {
-      _digester.update(data, effective);
+      if (effective != END_OF_STREAM)
+        _digester.update(data, effective);
     }
 
     typename D::computed_type get() const { return _digester.get(); }
