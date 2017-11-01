@@ -53,7 +53,6 @@ public:
   bool operator==(const memory_buffer& other) const { return _size == other._size && std::equal(_data, _data+_size, other._data); }
   bool operator!=(const memory_buffer& other) { return !operator==(other); }
 
-  void eos() override { }
   bool eos() const override { return _size == _position; }
   
   size_t size() const { return _size; }
@@ -158,7 +157,10 @@ public:
   
   size_t write(const byte* data, size_t amount) override
   {
-    return write(data, 1, amount);
+    if (amount != END_OF_STREAM)
+      return write(data, 1, amount);
+    else
+      return END_OF_STREAM;
   }
   
   void resize(size_t newCapacity)

@@ -571,7 +571,7 @@ TEST_CASE("streams", "[stream]") {
   }
   
   SECTION("compression") {
-    /*SECTION("deflate/inflate source") {
+    SECTION("deflate/inflate source") {
       
       constexpr size_t LEN = 1 << 18;
       
@@ -629,7 +629,7 @@ TEST_CASE("streams", "[stream]") {
       REQUIRE(inflater.zstream().total_out == source.size());
       
       REQUIRE(source == sink);
-    }*/
+    }
     
     SECTION("chained deflate/inflate on sink")
     {

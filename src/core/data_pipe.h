@@ -12,13 +12,24 @@ class data_pipe
 class passthrough_pipe : public data_pipe
 {
 private:
+  enum class state
+  {
+    READY = 0,
+    OPENED,
+    END_OF_INPUT,
+    NOTIFIED_SINK,
+    CLOSED
+  };
+  
   data_source* _source;
   data_sink* _sink;
   
   memory_buffer _buffer;
-
+  
+  state _state;
+  
 public:
-  passthrough_pipe(data_source* source, data_sink* sink, size_t bufferSize) : _source(source), _sink(sink), _buffer(bufferSize)
+  passthrough_pipe(data_source* source, data_sink* sink, size_t bufferSize) : _source(source), _sink(sink), _buffer(bufferSize), _state(state::OPENED)
   { }
   
   void stepInput()
@@ -30,10 +41,14 @@ public:
     if (available > 0)
     {
       size_t effective = _source->read(_buffer.tail(), available);
-      _buffer.advance(effective);
       
-      if (_source->eos())
-        _sink->eos();
+      if (effective == END_OF_STREAM)
+      {
+        assert(_state == state::OPENED);
+        _state = state::END_OF_INPUT;
+      }
+      else
+        _buffer.advance(effective);
     }
   }
   
@@ -47,77 +62,34 @@ public:
       /* TODO: circular buffer would be better? */
       /* we processed less data than total available, so we shift remaining */
       _buffer.consume(effective);
+      
+      if (effective == END_OF_STREAM)
+        _state = state::CLOSED;
+    }
+    else if (_buffer.empty() && _state == state::END_OF_INPUT)
+    {
+      size_t effective = _sink->write(nullptr, END_OF_STREAM);
+      _state = effective != END_OF_STREAM ? state::NOTIFIED_SINK : state::CLOSED;
     }
   }
   
   void process() override
   {
-    while (!_source->eos() || !_buffer.empty())
+    while (_state != state::CLOSED)
     {
-      stepInput();
+      if (_state == state::OPENED)
+        stepInput();
+      
+      if (_source->eos() && _state == state::OPENED)
+      {
+        //LOG("pipe::source::eos() state: OPENED -> END_OF_INPUT");
+        _state = state::END_OF_INPUT;
+      }
+      
       stepOutput();
     }
   }
 };
-
-class data_mutator : public data_pipe
-{
-protected:
-  data_source* _source;
-  data_sink* _sink;
-  
-  memory_buffer _in, _out;
-
-protected:
-  virtual bool mutate() = 0;
-  virtual void initialize() = 0;
-  virtual void finalize() = 0;
-  
-public:
-  data_mutator(data_source* source, data_sink* sink, size_t inBufferSize, size_t outBufferSize) :
-  _source(source), _sink(sink), _in(inBufferSize), _out(outBufferSize) { }
-
-  void stepInput()
-  {
-    if (!_in.full())
-    {
-      size_t effective = _source->read(_in.tail(), _in.available());
-      _in.advance(effective);
-    }
-  }
-  
-  void stepOutput()
-  {
-    if (!_out.empty())
-    {
-      size_t effective = _sink->write(_out.head(), _out.used());
-      _out.consume(effective);
-    }
-  }
-  
-  void process() override
-  {
-    initialize();
-    
-    while (!_source->eos())
-    {
-      stepInput();
-      if (!mutate()) break;
-      stepOutput();
-    }
-    
-    while (mutate())
-      stepOutput();
-    
-    finalize();
-    
-    while (!_out.empty())
-      stepOutput();
-  }
-  
-};
-
-
 
 
 

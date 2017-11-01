@@ -2,6 +2,8 @@
 
 #include "base/common.h"
 
+constexpr size_t END_OF_STREAM = 0xFFFFFFFFFFFFFFFFLL;
+
 class data_source
 {
 public:
@@ -35,7 +37,9 @@ public:
   
   size_t read(byte* dest, size_t amount) override
   {
-    if (_pristine)
+    if (_it == _sources.end())
+      return END_OF_STREAM;
+    else if (_pristine)
     {
       _onBegin(*_it);
       _pristine = false;
@@ -58,7 +62,7 @@ class data_sink
   
 public:
   virtual size_t write(const byte* src, size_t amount) = 0;
-  virtual void eos() = 0;
+  //virtual void eos() = 0;
 };
 
 struct data_buffer
@@ -119,15 +123,18 @@ private:
 public:
   log_data_sink(size_t maxAvailable) : _maxAvailable(maxAvailable) { }
   
-  void eos() override
-  {
-    printf("data_sink::eos()\n");
-  }
-  
   size_t write(const byte* src, size_t amount) override
   {
-    size_t available = std::min(amount, _maxAvailable);
-    printf("data_sink::write(%lu) (%lu)\n", amount, available);
-    return available;
+    if (amount != END_OF_STREAM)
+    {
+      size_t available = std::min(amount, _maxAvailable);
+      printf("data_sink::write(%lu) (%lu)\n", amount, available);
+      return available;
+    }
+    else
+    {
+      printf("data_sink::eos()\n");
+      return END_OF_STREAM;
+    }
   }
 };

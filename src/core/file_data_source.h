@@ -38,9 +38,7 @@ private:
   
 public:
   file_data_sink(path path, bool waitForOpen = false) : _path(path), _handle(waitForOpen ? file_handle(path) : file_handle(path, file_mode::WRITING)) { }
-  
-  void eos() override { /* do nothing */ }
-  
+    
   void open()
   {
     assert(!_handle);
@@ -49,7 +47,10 @@ public:
   
   size_t write(const byte* src, size_t amount) override
   {
-    return _handle.write(src, 1, amount);
+    if (amount != END_OF_STREAM)
+      return _handle.write(src, 1, amount);
+    else
+      return END_OF_STREAM;
   }
 
 };

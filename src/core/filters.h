@@ -46,9 +46,7 @@ protected:
   data_filter* _filter;
 public:
   sink_filter(data_sink* sink/*, data_filter* filter*/) : _sink(sink)/*, _filter(filter)*/ { }
-  
-  void eos() override { _sink->eos(); }
-  
+    
   size_t write(const byte* src, size_t amount) override
   {
     size_t written = _sink->write(src, amount);
@@ -124,7 +122,8 @@ namespace filters
         
     void process(const byte* data, size_t amount, size_t effective) override
     {
-      _count += effective;
+      if (effective != END_OF_STREAM)
+        _count += effective;
     }
     
   };

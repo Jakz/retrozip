@@ -2,6 +2,16 @@
 
 #include <zlib.h>
 
+static char buffer[512];
+void debugprintf(const char* str, ...)
+{
+  va_list args;
+  va_start (args, str);
+  vsnprintf (buffer, 512, str, args);
+  printf("%s\n", buffer);
+}
+
+
 std::string strings::humanReadableSize(size_t bytes, bool si) {
   static constexpr char pre[][7] = { "kMGTPE", "KMGTPE"};
   

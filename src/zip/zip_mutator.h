@@ -103,19 +103,25 @@ protected:
     return 0;
   }
   
-  void dumpOutput()
+  size_t dumpOutput()
   {
     if (!this->_out.empty())
     {
       size_t effective = _sink->write(this->_out.head(), this->_out.used());
       this->_out.consume(effective);
+      return effective;
+    }
+    else
+    {
+      if (this->_finished)
+        return _sink->write(nullptr, END_OF_STREAM);
+      else
+        return 0;
     }
   }
   
 public:
-  template<typename... Args> buffered_sink_filter(data_sink* sink, Args... args) : _sink(sink), F(args...) { }
-  
-  void eos() override { _isEnded = true; }
+  template<typename... Args> buffered_sink_filter(data_sink* sink, Args... args) : _isEnded(false), _sink(sink), F(args...) { }
   
   size_t write(const byte* src, size_t amount) override
   {
@@ -125,13 +131,27 @@ public:
       this->_started = true;
     }
     
-    size_t effective = fetchInput(src, amount);
-    if (!this->_finished && (!this->_in.empty() || !this->_out.full()))
-      this->process();
-    dumpOutput();
+    size_t effective = 0;
+    if (amount != END_OF_STREAM)
+    {
+      effective = fetchInput(src, amount);
+      if (!this->_finished && (!this->_in.empty() || !this->_out.full()))
+        this->process();
+      dumpOutput();
+    }
+    else
+    {
+      _isEnded = true;
+      while (!this->_finished)
+        this->process();
+      while (dumpOutput() != END_OF_STREAM) ;
+      effective = END_OF_STREAM;
+    }
     
     if (_isEnded && this->_in.empty() && this->_out.empty() && this->_finished)
+    {
       this->finalize();
+    }
     
     return effective;
   }
@@ -201,61 +221,4 @@ namespace compression
   
   using deflater_filter = zlib_filter<deflate, deflateEnd, DeflateOptions>;
   using inflater_filter = zlib_filter<inflate, inflateEnd, InflateOptions>;
-
-  
-  class deflate_source : public data_source
-  {
-  private:
-    data_source* _source;
-    memory_buffer _in, _out;
-    
-    DeflateOptions _options;
-    
-    bool _finished;
-    bool _started;
-    bool _failed;
-    int _result;
-    
-    z_stream _stream;
-    
-  private:
-    void fetchInput();
-    size_t dumpOutput(byte* dest, size_t length);
-    
-  public:
-    deflate_source(data_source* source, size_t bufferSize);
-    
-    bool eos() const override;
-    size_t read(byte* dest, size_t amount) override;
-    
-    const z_stream& zstream() { return _stream; }
-  };
-  
-  class inflate_source : public data_source
-  {
-  private:
-    data_source* _source;
-    memory_buffer _in, _out;
-    
-    InflateOptions _options;
-    
-    bool _finished;
-    bool _started;
-    bool _failed;
-    int _result;
-    
-    z_stream _stream;
-    
-  private:
-    void fetchInput();
-    size_t dumpOutput(byte* dest, size_t length);
-    
-  public:
-    inflate_source(data_source* source, size_t bufferSize);
-    
-    bool eos() const override;
-    size_t read(byte* dest, size_t amount) override;
-    
-    const z_stream& zstream() { return _stream; }
-  };
 }

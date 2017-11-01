@@ -47,6 +47,14 @@ constexpr bool IS_LITTLE_ENDIAN_ = true;
 #error "Unknown endianness!"
 #endif
 
+#ifdef DEBUG
+extern void debugprintf(const char* str, ...);
+#define LOG(...) debugprintf(__VA_ARGS__);
+#else
+#define LOG(...) do { } while (false);
+#endif
+
+
 namespace hidden
 {
   struct u16se
