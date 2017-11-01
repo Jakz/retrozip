@@ -493,7 +493,7 @@ TEST_CASE("streams", "[stream]") {
     REQUIRE(sink.size() == LEN);
   }
   
-  SECTION("file data source/sink") {
+  SECTION("memory source to file sink / file source to memory sink") {
     constexpr size_t LEN = 1024;
     memory_buffer source, sink;
     
@@ -512,6 +512,36 @@ TEST_CASE("streams", "[stream]") {
     }
     
     REQUIRE(source == sink);
+  }
+  
+  SECTION("file source to file sink")
+  {
+    constexpr size_t LEN = 1024;
+    memory_buffer source;
+    
+    WRITE_RANDOM_DATA_AND_REWIND(source, test, LEN);
+    
+    {
+      file_data_sink fileSink("test.bin");
+      passthrough_pipe pipe(&source, &fileSink, 64);
+      pipe.process();
+    }
+    
+    {
+      file_data_source fileSource("test.bin");
+      file_data_sink fileSink("test2.bin");
+      passthrough_pipe pipe(&fileSource, &fileSink, 60);
+      pipe.process();
+    }
+    
+    {
+      file_data_source fileSource("test2.bin");
+      memory_buffer sink;
+      passthrough_pipe pipe(&fileSource, &sink, 100);
+      pipe.process();
+      
+      REQUIRE(source == sink);
+    }
   }
   
   SECTION("filters") {
