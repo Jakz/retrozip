@@ -402,21 +402,8 @@ TEST_CASE("memory buffer", "[support]") {
 }
 
 #pragma mark streams
-TEST_CASE("streams", "[stream]") {
+TEST_CASE("basic", "[stream]") {
   SECTION("single pipe") {
-    constexpr size_t LEN = 256;
-    memory_buffer source;
-    memory_buffer sink;
-    
-    WRITE_RANDOM_DATA_AND_REWIND(source, test, LEN);
-    
-    passthrough_pipe pipe = passthrough_pipe(&source, &sink, 8);
-    pipe.process();
-    
-    REQUIRE(source == sink);
-  }
-  
-  SECTION("basic pipe test") {
     constexpr size_t LEN = 256;
     memory_buffer source;
     memory_buffer sink;
@@ -446,7 +433,33 @@ TEST_CASE("streams", "[stream]") {
     REQUIRE(std::equal(sink.raw() + LEN1, sink.raw() + LEN1 + LEN2, source2.raw()));
   }
   
-  SECTION("data read counter") {
+  SECTION("multiple fixed sinks") {
+    constexpr size_t LEN = 1024;
+    constexpr size_t L1 = 256LL, L2 = 256LL, L3 = 512LL;
+    
+    memory_buffer source;
+    WRITE_RANDOM_DATA_AND_REWIND(source, test, LEN);
+
+    sink_factory factory = []() { return new memory_buffer(); };
+    multiple_fixed_size_sink_policy policy(factory, { L1, L2, L3 });
+    multiple_data_sink sink(&policy);
+    
+    passthrough_pipe pipe(&source, &sink, 100);
+    pipe.process();
+    
+    memory_buffer *sink1 = sink[0]->as<memory_buffer>(), *sink2 = sink[1]->as<memory_buffer>(), *sink3 = sink[2]->as<memory_buffer>();
+    
+    REQUIRE(sink1->size() == 256LL);
+    REQUIRE(sink2->size() == 256LL);
+    REQUIRE(sink3->size() == 512LL);
+    REQUIRE(memcmp(source.raw(), sink1->raw(), L1) == 0);
+    REQUIRE(memcmp(source.raw() + L1, sink2->raw(), L2) == 0);
+    REQUIRE(memcmp(source.raw() + L1 + L2, sink3->raw(), L3) == 0);
+  }
+}
+
+TEST_CASE("counter", "[filters]") {
+  SECTION("data source counter") {
     constexpr size_t LEN = 2048;
     memory_buffer source;
     memory_buffer sink;
@@ -461,7 +474,7 @@ TEST_CASE("streams", "[stream]") {
     REQUIRE(sink.size() == LEN);
   }
   
-  SECTION("data write counter") {
+  SECTION("data sink counter") {
     constexpr size_t LEN = 2048;
     memory_buffer source;
     memory_buffer sink;
@@ -492,7 +505,9 @@ TEST_CASE("streams", "[stream]") {
     REQUIRE(sourceCounter.count() == LEN);
     REQUIRE(sink.size() == LEN);
   }
+}
   
+TEST_CASE("file sources/sinks", "[stream]") {
   SECTION("memory source to file sink / file source to memory sink") {
     constexpr size_t LEN = 1024;
     memory_buffer source, sink;
@@ -543,148 +558,174 @@ TEST_CASE("streams", "[stream]") {
       REQUIRE(source == sink);
     }
   }
-  
-  SECTION("filters") {
-    SECTION("crc32") {
-      constexpr size_t LEN = 256;
-      memory_buffer source;
-      memory_buffer sink;
-      source_filter<filters::crc32_filter> filter(&source);
-      hash::crc32_digester digester;
-      
-      WRITE_RANDOM_DATA_AND_REWIND(source, test, LEN);
-      
-      digester.update(test, LEN);
-      hash::crc32_t value = digester.get();
-      
-      passthrough_pipe pipe(&filter, &sink, 30);
-      pipe.process();
-      
-      REQUIRE(value == filter.get());
-    }
+}
+
+TEST_CASE("hash filters", "[filters]") {
+  SECTION("crc32") {
+    constexpr size_t LEN = 256;
+    memory_buffer source;
+    memory_buffer sink;
+    source_filter<filters::crc32_filter> filter(&source);
+    hash::crc32_digester digester;
     
-    SECTION("md5") {
-      constexpr size_t LEN = 256;
-      memory_buffer source;
-      memory_buffer sink;
-      source_filter<filters::md5_filter> filter(&source);
-      hash::md5_digester digester;
-      
-      WRITE_RANDOM_DATA_AND_REWIND(source, test, LEN);
-      
-      digester.update(test, LEN);
-      hash::md5_t value = digester.get();
-      
-      passthrough_pipe pipe(&filter, &sink, 30);
-      pipe.process();
-      
-      REQUIRE(value == filter.get());
-    }
+    WRITE_RANDOM_DATA_AND_REWIND(source, test, LEN);
     
-    SECTION("sha1") {
-      constexpr size_t LEN = 256;
-      memory_buffer source;
-      memory_buffer sink;
-      source_filter<filters::sha1_filter> filter(&source);
-      hash::sha1_digester digester;
-      
-      WRITE_RANDOM_DATA_AND_REWIND(source, test, LEN);
-      
-      digester.update(test, LEN);
-      hash::sha1_t value = digester.get();
-      
-      passthrough_pipe pipe(&filter, &sink, 30);
-      pipe.process();
-      
-      REQUIRE(value == filter.get());
-    }
+    digester.update(test, LEN);
+    hash::crc32_t value = digester.get();
+    
+    passthrough_pipe pipe(&filter, &sink, 30);
+    pipe.process();
+    
+    REQUIRE(value == filter.get());
   }
   
-  SECTION("compression") {
-    SECTION("deflate/inflate source") {
-      
-      constexpr size_t LEN = 1 << 18;
-      
-      byte* testData = new byte[LEN];
-      for (size_t i = 0; i < LEN; ++i)
-        testData[i] = (i/8) % 256;
-      
-      memory_buffer source(testData, LEN);
-      delete [] testData;
-      
-      buffered_source_filter<compression::deflater_filter> deflated(&source, 1024);
-      
-      memory_buffer sink;
-
-      passthrough_pipe pipe(&deflated, &sink, 200);
-      pipe.process();
-
-      REQUIRE(deflated.zstream().total_out == sink.size());
-      
-      memory_buffer source2(sink.raw(), sink.size());
-      memory_buffer sink2;
-      
-      REQUIRE(source2.size() == sink.size());
-      
-      buffered_sink_filter<compression::inflater_filter> inflater(&sink2, 1024);
-      
-      passthrough_pipe pipe2(&source2, &inflater, 200);
-
-      pipe2.process();
-      
-      REQUIRE(sink2 == source);
-    }
+  SECTION("md5") {
+    constexpr size_t LEN = 256;
+    memory_buffer source;
+    memory_buffer sink;
+    source_filter<filters::md5_filter> filter(&source);
+    hash::md5_digester digester;
     
-    SECTION("chained deflate/inflate on source")
-    {
-      constexpr size_t LEN = 1 << 18;
-      
-      byte* testData = new byte[LEN];
-      for (size_t i = 0; i < LEN; ++i)
-        testData[i] = (i/8) % 256;
-      
-      memory_buffer source(testData, LEN);
-      delete [] testData;
-      
-      buffered_source_filter<compression::deflater_filter> deflater(&source, 1024);
-      buffered_source_filter<compression::inflater_filter> inflater(&deflater, 512);
-      
-      memory_buffer sink;
-      
-      passthrough_pipe pipe(&inflater, &sink, 1024);
-      pipe.process();
-      
-      REQUIRE(deflater.zstream().total_in == source.size());
-      REQUIRE(deflater.zstream().total_out == inflater.zstream().total_in);
-      REQUIRE(inflater.zstream().total_out == source.size());
-      
-      REQUIRE(source == sink);
-    }
+    WRITE_RANDOM_DATA_AND_REWIND(source, test, LEN);
     
-    SECTION("chained deflate/inflate on sink")
-    {
-      constexpr size_t LEN = 1 << 18;
-      
-      byte* testData = new byte[LEN];
-      for (size_t i = 0; i < LEN; ++i)
-        testData[i] = (i/8) % 256;
-      
-      memory_buffer source(testData, LEN);
-      delete [] testData;
-      
-      memory_buffer sink;
-      buffered_sink_filter<compression::inflater_filter> inflater(&sink, 512);
-      buffered_sink_filter<compression::deflater_filter> deflater(&inflater, 1024);
-      
-      passthrough_pipe pipe(&source, &deflater, 1024);
-      pipe.process();
-      
-      REQUIRE(deflater.zstream().total_in == source.size());
-      REQUIRE(deflater.zstream().total_out == inflater.zstream().total_in);
-      REQUIRE(inflater.zstream().total_out == source.size());
-      
-      REQUIRE(source == sink);
-    }
+    digester.update(test, LEN);
+    hash::md5_t value = digester.get();
+    
+    passthrough_pipe pipe(&filter, &sink, 30);
+    pipe.process();
+    
+    REQUIRE(value == filter.get());
+  }
+  
+  SECTION("sha1") {
+    constexpr size_t LEN = 256;
+    memory_buffer source;
+    memory_buffer sink;
+    source_filter<filters::sha1_filter> filter(&source);
+    hash::sha1_digester digester;
+    
+    WRITE_RANDOM_DATA_AND_REWIND(source, test, LEN);
+    
+    digester.update(test, LEN);
+    hash::sha1_t value = digester.get();
+    
+    passthrough_pipe pipe(&filter, &sink, 30);
+    pipe.process();
+    
+    REQUIRE(value == filter.get());
+  }
+}
+
+
+TEST_CASE("deflate", "[filters]") {
+  SECTION("deflate/inflate source") {
+    
+    constexpr size_t LEN = 1 << 18;
+    
+    byte* testData = new byte[LEN];
+    for (size_t i = 0; i < LEN; ++i)
+      testData[i] = (i/8) % 256;
+    
+    memory_buffer source(testData, LEN);
+    delete [] testData;
+    
+    buffered_source_filter<compression::deflater_filter> deflated(&source, 1024);
+    
+    memory_buffer sink;
+
+    passthrough_pipe pipe(&deflated, &sink, 200);
+    pipe.process();
+
+    REQUIRE(deflated.zstream().total_out == sink.size());
+    
+    memory_buffer source2(sink.raw(), sink.size());
+    memory_buffer sink2;
+    
+    REQUIRE(source2.size() == sink.size());
+    
+    buffered_sink_filter<compression::inflater_filter> inflater(&sink2, 1024);
+    
+    passthrough_pipe pipe2(&source2, &inflater, 200);
+
+    pipe2.process();
+    
+    REQUIRE(sink2 == source);
+  }
+  
+  SECTION("chained deflate/inflate on source")
+  {
+    constexpr size_t LEN = 1 << 18;
+    
+    byte* testData = new byte[LEN];
+    for (size_t i = 0; i < LEN; ++i)
+      testData[i] = (i/8) % 256;
+    
+    memory_buffer source(testData, LEN);
+    delete [] testData;
+    
+    buffered_source_filter<compression::deflater_filter> deflater(&source, 1024);
+    buffered_source_filter<compression::inflater_filter> inflater(&deflater, 512);
+    
+    memory_buffer sink;
+    
+    passthrough_pipe pipe(&inflater, &sink, 1024);
+    pipe.process();
+    
+    REQUIRE(deflater.zstream().total_in == source.size());
+    REQUIRE(deflater.zstream().total_out == inflater.zstream().total_in);
+    REQUIRE(inflater.zstream().total_out == source.size());
+    
+    REQUIRE(source == sink);
+  }
+  
+  SECTION("chained deflate/inflate on sink")
+  {
+    constexpr size_t LEN = 1 << 18;
+    
+    byte* testData = new byte[LEN];
+    for (size_t i = 0; i < LEN; ++i)
+      testData[i] = (i/8) % 256;
+    
+    memory_buffer source(testData, LEN);
+    delete [] testData;
+    
+    memory_buffer sink;
+    buffered_sink_filter<compression::inflater_filter> inflater(&sink, 512);
+    buffered_sink_filter<compression::deflater_filter> deflater(&inflater, 1024);
+    
+    passthrough_pipe pipe(&source, &deflater, 1024);
+    pipe.process();
+    
+    REQUIRE(deflater.zstream().total_in == source.size());
+    REQUIRE(deflater.zstream().total_out == inflater.zstream().total_in);
+    REQUIRE(inflater.zstream().total_out == source.size());
+    
+    REQUIRE(source == sink);
+  }
+  
+  SECTION("deflate on source / inflate on sink")
+  {
+    constexpr size_t LEN = 1 << 18;
+    
+    byte* testData = new byte[LEN];
+    for (size_t i = 0; i < LEN; ++i)
+      testData[i] = (i/8) % 256;
+    
+    memory_buffer source(testData, LEN);
+    delete [] testData;
+    memory_buffer sink;
+
+    buffered_source_filter<compression::deflater_filter> deflater(&source, 500);
+    buffered_sink_filter<compression::inflater_filter> inflater(&sink, 800);
+    
+    passthrough_pipe pipe(&deflater, &inflater, 1000);
+    pipe.process();
+    
+    REQUIRE(deflater.zstream().total_in == source.size());
+    REQUIRE(deflater.zstream().total_out == inflater.zstream().total_in);
+    REQUIRE(inflater.zstream().total_out == source.size());
+    
+    REQUIRE(source == sink);
   }
 }
 

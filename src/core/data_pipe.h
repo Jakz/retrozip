@@ -74,7 +74,7 @@ public:
         TRACE("pipe::stepOutput() state: NOTIFIED_SINK -> CLOSED");
       }
     }
-    else if (_buffer.empty() && _state == state::END_OF_INPUT)
+    else if (_buffer.empty() && (_state == state::END_OF_INPUT || _state == state::NOTIFIED_SINK))
     {
       size_t effective = _sink->write(nullptr, END_OF_STREAM);
       
@@ -101,7 +101,7 @@ public:
       stepOutput();
     }
     
-    TRACE("pipe::process() pipe cloed");
+    TRACE("pipe::process() pipe closed");
   }
 };
 

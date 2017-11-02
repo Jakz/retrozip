@@ -17,26 +17,20 @@
 
 int main(int argc, const char * argv[])
 {
-  constexpr size_t LEN = 1 << 18;
+  constexpr size_t LEN = 1024;
   
-  byte* testData = new byte[LEN];
+  memory_buffer source;
+  byte* data = new byte[LEN];
   for (size_t i = 0; i < LEN; ++i)
-    testData[i] = (i/8) % 256;
+    data[i] = 0x88;
   
-  memory_buffer source(testData, LEN);
-  delete [] testData;
+  source.write(data, LEN);
+  source.rewind();
   
-  buffered_source_filter<compression::deflater_filter> deflater(&source, 1024);
-  buffered_source_filter<compression::inflater_filter> inflater(&deflater, 512);
+  sink_factory factory = []() { return new memory_buffer(); };
+  multiple_fixed_size_sink_policy policy(factory, { 256LL, 256LL, 512LL });
+  multiple_data_sink sink(&policy);
   
-  memory_buffer sink;
-  
-  passthrough_pipe pipe(&inflater, &sink, 1024);
+  passthrough_pipe pipe(&source, &sink, 100);
   pipe.process();
-  
-  REQUIRE(deflater.zstream().total_in == source.size());
-  REQUIRE(deflater.zstream().total_out == inflater.zstream().total_in);
-  REQUIRE(inflater.zstream().total_out == source.size());
-  
-  REQUIRE(source == sink);
 }

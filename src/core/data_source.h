@@ -4,12 +4,69 @@
 
 constexpr size_t END_OF_STREAM = 0xFFFFFFFFFFFFFFFFLL;
 
-class data_source
+struct data_source
 {
-public:
+  virtual ~data_source() { }
   virtual size_t read(byte* dest, size_t amount) = 0;
-  template<typename T> size_t read(T& dest) const { return read(&dest, sizeof(T), 1); }
 };
+
+struct data_sink
+{
+  virtual ~data_sink() { }
+  virtual size_t write(const byte* src, size_t amount) = 0;
+  
+  template<typename T, typename std::enable_if<std::is_base_of<data_sink, T>::value, int>::type = 0>
+  T* as() { return static_cast<T*>(this); }
+};
+
+struct data_buffer
+{
+  virtual bool empty() const = 0;
+  virtual bool full() const = 0;
+  
+  virtual size_t size() const= 0;
+  virtual size_t available() const = 0;
+  virtual size_t used() const = 0;
+  
+  virtual void resize(size_t newSize) = 0;
+  
+  virtual void advance(size_t offset) = 0;
+  virtual void consume(size_t amount) = 0;
+  
+  virtual byte* head() = 0;
+  virtual byte* tail() = 0;
+};
+
+#pragma null sink
+
+class null_data_sink : public data_sink
+{
+private:
+  size_t _current;
+  size_t _maxAccepted;
+public:
+  null_data_sink() : _maxAccepted(END_OF_STREAM) { }
+  null_data_sink(size_t maxAccepted) : _current(0), _maxAccepted(maxAccepted) { }
+  
+  size_t write(const byte* src, size_t amount) override
+  {
+    if (_maxAccepted == END_OF_STREAM)
+      return amount;
+    else
+    {
+      size_t effective = std::min(_maxAccepted - _current, amount);
+      if (effective > 0)
+      {
+        _current += effective;
+        return effective;
+      }
+      else
+        return END_OF_STREAM; //TODO: should return 0 instead?
+    }
+  }
+};
+
+#pragma multiple source
 
 class multiple_data_source : public data_source
 {
@@ -58,76 +115,91 @@ public:
   }
 };
 
-class data_sink
+#pragma multiple sink
+
+using sink_factory = std::function<data_sink*()>;
+
+struct multiple_sink_policy
 {
-  
-public:
-  virtual size_t write(const byte* src, size_t amount) = 0;
-  //virtual void eos() = 0;
+  virtual size_t availableToWrite(data_sink* sink, size_t requested) = 0;
+  virtual data_sink* buildNext() = 0;
 };
 
-struct data_buffer
-{
-  virtual bool empty() const = 0;
-  virtual bool full() const = 0;
-  
-  virtual size_t size() const= 0;
-  virtual size_t available() const = 0;
-  virtual size_t used() const = 0;
-  
-  virtual void resize(size_t newSize) = 0;
-  
-  virtual void advance(size_t offset) = 0;
-  virtual void consume(size_t amount) = 0;
-  
-  virtual byte* head() = 0;
-  virtual byte* tail() = 0;
-};
-
-
-class log_data_source : public data_source
+class multiple_fixed_size_sink_policy : public multiple_sink_policy
 {
 private:
-  size_t _length;
-  size_t _position;
-  size_t _maxAvailable;
-  mutable bool _isEos;
+  std::vector<size_t> _sizes;
+  std::vector<data_sink*> _sinks;
+  
+  size_t _leftAmount;
+  sink_factory _factory;
   
 public:
-  log_data_source(size_t length, size_t maxAvailable) : _length(length), _position(0), _maxAvailable(maxAvailable), _isEos(false) { }
+  multiple_fixed_size_sink_policy(sink_factory factory, const std::initializer_list<size_t> sizes) : _sizes(sizes), _factory(factory), _leftAmount(0) { }
+  ~multiple_fixed_size_sink_policy() { std::for_each(_sinks.begin(), _sinks.end(), [] (data_sink* sink) { delete sink; }); }
   
-  size_t read(byte* dest, size_t amount) override
+  size_t availableToWrite(data_sink* sink, size_t requested) override
   {
-    if (_position == _length)
+    if (_leftAmount == 0)
       return END_OF_STREAM;
-    
-    size_t available = std::min(_maxAvailable, std::min(amount, _length - _position));
-    printf("data_source::read(%lu) (%lu)\n", amount, available);
-    _position += available;
-    return available;
+    else
+    {
+      size_t effective = std::min(requested, _leftAmount);
+      _leftAmount -= effective;
+      return effective;
+    }
   }
+  
+  data_sink* buildNext() override
+  {
+    if (_sinks.size() < _sizes.size())
+    {
+      data_sink* sink = _factory();
+      _sinks.push_back(sink);
+      _leftAmount = _sizes[_sinks.size()-1];
+      return sink;
+    }
+    
+    return nullptr;
+  }
+  
 };
 
-class log_data_sink : public data_sink
+class multiple_data_sink : public data_sink
 {
 private:
-  size_t _maxAvailable;
+  using iterator = std::vector<data_sink*>::const_iterator;
+
+  std::vector<data_sink*> _sinks;
+  data_sink* _sink;
+  
+  multiple_sink_policy* _policy;
 
 public:
-  log_data_sink(size_t maxAvailable) : _maxAvailable(maxAvailable) { }
+  multiple_data_sink(multiple_sink_policy* policy) : _policy(policy), _sink(nullptr) { }
   
   size_t write(const byte* src, size_t amount) override
   {
-    if (amount != END_OF_STREAM)
+    if (!_sink)
     {
-      size_t available = std::min(amount, _maxAvailable);
-      printf("data_sink::write(%lu) (%lu)\n", amount, available);
-      return available;
+      _sink = _policy->buildNext();
+     
+      if (!_sink)
+        return END_OF_STREAM;
+      else
+        _sinks.push_back(_sink);
+    }
+    
+    size_t available = _policy->availableToWrite(_sink, amount);
+    
+    if (available == END_OF_STREAM)
+    {
+      _sink = nullptr;
+      return 0;
     }
     else
-    {
-      printf("data_sink::eos()\n");
-      return END_OF_STREAM;
-    }
+      return _sink->write(src, available);
   }
+  
+  data_sink* operator[](size_t index) const { return _sinks[index]; }
 };
