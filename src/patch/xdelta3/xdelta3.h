@@ -875,15 +875,13 @@ struct _xd3_stream
 
   /* output state */
   uint8_t          *next_out;         /* next output byte */
-  usize_t           avail_out;        /* number of bytes available at
-					 next_out */
+  usize_t           avail_out;        /* number of bytes available at next_out */
   usize_t           space_out;        /* total out space */
   xoff_t            current_window;   /* number of windows encoded/decoded */
   xoff_t            total_out;        /* how many bytes out */
 
   /* to indicate an error, xd3 sets */
-  const char       *msg;              /* last error message, NULL if
-					 no error */
+  const char       *msg;              /* last error message, NULL if no error */
 
   /* source configuration */
   xd3_source       *src;              /* source array */

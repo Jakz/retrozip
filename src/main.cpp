@@ -39,6 +39,39 @@ const char* nameForXdeltaReturnValue(int value)
 
 using xd3_function = int (*) (xd3_stream*);
 
+class xdelta3_filter : public buffered_filter
+{
+private:
+  xd3_stream _stream;
+  xd3_config _config;
+  xd3_source _source;
+
+  xd3_function FUNCTION = xd3_encode_input;
+  
+  static constexpr usize_t DEFAULT_WIN_SIZE = 4096;
+public:
+  void init() override;
+  void process() override;
+  void finalize() override;
+};
+
+void xdelta3_filter::init()
+{
+
+}
+
+void xdelta3_filter::process()
+{
+  
+}
+
+void xdelta3_filter::finalize()
+{
+  
+}
+
+
+
 int main(int argc, const char * argv[])
 {
   constexpr size_t SIZE = 1 << 20;
