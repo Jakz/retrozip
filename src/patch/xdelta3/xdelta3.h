@@ -167,12 +167,11 @@ typedef ULONGLONG      uint64_t;
 #define _FILE_OFFSET_BITS 64
 #endif
 
-#define SIZEOF_SIZE_T (sizeof(size_t))
-static const size_t SIZEOF_UNSIGNED_LONG_LONG = sizeof(unsigned long long);
+#define SIZEOF_SIZE_T (8)
+#define SIZEOF_UNSIGNED_LONG_LONG (8)
 
-
-static_assert(SIZEOF_SIZE_T == sizeof(size_t), "SIZEOF_SIZE_T not correctly set");
-static_assert(SIZEOF_UNSIGNED_LONG_LONG == sizeof(unsigned long long), "SIZEOF_UNSIGNED_LONG_LONG not correctly set");
+/*static_assert(SIZEOF_SIZE_T == sizeof(size_t), "SIZEOF_SIZE_T not correctly set");
+static_assert(SIZEOF_UNSIGNED_LONG_LONG == sizeof(unsigned long long), "SIZEOF_UNSIGNED_LONG_LONG not correctly set");*/
 
 /* Set a xoff_t typedef and the "Q" printf insert. */
 #if defined(_WIN32)
@@ -796,11 +795,8 @@ struct _xd3_sec_cfg
 struct _xd3_config
 {
   usize_t             winsize;       /* The encoder window size. */
-  usize_t             sprevsz;       /* How far back small string
-					matching goes */
-  usize_t             iopt_size;     /* entries in the
-					instruction-optimizing
-					buffer */
+  usize_t             sprevsz;       /* How far back small string matching goes */
+  usize_t             iopt_size;     /* entries in the instruction-optimizing buffer */
 
   xd3_getblk_func   *getblk;        /* The three callbacks. */
   xd3_alloc_func    *alloc;

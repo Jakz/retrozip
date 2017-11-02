@@ -100,6 +100,17 @@
 		04D118511FA23DD300C59EC3 /* libcorecrypto.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libcorecrypto.tbd; path = usr/lib/system/libcorecrypto.tbd; sourceTree = SDKROOT; };
 		04D118531FA25B4000C59EC3 /* sha1.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = sha1.cpp; sourceTree = "<group>"; };
 		04DA99D51FA6338600B83C76 /* filters.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = filters.h; sourceTree = "<group>"; };
+		04FBBB0A1FABBE12001B8F5A /* xdelta3-blkcache.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "xdelta3-blkcache.h"; sourceTree = "<group>"; };
+		04FBBB0C1FABBE12001B8F5A /* xdelta3-decode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "xdelta3-decode.h"; sourceTree = "<group>"; };
+		04FBBB0D1FABBE12001B8F5A /* xdelta3-djw.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "xdelta3-djw.h"; sourceTree = "<group>"; };
+		04FBBB0E1FABBE12001B8F5A /* xdelta3-fgk.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "xdelta3-fgk.h"; sourceTree = "<group>"; };
+		04FBBB0F1FABBE12001B8F5A /* xdelta3-hash.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "xdelta3-hash.h"; sourceTree = "<group>"; };
+		04FBBB101FABBE12001B8F5A /* xdelta3-internal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "xdelta3-internal.h"; sourceTree = "<group>"; };
+		04FBBB111FABBE12001B8F5A /* xdelta3-list.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "xdelta3-list.h"; sourceTree = "<group>"; };
+		04FBBB121FABBE12001B8F5A /* xdelta3-lzma.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "xdelta3-lzma.h"; sourceTree = "<group>"; };
+		04FBBB141FABBE12001B8F5A /* xdelta3-merge.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "xdelta3-merge.h"; sourceTree = "<group>"; };
+		04FBBB151FABBE12001B8F5A /* xdelta3-second.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "xdelta3-second.h"; sourceTree = "<group>"; };
+		04FBBB161FABC012001B8F5A /* xdelta3-cfgs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "xdelta3-cfgs.h"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -157,8 +168,19 @@
 		0478F1671FAAE04A009183C7 /* xdelta3 */ = {
 			isa = PBXGroup;
 			children = (
-				0478F1681FAAE04A009183C7 /* xdelta3.c */,
+				04FBBB0A1FABBE12001B8F5A /* xdelta3-blkcache.h */,
+				04FBBB161FABC012001B8F5A /* xdelta3-cfgs.h */,
+				04FBBB0C1FABBE12001B8F5A /* xdelta3-decode.h */,
+				04FBBB0D1FABBE12001B8F5A /* xdelta3-djw.h */,
+				04FBBB0E1FABBE12001B8F5A /* xdelta3-fgk.h */,
+				04FBBB0F1FABBE12001B8F5A /* xdelta3-hash.h */,
+				04FBBB101FABBE12001B8F5A /* xdelta3-internal.h */,
+				04FBBB111FABBE12001B8F5A /* xdelta3-list.h */,
+				04FBBB121FABBE12001B8F5A /* xdelta3-lzma.h */,
+				04FBBB141FABBE12001B8F5A /* xdelta3-merge.h */,
+				04FBBB151FABBE12001B8F5A /* xdelta3-second.h */,
 				0478F1691FAAE04A009183C7 /* xdelta3.h */,
+				0478F1681FAAE04A009183C7 /* xdelta3.c */,
 			);
 			path = xdelta3;
 			sourceTree = "<group>";
@@ -399,7 +421,6 @@
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
@@ -449,7 +470,6 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;

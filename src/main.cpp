@@ -13,24 +13,84 @@
 #include "core/data_source.h"
 #include "zip/zip_mutator.h"
 
+#include "patch/xdelta3/xdelta3.h"
+
 #define REQUIRE assert
+
+const char* nameForXdeltaReturnValue(int value)
+{
+  switch (value)
+  {
+    case XD3_INPUT: return "XD3_INPUT";
+    case XD3_OUTPUT: return "XD3_OUTPUT";
+    case XD3_GETSRCBLK: return "XD3_GETSRCBLK";
+    case XD3_GOTHEADER: return "XD3_GOTHEADER";
+    case XD3_WINSTART: return "XD3_WINSTART";
+    case XD3_WINFINISH: return "XD3_WINFINISH";
+    case XD3_TOOFARBACK: return "XD3_TOOFARBACK";
+    case XD3_INTERNAL: return "XD3_INTERNAL";
+    case XD3_INVALID_INPUT: return "XD3_INVALID_INPUT";
+    case XD3_NOSECOND: return "XD3_NOSECOND";
+    case XD3_UNIMPLEMENTED: return "XD3_UNIMPLEMENTED";
+    case ENOSPC: return "ENOSPC";
+    default: return "UNKNOWN";
+  }
+}
+
+using xd3_function = int (*) (xd3_stream*);
 
 int main(int argc, const char * argv[])
 {
-  constexpr size_t LEN = 1024;
+  constexpr size_t SIZE = 1 << 20;
+  constexpr size_t INPUT_SIZE = 1 << 20;
   
-  memory_buffer source;
-  byte* data = new byte[LEN];
-  for (size_t i = 0; i < LEN; ++i)
-    data[i] = 0x88;
+  byte* source = new byte[SIZE];
+  for (size_t i = 0; i < SIZE; ++i) source[i] = rand()%256;
   
-  source.write(data, LEN);
-  source.rewind();
+  byte* input = new byte[SIZE];
+  for (size_t i = 0; i < 1024; ++i) input[rand()%(SIZE)] = rand()%256;
   
-  sink_factory factory = []() { return new memory_buffer(); };
-  multiple_fixed_size_sink_policy policy(factory, { 256LL, 256LL, 512LL });
-  multiple_data_sink sink(&policy);
+  byte* output = new byte[512];
+  memset(output, 0, 512);
+  usize_t outputSize;
   
-  passthrough_pipe pipe(&source, &sink, 100);
-  pipe.process();
+  xd3_stream stream;
+  xd3_config config;
+  xd3_source src;
+  
+  memset(&src, 0, sizeof(src));
+  memset(&stream, 0, sizeof(stream));
+  memset(&config, 0, sizeof(config));
+  
+  if (source != NULL)
+  {
+    //src.size = SIZE;
+    src.blksize = SIZE;
+    src.curblkno = 0;
+    src.onblk = SIZE;
+    src.curblk = source;
+    src.max_winsize = SIZE;
+    xd3_set_source(&stream, &src);
+  }
+  
+  //config.flags = flags;
+  config.winsize = INPUT_SIZE;
+  
+  //... set smatcher, appheader, encoding-table, compression-level, etc.
+  
+  /*
+   (xd3_stream    *stream,
+   const uint8_t *input,
+   usize_t         input_size,
+   uint8_t       *output,
+   usize_t        *output_size,
+   usize_t         output_size_max)
+   */
+  
+  xd3_config_stream(&stream, &config);
+  int r = xd3_encode_stream(&stream, input, INPUT_SIZE, output, &outputSize, 512);
+  printf("%s %s\n", nameForXdeltaReturnValue(r), stream.msg);
+  xd3_free_stream(&stream);
 }
+
+
