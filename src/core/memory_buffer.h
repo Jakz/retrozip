@@ -77,7 +77,6 @@ public:
   {
     if (capacity > _capacity)
     {
-      capacity = _capacity + _capacity/2;
       printf("%p: memory_buffer::ensure_capacity (old: %lu, new: %lu)\n", this, _capacity, capacity);
       //TODO: this may fail and must be managed
       byte* newData = new byte[capacity];
@@ -101,8 +100,13 @@ public:
   template<typename T> size_t write(const T& src) { return write(&src, sizeof(T), 1); }
   size_t write(const void* data, size_t size, size_t count)
   {
-    ensure_capacity(_position + size*count);
-    //ensure_capacity(_position + (size*count));
+    size_t requiredCapacity = _position + size*count;
+    
+    if (requiredCapacity > _capacity)
+    {
+      size_t delta = std::max(_capacity/2, requiredCapacity - _capacity);
+      ensure_capacity(_capacity + delta);
+    }
 
     std::copy((const byte*)data, (const byte*)data + (size*count), _data+_position);
     _position += count*size;

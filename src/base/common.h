@@ -235,9 +235,15 @@ struct bit_mask
   }
 };
 
+constexpr size_t KB8 = 8192;
 constexpr size_t KB16 = 16384;
+constexpr size_t KB32 = 16384 << 1;
 constexpr size_t KB64 = 16384 << 2;
+constexpr size_t KB128 = KB64 << 1;
+constexpr size_t KB256 = KB128 << 1;
 constexpr size_t MB1 = 1 << 20;
+constexpr size_t MB2 = MB1 << 1;
+constexpr size_t MB4 = MB1 << 2;
 constexpr size_t MB8 = MB1 << 3;
 constexpr size_t MB16 = MB8 << 1;
 constexpr size_t MB32 = MB8 << 2;

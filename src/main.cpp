@@ -100,9 +100,9 @@ void xdelta3_filter::init()
 
 void xdelta3_filter::process()
 {
-  if (_isEnded && !(_stream.flags & XD3_FLUSH))
+  if (_isEnded && _in.empty() && !(_stream.flags & XD3_FLUSH))
   {
-    //printf("%p: xdelta3::process flush request (setting XD3_FLUSH flag)\n", this);
+    printf("%p: xdelta3::process flush request (setting XD3_FLUSH flag)\n", this);
     xd3_set_flags(&_stream, _stream.flags | XD3_FLUSH);
   }
   
@@ -114,21 +114,13 @@ void xdelta3_filter::process()
     
     static size_t ___total_in = 0;
     ___total_in += _in.used();
-    printf("%p: xdelta3::process consumed %lu bytes (XD3_INPUT) (total: %lu)\n", this, _in.used(), ___total_in);
+    printf("%p: xdelta3::process consumed %lu bytes (XD3_INPUT) (total: %lu)\n", this, effective, ___total_in);
     
-    _in.consume(_in.used());
+    _in.consume(effective);
   }
 
-
-
-  /*_source.curblkno = _stream.total_in / _source.blksize;
-  _source.onblk = _stream.total_in % _source.blksize;
-  _source.curblk =  _in.head();*/
-  
   _state = xd3_encode_input(&_stream);
   
-  //printf(">> %s %s\n", nameForXdeltaReturnValue(r), _stream.msg);
-
   switch (_state)
   {
     case XD3_OUTPUT:
@@ -148,29 +140,27 @@ void xdelta3_filter::process()
     }
       
     case XD3_INPUT:
-    {
       break;
-    }
       
     case XD3_GOTHEADER:
     {
-      //printf("%p: xdelta3::process got %s\n", this, nameForXdeltaReturnValue(_state));
+      printf("%p: xdelta3::process got %s\n", this, nameForXdeltaReturnValue(_state));
       break;
     }
       
     case XD3_WINSTART:
     {
-      //printf("%p: xdelta3::process started window (avail_in: %lu) (XD3_WINSTART)\n", this, _stream.avail_in);
+      printf("%p: xdelta3::process started window (avail_in: %lu) (XD3_WINSTART)\n", this, _stream.avail_in);
       break;
     }
       
     case XD3_WINFINISH:
     {
-      //printf("%p: xdelta3::process finished window (XD3_WINFINISH)\n", this);
+      printf("%p: xdelta3::process finished window (XD3_WINFINISH)\n", this);
       
-      if (_isEnded && _stream.buf_avail == 0 && _stream.buf_leftover == 0)
+      if (_isEnded && _in.empty() && _stream.buf_avail == 0 && _stream.buf_leftover == 0)
       {
-        //printf("%p: xdelta::process input was finished so encoding is finished\n", this);
+        printf("%p: xdelta::process input was finished so encoding is finished\n", this);
         _finished = true;
       }
       
@@ -179,7 +169,7 @@ void xdelta3_filter::process()
       
     case XD3_GETSRCBLK:
     {
-      //printf("%p: xdelta3::process block request %lu (XD3_GETSRCBLK)\n", this, _xsource.getblkno);
+      printf("%p: xdelta3::process block request %lu (XD3_GETSRCBLK)\n", this, _xsource.getblkno);
       
       assert(_sourceBuffer.capacity() >= _sourceBlockSize);
       
@@ -197,10 +187,8 @@ void xdelta3_filter::process()
       break;
     }
       
-    case 0:
-    {
-      break;
-    }
+    default:
+      assert(false);
   }
 }
 
@@ -210,10 +198,78 @@ void xdelta3_filter::finalize()
   xd3_free_stream(&_stream);
 }
 
+#include <sstream>
+
+static std::stringstream ss;
+void test_xdelta3_encoding(size_t testLength, size_t modificationCount, size_t bufferSize, size_t windowSize, size_t blockSize)
+{
+  assert(windowSize >= KB16 && windowSize <= MB16);
+  
+  remove("source.bin");
+  remove("input.bin");
+  remove("generated.bin");
+  remove("patch.xdelta3");
+  
+  byte* bsource = new byte[testLength];
+  for (size_t i = 0; i < testLength; ++i) bsource[i] = rand()%256;
+  
+  byte* binput = new byte[testLength];
+  memcpy(binput, bsource, testLength);
+  for (size_t i = 0; i < modificationCount; ++i) binput[rand()%(testLength)] = rand()%256;
+  
+  memory_buffer source(bsource, testLength);
+  memory_buffer input(binput, testLength);
+  
+  memory_buffer sink(testLength >> 1);
+  
+  buffered_source_filter<xdelta3_filter> filter(&input, &source, bufferSize, windowSize, blockSize);
+
+  passthrough_pipe pipe(&filter, &sink, windowSize);
+  pipe.process();
+  
+  source.rewind();
+  input.rewind();
+
+  source.serialize(file_handle("source.bin", file_mode::WRITING));
+  input.serialize(file_handle("input.bin", file_mode::WRITING));
+  
+  sink.serialize(file_handle("patch.xdelta3", file_mode::WRITING));
+  
+  system("/usr/local/bin/xdelta3 -f -d -s source.bin patch.xdelta3 generated.bin");
+  
+  memory_buffer generated;
+  generated.unserialize(file_handle("generated.bin", file_mode::READING));
+  
+  bool success = generated == input;
+  
+  ss << "Test " << (success ? "success" : "failed") << " (input length: ";
+  ss << strings::humanReadableSize(testLength, false) << ", modifications: ";
+  ss << strings::humanReadableSize(modificationCount, false) << ", window size: ";
+  ss << strings::humanReadableSize(windowSize, false) << ", block size: ";
+  ss << strings::humanReadableSize(blockSize, false) << ")" << std::endl;
+}
 
 
 int main(int argc, const char * argv[])
 {
+  /*test_xdelta3_encoding(MB1, KB16, MB1, MB1, MB1);
+  test_xdelta3_encoding(MB1, KB16, MB1, MB1, KB16);
+
+  test_xdelta3_encoding(MB2, KB16, MB1, MB1, MB1);
+  test_xdelta3_encoding(MB1, KB16, MB1, MB2, MB2);*/
+  
+  size_t steps[] = { KB16, KB32, KB64, KB256, MB1, MB2, MB8, MB16 };
+  
+  //for (size_t i = 0; i < 8; ++i)
+  //  test_xdelta3_encoding(steps[i], 1024, steps[i], steps[i], steps[i]);
+    
+  test_xdelta3_encoding(KB32, 1024, KB16, KB16, KB16);
+
+  std::cout << ss.str();
+  
+  return 0;
+  
+  
   constexpr size_t SIZE = (MB1);
   
   byte* bsource = new byte[SIZE];
@@ -249,21 +305,8 @@ int main(int argc, const char * argv[])
     source.serialize(file_handle("source.bin", file_mode::WRITING));
     input.serialize(file_handle("input.bin", file_mode::WRITING));
 
-    sink.serialize(file_handle("patch-buggy.xdelta3", file_mode::WRITING));
-  }
-  
-  /*{
-    memory_buffer sink;
-    buffered_source_filter<xdelta3_filter> filter(&input, &source, 1 << 21);
-    
-    source.rewind();
-    input.rewind();
-    
-    passthrough_pipe pipe(&filter, &sink, 256);
-    pipe.process();
-
     sink.serialize(file_handle("patch.xdelta3", file_mode::WRITING));
-  }*/
+  }
   
   return 0;
 }
