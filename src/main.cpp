@@ -103,7 +103,7 @@ void xdelta3_filter::process()
   if (_isEnded && !(_stream.flags & XD3_FLUSH))
   {
     //printf("%p: xdelta3::process flush request (setting XD3_FLUSH flag)\n", this);
-    xd3_set_flags(&_stream, XD3_FLUSH);
+    xd3_set_flags(&_stream, _stream.flags | XD3_FLUSH);
   }
   
   usize_t effective = xd3_min(_stream.winsize, _in.used());
@@ -214,14 +214,14 @@ void xdelta3_filter::finalize()
 
 int main(int argc, const char * argv[])
 {
-  constexpr size_t SIZE = (MB128);
+  constexpr size_t SIZE = (MB1);
   
   byte* bsource = new byte[SIZE];
   for (size_t i = 0; i < SIZE; ++i) bsource[i] = rand()%256;
   
   byte* binput = new byte[SIZE];
   memcpy(binput, bsource, SIZE);
-  for (size_t i = 0; i < (SIZE >> 6); ++i) binput[rand()%(SIZE)] = rand()%256;
+  for (size_t i = 0; i < (SIZE >> 4); ++i) binput[rand()%(SIZE)] = rand()%256;
 
   memory_buffer source(bsource, SIZE);
   memory_buffer input(binput, SIZE);
@@ -233,9 +233,9 @@ int main(int argc, const char * argv[])
     sink.ensure_capacity(MB32);
     
     // size_t bufferSize, usize_t xdeltaWindowSize, usize_t sourceBlockSize
-    buffered_source_filter<xdelta3_filter> filter(&input, &source, MB8, MB8, MB64);
+    buffered_source_filter<xdelta3_filter> filter(&input, &source, MB1, MB1, MB1);
     
-    passthrough_pipe pipe(&filter, &sink, MB8);
+    passthrough_pipe pipe(&filter, &sink, MB1);
     pipe.process();
     
     source.rewind();
