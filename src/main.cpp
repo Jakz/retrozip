@@ -176,14 +176,14 @@ void xdelta3_filter::process()
       const xoff_t blockNumber = _xsource.getblkno;
       const off_t offset = _sourceBlockSize * blockNumber;
       const usize_t size = std::min(_sourceBlockSize, (usize_t)(_source->size() - offset));
-      
+ 
       _source->seek(offset);
       _source->read(_sourceBuffer.head(), size);
       
       _xsource.onblk = size;
       _xsource.curblkno = blockNumber;
       _xsource.curblk = _sourceBuffer.head();
-
+      
       break;
     }
       
