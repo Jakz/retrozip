@@ -49,6 +49,7 @@ constexpr bool IS_LITTLE_ENDIAN_ = true;
 
 #ifdef DEBUG
 extern void debugprintf(const char* str, ...);
+extern void debugnnprintf(const char* str, ...);
 #define LOG(...) debugprintf(__VA_ARGS__);
 #else
 #define LOG(...) do { } while (false);
@@ -236,6 +237,13 @@ struct bit_mask
 
 constexpr size_t KB16 = 16384;
 constexpr size_t KB64 = 16384 << 2;
+constexpr size_t MB1 = 1 << 20;
+constexpr size_t MB8 = MB1 << 3;
+constexpr size_t MB16 = MB8 << 1;
+constexpr size_t MB32 = MB8 << 2;
+constexpr size_t MB64 = MB8 << 3;
+constexpr size_t MB128 = MB8 << 4;
+constexpr size_t MB256 = MB8 << 5;
 
 enum class ZlibResult : int;
 

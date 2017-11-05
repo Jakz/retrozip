@@ -10,6 +10,13 @@ struct data_source
   virtual size_t read(byte* dest, size_t amount) = 0;
 };
 
+struct seekable_data_source : public data_source
+{
+  virtual void seek(off_t position) = 0;
+  virtual off_t tell() const = 0;
+  virtual size_t size() const = 0;
+};
+
 struct data_sink
 {
   virtual ~data_sink() { }
@@ -18,6 +25,8 @@ struct data_sink
   template<typename T, typename std::enable_if<std::is_base_of<data_sink, T>::value, int>::type = 0>
   T* as() { return static_cast<T*>(this); }
 };
+
+
 
 struct data_buffer
 {

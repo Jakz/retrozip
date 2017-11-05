@@ -13,7 +13,7 @@ enum class Seek
 template<typename T> class data_reference;
 template<typename T> class array_reference;
 
-class memory_buffer : public data_source, public data_sink
+class memory_buffer : public seekable_data_source, public data_sink
 {
 private:
   byte* _data;
@@ -53,14 +53,15 @@ public:
   bool operator==(const memory_buffer& other) const { return _size == other._size && std::equal(_data, _data+_size, other._data); }
   bool operator!=(const memory_buffer& other) { return !operator==(other); }
   
-  size_t size() const { return _size; }
+  size_t size() const override { return _size; }
   size_t capacity() const { return _capacity; }
   off_t position() const { return _position; }
-  const byte* raw() { return _data; }
+  const byte* raw() const { return _data; }
+  byte* raw() { return _data; }
   
-  off_t tell() const { return _position; }
+  off_t tell() const override { return _position; }
   
-  void seek(off_t offset) { seek(offset, Seek::SET); }
+  void seek(off_t offset) override { seek(offset, Seek::SET); }
   void seek(off_t offset, Seek origin)
   {
     switch (origin) {
@@ -76,6 +77,8 @@ public:
   {
     if (capacity > _capacity)
     {
+      capacity = _capacity + _capacity/2;
+      printf("%p: memory_buffer::ensure_capacity (old: %lu, new: %lu)\n", this, _capacity, capacity);
       //TODO: this may fail and must be managed
       byte* newData = new byte[capacity];
       memset(newData, 0, capacity);
@@ -98,7 +101,8 @@ public:
   template<typename T> size_t write(const T& src) { return write(&src, sizeof(T), 1); }
   size_t write(const void* data, size_t size, size_t count)
   {
-    ensure_capacity(_position + (size*count));
+    ensure_capacity(_position + size*count);
+    //ensure_capacity(_position + (size*count));
 
     std::copy((const byte*)data, (const byte*)data + (size*count), _data+_position);
     _position += count*size;

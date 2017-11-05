@@ -11,7 +11,6 @@ protected:
   memory_buffer _in;
   memory_buffer _out;
   
-  
   bool _started;
   bool _finished;
   bool _isEnded;
@@ -81,7 +80,7 @@ public:
     
     size_t effective = dumpOutput(dest, amount);
     
-    if (this->_isEnded)
+    if (this->_isEnded && this->_finished)
     {
       this->finalize();
     }

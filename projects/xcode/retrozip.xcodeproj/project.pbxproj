@@ -9,8 +9,8 @@
 /* Begin PBXBuildFile section */
 		043225171FA6C6DE0022205E /* zip_mutator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 043225161FA6C6DE0022205E /* zip_mutator.cpp */; };
 		043225181FA6C6DE0022205E /* zip_mutator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 043225161FA6C6DE0022205E /* zip_mutator.cpp */; };
-		0478F16A1FAAE04A009183C7 /* xdelta3.c in Sources */ = {isa = PBXBuildFile; fileRef = 0478F1681FAAE04A009183C7 /* xdelta3.c */; };
-		0478F16B1FAAE04A009183C7 /* xdelta3.c in Sources */ = {isa = PBXBuildFile; fileRef = 0478F1681FAAE04A009183C7 /* xdelta3.c */; };
+		0478F16A1FAAE04A009183C7 /* xdelta3.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0478F1681FAAE04A009183C7 /* xdelta3.cpp */; };
+		0478F16B1FAAE04A009183C7 /* xdelta3.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0478F1681FAAE04A009183C7 /* xdelta3.cpp */; };
 		04ADC13A1FA376F300FF8D25 /* archive.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 04ADC1391FA376F300FF8D25 /* archive.cpp */; };
 		04ADC13B1FA376F300FF8D25 /* archive.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 04ADC1391FA376F300FF8D25 /* archive.cpp */; };
 		04D118161FA219BB00C59EC3 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 04D118151FA219BB00C59EC3 /* main.cpp */; };
@@ -66,7 +66,7 @@
 		04360FA61FA2E3A20096F199 /* header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = header.h; sourceTree = "<group>"; };
 		04360FA71FA366040096F199 /* archive.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = archive.h; sourceTree = "<group>"; };
 		0451D6BE1FA3970900DFBA90 /* memory_buffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = memory_buffer.h; sourceTree = "<group>"; };
-		0478F1681FAAE04A009183C7 /* xdelta3.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = xdelta3.c; sourceTree = "<group>"; };
+		0478F1681FAAE04A009183C7 /* xdelta3.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = xdelta3.cpp; sourceTree = "<group>"; };
 		0478F1691FAAE04A009183C7 /* xdelta3.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = xdelta3.h; sourceTree = "<group>"; };
 		04ADC1391FA376F300FF8D25 /* archive.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = archive.cpp; sourceTree = "<group>"; };
 		04B2D9B21FA21987007F61BE /* retrozip */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = retrozip; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -100,6 +100,7 @@
 		04D118511FA23DD300C59EC3 /* libcorecrypto.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libcorecrypto.tbd; path = usr/lib/system/libcorecrypto.tbd; sourceTree = SDKROOT; };
 		04D118531FA25B4000C59EC3 /* sha1.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = sha1.cpp; sourceTree = "<group>"; };
 		04DA99D51FA6338600B83C76 /* filters.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = filters.h; sourceTree = "<group>"; };
+		04DD14541FAD799700660DAC /* xdelta3-cfgs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "xdelta3-cfgs.h"; sourceTree = "<group>"; };
 		04FBBB0A1FABBE12001B8F5A /* xdelta3-blkcache.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "xdelta3-blkcache.h"; sourceTree = "<group>"; };
 		04FBBB0C1FABBE12001B8F5A /* xdelta3-decode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "xdelta3-decode.h"; sourceTree = "<group>"; };
 		04FBBB0D1FABBE12001B8F5A /* xdelta3-djw.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "xdelta3-djw.h"; sourceTree = "<group>"; };
@@ -110,7 +111,6 @@
 		04FBBB121FABBE12001B8F5A /* xdelta3-lzma.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "xdelta3-lzma.h"; sourceTree = "<group>"; };
 		04FBBB141FABBE12001B8F5A /* xdelta3-merge.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "xdelta3-merge.h"; sourceTree = "<group>"; };
 		04FBBB151FABBE12001B8F5A /* xdelta3-second.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "xdelta3-second.h"; sourceTree = "<group>"; };
-		04FBBB161FABC012001B8F5A /* xdelta3-cfgs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "xdelta3-cfgs.h"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -169,7 +169,7 @@
 			isa = PBXGroup;
 			children = (
 				04FBBB0A1FABBE12001B8F5A /* xdelta3-blkcache.h */,
-				04FBBB161FABC012001B8F5A /* xdelta3-cfgs.h */,
+				04DD14541FAD799700660DAC /* xdelta3-cfgs.h */,
 				04FBBB0C1FABBE12001B8F5A /* xdelta3-decode.h */,
 				04FBBB0D1FABBE12001B8F5A /* xdelta3-djw.h */,
 				04FBBB0E1FABBE12001B8F5A /* xdelta3-fgk.h */,
@@ -180,7 +180,7 @@
 				04FBBB141FABBE12001B8F5A /* xdelta3-merge.h */,
 				04FBBB151FABBE12001B8F5A /* xdelta3-second.h */,
 				0478F1691FAAE04A009183C7 /* xdelta3.h */,
-				0478F1681FAAE04A009183C7 /* xdelta3.c */,
+				0478F1681FAAE04A009183C7 /* xdelta3.cpp */,
 			);
 			path = xdelta3;
 			sourceTree = "<group>";
@@ -367,7 +367,7 @@
 				04D118541FA25B4000C59EC3 /* sha1.cpp in Sources */,
 				043225171FA6C6DE0022205E /* zip_mutator.cpp in Sources */,
 				04D1183A1FA21AF600C59EC3 /* crc32.cpp in Sources */,
-				0478F16A1FAAE04A009183C7 /* xdelta3.c in Sources */,
+				0478F16A1FAAE04A009183C7 /* xdelta3.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -387,7 +387,7 @@
 				04D118551FA25B4000C59EC3 /* sha1.cpp in Sources */,
 				043225181FA6C6DE0022205E /* zip_mutator.cpp in Sources */,
 				04D118491FA21C5700C59EC3 /* tests.cpp in Sources */,
-				0478F16B1FAAE04A009183C7 /* xdelta3.c in Sources */,
+				0478F16B1FAAE04A009183C7 /* xdelta3.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -426,6 +426,7 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
+					"XD3_DEBUG=1",
 					"$(inherited)",
 				);
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;

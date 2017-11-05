@@ -173,7 +173,7 @@ typedef ULONGLONG      uint64_t;
 /*static_assert(SIZEOF_SIZE_T == sizeof(size_t), "SIZEOF_SIZE_T not correctly set");
 static_assert(SIZEOF_UNSIGNED_LONG_LONG == sizeof(unsigned long long), "SIZEOF_UNSIGNED_LONG_LONG not correctly set");*/
 
-/* Set a xoff_t typedef and the "Q" printf insert. */
+/* Set a xoff_t typedef and the " Q " printf insert. */
 #if defined(_WIN32)
 typedef uint64_t xoff_t;
 #define Q "I64"
@@ -207,7 +207,7 @@ typedef uint32_t xoff_t;
 /* Settings based on the size of usize_t (32 and 64 bit window size) */
 #if XD3_USE_LARGESIZET
 
-/* Set a usize_ttypedef and the "W" printf insert. */
+/* Set a usize_ttypedef and the " W " printf insert. */
 #if defined(_WIN32)
 typedef uint64_t usize_t;
 #define W "I64"
@@ -359,9 +359,7 @@ typedef struct _xd3_wininfo            xd3_wininfo;
  * which may be supplied with NULL values.  If config->getblk is
  * provided as NULL, the stream returns XD3_GETSRCBLK. */
 
-typedef void*  (xd3_alloc_func)    (void       *opaque,
-				    size_t      items,
-				    usize_t     size);
+typedef void* (xd3_alloc_func)(void *opaque, size_t items, usize_t size);
 typedef void   (xd3_free_func)     (void       *opaque,
 				    void       *address);
 
@@ -401,14 +399,16 @@ int xsnprintf_func (char *str, size_t n, const char *fmt, ...)
 
 /* XPR(NT "", ...) (used by main) prefixes an "xdelta3: " to the output. */
 void xprintf(const char *fmt, ...) PRINTF_ATTRIBUTE(1,2);
-#define XPR xprintf
+#define XPR debugnnprintf
 #define NT "xdelta3: "
 #define NTR ""
 /* DP(RINT ...) */
-#define DP   xprintf
+#define DP   debugnnprintf
 #define RINT ""
 
+
 #if XD3_DEBUG
+extern void debugnnprintf(const char* str, ...);
 #define XD3_ASSERT(x)				     \
   do {						     \
     if (! (x)) {				     \
@@ -428,8 +428,8 @@ void xprintf(const char *fmt, ...) PRINTF_ATTRIBUTE(1,2);
 
 /* These are the five ordinary status codes returned by the
  * xd3_encode_input() and xd3_decode_input() state machines. */
-typedef enum {
-
+enum XD3Status
+{
   /* An application must be prepared to handle these five return
    * values from either xd3_encode_input or xd3_decode_input, except
    * in the case of no-source compression, in which case XD3_GETSRCBLK
@@ -456,20 +456,15 @@ typedef enum {
   XD3_NOSECOND    = -17713, /* when secondary compression finds no
 			       improvement. */
   XD3_UNIMPLEMENTED = -17714  /* currently VCD_TARGET, VCD_CODETABLE */
-} xd3_rvalues;
+};
 
 /* special values in config->flags */
 typedef enum
 {
-  XD3_JUST_HDR       = (1 << 1),   /* used by VCDIFF tools, see
-				      xdelta3-main.h. */
-  XD3_SKIP_WINDOW    = (1 << 2),   /* used by VCDIFF tools, see
-				      xdelta3-main.h. */
-  XD3_SKIP_EMIT      = (1 << 3),   /* used by VCDIFF tools, see
-				      xdelta3-main.h. */
-  XD3_FLUSH          = (1 << 4),   /* flush the stream buffer to
-				      prepare for
-				      xd3_stream_close(). */
+  XD3_JUST_HDR       = (1 << 1),   /* used by VCDIFF tools, see xdelta3-main.h. */
+  XD3_SKIP_WINDOW    = (1 << 2),   /* used by VCDIFF tools, see xdelta3-main.h. */
+  XD3_SKIP_EMIT      = (1 << 3),   /* used by VCDIFF tools, see xdelta3-main.h. */
+  XD3_FLUSH          = (1 << 4),   /* flush the stream buffer to prepare for xd3_stream_close(). */
 
   XD3_SEC_DJW        = (1 << 5),   /* use DJW static huffman */
   XD3_SEC_FGK        = (1 << 6),   /* use FGK adaptive huffman */
@@ -477,27 +472,17 @@ typedef enum
 
   XD3_SEC_TYPE       = (XD3_SEC_DJW | XD3_SEC_FGK | XD3_SEC_LZMA),
 
-  XD3_SEC_NODATA     = (1 << 7),   /* disable secondary compression of
-				      the data section. */
-  XD3_SEC_NOINST     = (1 << 8),   /* disable secondary compression of
-				      the inst section. */
-  XD3_SEC_NOADDR     = (1 << 9),   /* disable secondary compression of
-				      the addr section. */
+  XD3_SEC_NODATA     = (1 << 7),   /* disable secondary compression of the data section. */
+  XD3_SEC_NOINST     = (1 << 8),   /* disable secondary compression of the inst section. */
+  XD3_SEC_NOADDR     = (1 << 9),   /* disable secondary compression of the addr section. */
 
   XD3_SEC_NOALL      = (XD3_SEC_NODATA | XD3_SEC_NOINST | XD3_SEC_NOADDR),
 
-  XD3_ADLER32        = (1 << 10),  /* enable checksum computation in
-				      the encoder. */
-  XD3_ADLER32_NOVER  = (1 << 11),  /* disable checksum verification in
-				      the decoder. */
+  XD3_ADLER32        = (1 << 10),  /* enable checksum computation in the encoder. */
+  XD3_ADLER32_NOVER  = (1 << 11),  /* disable checksum verification in the decoder. */
 
-  XD3_NOCOMPRESS     = (1 << 13),  /* disable ordinary data
-				    * compression feature, only search
-				    * the source, not the target. */
-  XD3_BEGREEDY       = (1 << 14),  /* disable the "1.5-pass
-				    * algorithm", instead use greedy
-				    * matching.  Greedy is off by
-				    * default. */
+  XD3_NOCOMPRESS     = (1 << 13),  /* disable ordinary data compression feature, only search the source, not the target. */
+  XD3_BEGREEDY       = (1 << 14),  /* disable the "1.5-pass algorithm", instead use greedy matching.  Greedy is off by default. */
   XD3_ADLER32_RECODE = (1 << 15),  /* used by "recode". */
 
   /* 4 bits to set the compression level the same as the command-line
@@ -827,39 +812,28 @@ struct _xd3_source
 {
   /* you set */
   usize_t             blksize;       /* block size */
-  const char         *name;          /* its name, for debug/print
-					purposes */
+  const char         *name;          /* its name, for debug/print purposes */
   void               *ioh;           /* opaque handle */
   xoff_t              max_winsize;   /* maximum visible buffer */
 
   /* getblk sets */
-  xoff_t              curblkno;      /* current block number: client
-					sets after getblk request */
-  usize_t             onblk;         /* number of bytes on current
-					block: client sets,  must be >= 0
-				        and <= blksize */
-  const uint8_t      *curblk;        /* current block array: client
-					sets after getblk request */
+  xoff_t              curblkno;      /* current block number: client sets after getblk request */
+  usize_t             onblk;         /* number of bytes on current block: client sets,  must be >= 0 and <= blksize */
+  const uint8_t      *curblk;        /* current block array: client sets after getblk request */
 
   /* xd3 sets */
   usize_t             srclen;        /* length of this source window */
-  xoff_t              srcbase;       /* offset of this source window
-					in the source itself */
+  xoff_t              srcbase;       /* offset of this source window in the source itself */
   usize_t             shiftby;       /* for power-of-two blocksizes */
   usize_t             maskby;        /* for power-of-two blocksizes */
   xoff_t              cpyoff_blocks; /* offset of dec_cpyoff in blocks */
-  usize_t             cpyoff_blkoff; /* offset of copy window in
-					blocks, remainder */
-  xoff_t              getblkno;      /* request block number: xd3 sets
-					current getblk request */
+  usize_t             cpyoff_blkoff; /* offset of copy window in blocks, remainder */
+  xoff_t              getblkno;      /* request block number: xd3 sets current getblk request */
 
   /* See xd3_getblk() */
-  xoff_t              max_blkno;  /* Maximum block, if eof is known,
-				   * otherwise, equals frontier_blkno
-				   * (initially 0). */
+  xoff_t              max_blkno;  /* Maximum block, if eof is known, otherwise, equals frontier_blkno (initially 0). */
   usize_t             onlastblk;  /* Number of bytes on max_blkno */
-  int                 eof_known;  /* Set to true when the first
-				   * partial block is read. */
+  int                 eof_known;  /* Set to true when the first partial block is read. */
 };
 
 /* The primary xd3_stream object, used for encoding and decoding.  You
@@ -868,13 +842,12 @@ struct _xd3_source
 struct _xd3_stream
 {
   /* input state */
-  const uint8_t    *next_in;          /* next input byte */
-  usize_t           avail_in;         /* number of bytes available at
-					 next_in */
+  const uint8_t     *next_in;         /* next input byte */
+  usize_t           avail_in;         /* number of bytes available at next_in */
   xoff_t            total_in;         /* how many bytes in */
 
   /* output state */
-  uint8_t          *next_out;         /* next output byte */
+  uint8_t           *next_out;        /* next output byte */
   usize_t           avail_out;        /* number of bytes available at next_out */
   usize_t           space_out;        /* total out space */
   xoff_t            current_window;   /* number of windows encoded/decoded */
@@ -888,10 +861,8 @@ struct _xd3_stream
 
   /* encoder memory configuration */
   usize_t           winsize;          /* suggested window size */
-  usize_t           sprevsz;          /* small string, previous window
-					 size (power of 2) */
-  usize_t           sprevmask;        /* small string, previous window
-					 size mask */
+  usize_t           sprevsz;          /* small string, previous window size (power of 2) */
+  usize_t           sprevmask;        /* small string, previous window size mask */
   usize_t           iopt_size;
   usize_t           iopt_unlimited;
 
@@ -899,8 +870,7 @@ struct _xd3_stream
   xd3_getblk_func  *getblk;           /* set nxtblk, nxtblkno to scanblkno */
   xd3_alloc_func   *alloc;            /* malloc function */
   xd3_free_func    *free;             /* free function */
-  void*             opaque;           /* private data object passed to
-					 alloc, free, and getblk */
+  void*             opaque;           /* private data object passed to alloc, free, and getblk */
   uint32_t          flags;            /* various options */
 
   /* secondary compressor configuration */
@@ -914,10 +884,8 @@ struct _xd3_stream
   xd3_hash_cfg       large_hash;       /* large hash config */
 
   usize_t           *small_table;      /* table of small checksums */
-  xd3_slist         *small_prev;       /* table of previous offsets,
-					  circular linked list */
-  int                small_reset;      /* true if small table should
-					  be reset */
+  xd3_slist         *small_prev;       /* table of previous offsets, circular linked list */
+  int                small_reset;      /* true if small table should be reset */
 
   xd3_hash_cfg       small_hash;       /* small hash config */
   xd3_addr_cache     acache;           /* the vcdiff address cache */
@@ -925,9 +893,7 @@ struct _xd3_stream
 
   usize_t            taroff;           /* base offset of the target input */
   usize_t            input_position;   /* current input position */
-  usize_t            min_match;        /* current minimum match
-					  length, avoids redundent
-					  matches */
+  usize_t            min_match;        /* current minimum match length, avoids redundent matches */
   usize_t            unencoded_offset; /* current input, first
 				       * unencoded offset. this value
 				       * is <= the first instruction's
@@ -967,8 +933,7 @@ struct _xd3_stream
 
   uint8_t          *buf_in;           /* for saving buffered input */
   usize_t           buf_avail;        /* amount of saved input */
-  const uint8_t    *buf_leftover;     /* leftover content of next_in
-					 (i.e., user's buffer) */
+  const uint8_t    *buf_leftover;     /* leftover content of next_in (i.e., user's buffer) */
   usize_t            buf_leftavail;    /* amount of leftover content */
 
   xd3_output       *enc_current;      /* current output buffer */
@@ -1117,7 +1082,7 @@ extern "C" {
  * input buffer, source buffer, output buffer, and flags.  The output
  * array must be large enough or else ENOSPC will be returned.  This
  * is the simplest in-memory encoding interface. */
-int     xd3_encode_memory (const uint8_t *input,
+int xd3_encode_memory (const uint8_t *input,
 			   usize_t        input_size,
 			   const uint8_t *source,
 			   usize_t        source_size,
@@ -1244,8 +1209,7 @@ int     xd3_encode_input  (xd3_stream    *stream);
 /* The xd3_config structure is used to initialize a stream - all data
  * is copied into stream so config may be a temporary variable.  See
  * the [documentation] or comments on the xd3_config structure. */
-int     xd3_config_stream (xd3_stream    *stream,
-			   xd3_config    *config);
+int xd3_config_stream(xd3_stream *stream, xd3_config *config);
 
 /* Since Xdelta3 doesn't open any files, xd3_close_stream is just an
  * error check that the stream is in a proper state to be closed: this
@@ -1317,9 +1281,7 @@ int     xd3_get_appheader (xd3_stream     *stream,
  */
 int xd3_encode_init_partial (xd3_stream *stream);
 void xd3_init_cache (xd3_addr_cache* acache);
-int xd3_found_match (xd3_stream *stream,
-		     usize_t pos, usize_t size,
-		     xoff_t addr, int is_source);
+int xd3_found_match (xd3_stream *stream, usize_t pos, usize_t size, xoff_t addr, int is_source);
 
 /* Gives an error string for xdelta3-speficic errors, returns NULL for
    system errors */
@@ -1327,9 +1289,7 @@ const char* xd3_strerror (int ret);
 
 /* For convenience, zero & initialize the xd3_config structure with
    specified flags. */
-static inline
-void    xd3_init_config (xd3_config *config,
-			 uint32_t    flags)
+static inline void xd3_init_config (xd3_config *config, uint32_t    flags)
 {
   memset (config, 0, sizeof (*config));
   config->flags = flags;
@@ -1467,6 +1427,11 @@ void xd3_blksize_add (xoff_t *blkno,
 #define IF_DEBUG2(x) x
 #else
 #define IF_DEBUG2(x)
+#endif
+#if XD3_DEBUG > 3
+#define IF_DEBUG3(x) x
+#else
+#define IF_DEBUG3(x)
 #endif
 
 #define SIZEOF_ARRAY(x) (sizeof(x) / sizeof(x[0]))

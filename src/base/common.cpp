@@ -2,13 +2,22 @@
 
 #include <zlib.h>
 
-static char buffer[512];
 void debugprintf(const char* str, ...)
 {
+  static char buffer[512];
   va_list args;
   va_start (args, str);
   vsnprintf (buffer, 512, str, args);
   printf("%s\n", buffer);
+}
+
+void debugnnprintf(const char* str, ...)
+{
+  static char buffer[512];
+  va_list args;
+  va_start (args, str);
+  vsnprintf (buffer, 512, str, args);
+  printf("%s", buffer);
 }
 
 
