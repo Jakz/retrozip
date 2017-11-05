@@ -113,13 +113,14 @@ void xdelta3_filter::process()
     xd3_avail_input(&_stream, _in.head(), effective);
     
     static size_t ___total_in = 0;
-    ___total_in += _in.used();
+    ___total_in += effective;
     printf("%p: xdelta3::process consumed %lu bytes (XD3_INPUT) (total: %lu)\n", this, effective, ___total_in);
     
     _in.consume(effective);
   }
 
   _state = xd3_encode_input(&_stream);
+  printf("%p: xdelta3::process %s\n", this, nameForXdeltaReturnValue(_state));
   
   switch (_state)
   {
@@ -172,7 +173,7 @@ void xdelta3_filter::process()
       printf("%p: xdelta3::process block request %lu (XD3_GETSRCBLK)\n", this, _xsource.getblkno);
       
       assert(_sourceBuffer.capacity() >= _sourceBlockSize);
-      
+
       const xoff_t blockNumber = _xsource.getblkno;
       const off_t offset = _sourceBlockSize * blockNumber;
       const usize_t size = std::min(_sourceBlockSize, (usize_t)(_source->size() - offset));
@@ -246,7 +247,27 @@ void test_xdelta3_encoding(size_t testLength, size_t modificationCount, size_t b
   ss << strings::humanReadableSize(testLength, false) << ", modifications: ";
   ss << strings::humanReadableSize(modificationCount, false) << ", window size: ";
   ss << strings::humanReadableSize(windowSize, false) << ", block size: ";
-  ss << strings::humanReadableSize(blockSize, false) << ")" << std::endl;
+  ss << strings::humanReadableSize(blockSize, false) << ")";
+  
+  if (success)
+    ss << std::endl;
+  else
+  {
+    size_t length = std::min(generated.size(), input.size());
+    size_t min = std::numeric_limits<size_t>::max();
+    size_t max = 0;
+    
+    for (size_t i = 0; i < length; ++i)
+    {
+      if (input.raw()[i] != generated.raw()[i])
+      {
+        min = std::min(min, i);
+        max = std::max(max, i);
+      }
+    }
+    
+    ss << " difference in range [" << min << ", " << max << "]" << std::endl;
+  }
 }
 
 
@@ -263,7 +284,7 @@ int main(int argc, const char * argv[])
   //for (size_t i = 0; i < 8; ++i)
   //  test_xdelta3_encoding(steps[i], 1024, steps[i], steps[i], steps[i]);
     
-  test_xdelta3_encoding(KB32, 1024, KB16, KB16, KB16);
+  test_xdelta3_encoding(KB32, 1024, KB32, KB16, KB32);
 
   std::cout << ss.str();
   

@@ -1874,8 +1874,10 @@ static int xd3_getblk (xd3_stream *stream, xoff_t blkno)
     {
       IF_DEBUG1 (DP(RINT "[getblk] eof block has %" W "u bytes; "
                     "source length known %" Q "u\n",
-                    xd3_bytes_on_srcblk (source, blkno),
-                    xd3_source_eof (source)));
+                    source->onblk,
+                    (source->max_blkno << source->shiftby) + source->onblk));
+                    /*xd3_bytes_on_srcblk (source, blkno), TODO: fixed, onlastblk is set after
+                    xd3_source_eof (source)));*/
       source->eof_known = 1;
     }
   }
