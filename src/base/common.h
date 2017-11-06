@@ -55,7 +55,7 @@ extern void debugnnprintf(const char* str, ...);
 #define LOG(...) do { } while (false);
 #endif
 
-//#define TRACE LOG
+#define TRACE LOG
 #define TRACE(...) do { } while (false);
 
 namespace hidden

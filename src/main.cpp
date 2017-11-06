@@ -39,6 +39,7 @@ const char* nameForXdeltaReturnValue(int value)
 
 using xd3_function = int (*) (xd3_stream*);
 
+template<xd3_function FUNCTION>
 class xdelta3_filter : public buffered_filter
 {
 private:
@@ -49,11 +50,11 @@ private:
   xd3_config _config;
   xd3_source _xsource;
   int _state;
-
-  xd3_function FUNCTION = xd3_encode_input;
   
   const usize_t _windowSize;
   const usize_t _sourceBlockSize;
+  
+  static int getBlockCallback(xd3_stream *stream, xd3_source *source, xoff_t blkno);
   
 public:
   xdelta3_filter(seekable_data_source* source, size_t bufferSize, usize_t xdeltaWindowSize, usize_t sourceBlockSize) :
@@ -65,7 +66,34 @@ public:
   void finalize() override;
 };
 
-void xdelta3_filter::init()
+template<xd3_function FUNCTION>
+int xdelta3_filter<FUNCTION>::getBlockCallback(xd3_stream *stream, xd3_source *source, xoff_t blkno)
+{
+  xdelta3_filter* filter = (xdelta3_filter*) source->ioh;
+  
+  printf("%p: xdelta3::getBlockCallback block request %lu\n", filter, filter->_xsource.getblkno);
+  
+  assert(filter->_sourceBuffer.capacity() >= filter->_sourceBlockSize);
+  
+  const xoff_t blockNumber = filter->_xsource.getblkno;
+  const off_t offset = filter->_sourceBlockSize * blockNumber;
+  const usize_t size = std::min(filter->_sourceBlockSize, (usize_t)(filter->_source->size() - offset));
+  
+  filter->_source->seek(offset);
+  filter->_source->read(filter->_sourceBuffer.head(), size);
+  
+  filter->_xsource.onblk = size;
+  filter->_xsource.curblkno = blockNumber;
+  filter->_xsource.curblk = filter->_sourceBuffer.head();
+  
+  return 0;
+}
+
+using xdelta3_encoder = xdelta3_filter<xd3_encode_input>;
+using xdelta3_decoder = xdelta3_filter<xd3_decode_input>;
+
+template<xd3_function FUNCTION>
+void xdelta3_filter<FUNCTION>::init()
 {
   memset(&_stream, 0, sizeof(_stream));
   memset(&_config, 0, sizeof(_config));
@@ -76,7 +104,7 @@ void xdelta3_filter::init()
   
   _config.winsize = _windowSize;
   _config.sprevsz = _windowSize >> 2;
-  _config.getblk = nullptr;
+  _config.getblk = getBlockCallback;
   
   _config.flags = XD3_SEC_DJW | XD3_COMPLEVEL_9;
   
@@ -92,13 +120,16 @@ void xdelta3_filter::init()
   _xsource.curblkno = 0;
   _xsource.curblk = nullptr;
   
+  _xsource.ioh = this;
+  
   r = xd3_set_source(&_stream, &_xsource);
   assert(r == 0);
   
   _state = XD3_INPUT;
 }
 
-void xdelta3_filter::process()
+template<xd3_function FUNCTION>
+void xdelta3_filter<FUNCTION>::process()
 {
   if (_isEnded && _in.empty() && !(_stream.flags & XD3_FLUSH))
   {
@@ -116,10 +147,13 @@ void xdelta3_filter::process()
     ___total_in += effective;
     printf("%p: xdelta3::process consumed %lu bytes (XD3_INPUT) (total: %lu)\n", this, effective, ___total_in);
     
-    _in.consume(effective);
   }
 
   _state = xd3_encode_input(&_stream);
+
+  if (_state == XD3_INPUT)
+    _in.consume(effective);
+
   printf("%p: xdelta3::process %s\n", this, nameForXdeltaReturnValue(_state));
   
   switch (_state)
@@ -193,7 +227,8 @@ void xdelta3_filter::process()
   }
 }
 
-void xdelta3_filter::finalize()
+template<xd3_function FUNCTION>
+void xdelta3_filter<FUNCTION>::finalize()
 {
   xd3_close_stream(&_stream);
   xd3_free_stream(&_stream);
@@ -223,7 +258,7 @@ void test_xdelta3_encoding(size_t testLength, size_t modificationCount, size_t b
   
   memory_buffer sink(testLength >> 1);
   
-  buffered_source_filter<xdelta3_filter> filter(&input, &source, bufferSize, windowSize, blockSize);
+  buffered_source_filter<xdelta3_encoder> filter(&input, &source, bufferSize, windowSize, blockSize);
 
   passthrough_pipe pipe(&filter, &sink, windowSize);
   pipe.process();
@@ -245,7 +280,7 @@ void test_xdelta3_encoding(size_t testLength, size_t modificationCount, size_t b
   
   ss << "Test " << (success ? "success" : "failed") << " (input length: ";
   ss << strings::humanReadableSize(testLength, false) << ", modifications: ";
-  ss << strings::humanReadableSize(modificationCount, false) << ", window size: ";
+  ss << modificationCount << ", window size: ";
   ss << strings::humanReadableSize(windowSize, false) << ", block size: ";
   ss << strings::humanReadableSize(blockSize, false) << ")";
   
@@ -279,12 +314,24 @@ int main(int argc, const char * argv[])
   test_xdelta3_encoding(MB2, KB16, MB1, MB1, MB1);
   test_xdelta3_encoding(MB1, KB16, MB1, MB2, MB2);*/
   
-  size_t steps[] = { KB16, KB32, KB64, KB256, MB1, MB2, MB8, MB16 };
+  size_t steps[] = { KB16, KB32, KB64, KB256, MB1, MB2 };
   
-  //for (size_t i = 0; i < 8; ++i)
-  //  test_xdelta3_encoding(steps[i], 1024, steps[i], steps[i], steps[i]);
-    
-  test_xdelta3_encoding(KB32, 1024, KB32, KB16, KB32);
+  // size_t testLength, size_t modificationCount, size_t bufferSize, size_t windowSize, size_t blockSize
+  
+  for (size_t i = 0; i < 6; ++i)
+  {
+    // tests with all values equal
+    test_xdelta3_encoding(steps[i], steps[i] >> 2, steps[i], steps[i], steps[i]);
+    // test with doubled source/input
+    test_xdelta3_encoding(steps[i] << 1, steps[i] >> 1, steps[i], steps[i], steps[i]);
+    // test with halved buffer size
+    test_xdelta3_encoding(steps[i], steps[i] >> 1, steps[i] >> 1, steps[i], steps[i]);
+    // test with doubled buffer size
+    test_xdelta3_encoding(steps[i], steps[i] >> 1, steps[i] << 1, steps[i], steps[i]);
+
+  }
+  
+  //test_xdelta3_encoding(KB64, 0, KB32, KB16, KB32);
 
   std::cout << ss.str();
   
@@ -310,7 +357,7 @@ int main(int argc, const char * argv[])
     sink.ensure_capacity(MB32);
     
     // size_t bufferSize, usize_t xdeltaWindowSize, usize_t sourceBlockSize
-    buffered_source_filter<xdelta3_filter> filter(&input, &source, MB1, MB1, MB1);
+    buffered_source_filter<xdelta3_encoder> filter(&input, &source, MB1, MB1, MB1);
     
     passthrough_pipe pipe(&filter, &sink, MB1);
     pipe.process();
