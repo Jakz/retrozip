@@ -142,8 +142,9 @@ public:
   
   void unserialize(const file_handle& file)
   {
-    reserve(file.length());
-    _size = _capacity;
+    size_t length = file.length();
+    reserve(length);
+    _size = length;
     rewind();
     file.read(_data, 1, _size);
   }
