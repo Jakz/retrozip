@@ -155,10 +155,18 @@ void xdelta3_filter<FUNCTION>::process()
       xd3_avail_input(&_stream, _in.head(), 0);
   }
 
-  _state = xd3_encode_input(&_stream);
+  _state = FUNCTION(&_stream);
 
   if (_state == XD3_INPUT)
+  {
     _in.consume(effective);
+    
+    if (_isEnded && _in.empty() && _stream.buf_avail == 0 && _stream.buf_leftover == 0)
+    {
+      printf("%p: xdelta::process input was finished so encoding is finished\n", this);
+      _finished = true;
+    }
+  }
 
   printf("%p: xdelta3::process %s\n", this, nameForXdeltaReturnValue(_state));
   
@@ -198,13 +206,6 @@ void xdelta3_filter<FUNCTION>::process()
     case XD3_WINFINISH:
     {
       printf("%p: xdelta3::process finished window (XD3_WINFINISH)\n", this);
-      
-      if (_isEnded && _in.empty() && _stream.buf_avail == 0 && _stream.buf_leftover == 0)
-      {
-        printf("%p: xdelta::process input was finished so encoding is finished\n", this);
-        _finished = true;
-      }
-      
       break;
     }
       
@@ -245,6 +246,8 @@ void xdelta3_filter<FUNCTION>::finalize()
 static std::stringstream ss;
 void test_xdelta3_encoding(size_t testLength, size_t modificationCount, size_t bufferSize, size_t windowSize, size_t blockSize)
 {
+  constexpr bool TEST_WITH_REAL_TOOL = false;
+  
   assert(windowSize >= KB16 && windowSize <= MB16);
   
   remove("source.bin");
@@ -263,24 +266,40 @@ void test_xdelta3_encoding(size_t testLength, size_t modificationCount, size_t b
   memory_buffer input(binput, testLength);
   
   memory_buffer sink(testLength >> 1);
+  memory_buffer generated(testLength);
   
-  buffered_source_filter<xdelta3_encoder> filter(&input, &source, bufferSize, windowSize, blockSize);
+  {
+    buffered_source_filter<xdelta3_encoder> filter(&input, &source, bufferSize, windowSize, blockSize);
 
-  passthrough_pipe pipe(&filter, &sink, windowSize);
-  pipe.process();
+    passthrough_pipe pipe(&filter, &sink, windowSize);
+    pipe.process();
+  }
   
-  source.rewind();
-  input.rewind();
+  if (TEST_WITH_REAL_TOOL)
+  {
+    source.rewind();
+    input.rewind();
+    
+    source.serialize(file_handle("source.bin", file_mode::WRITING));
+    input.serialize(file_handle("input.bin", file_mode::WRITING));
+    
+    sink.serialize(file_handle("patch.xdelta3", file_mode::WRITING));
+    
+    system("/usr/local/bin/xdelta3 -f -d -s source.bin patch.xdelta3 generated.bin");
+    
+    memory_buffer generated;
+    generated.unserialize(file_handle("generated.bin", file_mode::READING));
+  }
+  else
+  {
+    sink.rewind();
+    
+    buffered_source_filter<xdelta3_decoder> filter(&sink, &source, bufferSize, windowSize, blockSize);
+    passthrough_pipe pipe(&filter, &generated, windowSize);
+    pipe.process();
+  }
+  
 
-  source.serialize(file_handle("source.bin", file_mode::WRITING));
-  input.serialize(file_handle("input.bin", file_mode::WRITING));
-  
-  sink.serialize(file_handle("patch.xdelta3", file_mode::WRITING));
-  
-  system("/usr/local/bin/xdelta3 -f -d -s source.bin patch.xdelta3 generated.bin");
-  
-  memory_buffer generated;
-  generated.unserialize(file_handle("generated.bin", file_mode::READING));
   
   bool success = generated == input;
   
