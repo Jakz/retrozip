@@ -33,7 +33,7 @@ protected:
   
   void fetchInput()
   {
-    TRACE("%p: source_filter::fetchInput()", this);
+    TRACE_P("%p: source_filter::fetchInput()", this);
     
     if (!this->_in.full())
     {
@@ -49,7 +49,7 @@ protected:
   
   size_t dumpOutput(byte* dest, size_t length)
   {
-    TRACE("%p: source_filter::dumpOutput(%lu)", this, length);
+    TRACE_P("%p: source_filter::dumpOutput(%lu)", this, length);
     
     if (!this->_out.empty())
     {

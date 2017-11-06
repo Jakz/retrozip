@@ -34,7 +34,7 @@ public:
   
   void stepInput()
   {
-    TRACE("%p: pipe::stepInput", this);
+    TRACE_P("%p: pipe::stepInput", this);
     /* available data to read is minimum between free room in buffer and remaining data */
     //size_t available = std::min(_bufferSize - _bufferPosition, _source->length() - _done);
     size_t available = _buffer.available();
@@ -47,7 +47,7 @@ public:
       {
         assert(_state == state::OPENED);
         _state = state::END_OF_INPUT;
-        TRACE("pipe::stepInput() state: OPEN -> END_OF_INPUT");
+        TRACE("%p: pipe::stepInput() state: OPEN -> END_OF_INPUT", this);
 
       }
       else if (effective) //TODO: not necessary, used to skip tracing, just forward 0 in case
@@ -57,7 +57,7 @@ public:
   
   void stepOutput()
   {
-    TRACE("%p: pipe::stepOutput", this);
+    TRACE_P("%p: pipe::stepOutput", this);
     
     /* if there is data to process */
     if (!_buffer.empty())
@@ -71,7 +71,7 @@ public:
       if (effective == END_OF_STREAM && _state == state::NOTIFIED_SINK)
       {
         _state = state::CLOSED;
-        TRACE("pipe::stepOutput() state: NOTIFIED_SINK -> CLOSED");
+        TRACE("%p: pipe::stepOutput() state: NOTIFIED_SINK -> CLOSED", this);
       }
     }
     else if (_buffer.empty() && (_state == state::END_OF_INPUT || _state == state::NOTIFIED_SINK))
@@ -80,12 +80,12 @@ public:
       
       if (effective != END_OF_STREAM && _state == state::END_OF_INPUT)
       {
-        TRACE("pipe::stepOutput() state: END_OF_INPUT -> NOTIFIED_SINK");
+        TRACE("%p: pipe::stepOutput() state: END_OF_INPUT -> NOTIFIED_SINK", this);
         _state = state::NOTIFIED_SINK;
       }
       else if (effective == END_OF_STREAM && (_state == state::NOTIFIED_SINK || _state == state::END_OF_INPUT))
       {
-        TRACE("pipe::stepOutput() state: NOTIFIED_SINK -> CLOSED");
+        TRACE("%p: pipe::stepOutput() state: NOTIFIED_SINK -> CLOSED", this);
         _state = state::CLOSED;
       }
     }
@@ -101,7 +101,7 @@ public:
       stepOutput();
     }
     
-    TRACE("pipe::process() pipe closed");
+    TRACE("%p: pipe::process() pipe closed", this);
   }
 };
 

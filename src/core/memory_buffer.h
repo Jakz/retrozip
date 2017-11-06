@@ -77,7 +77,7 @@ public:
   {
     if (capacity > _capacity)
     {
-      printf("%p: memory_buffer::ensure_capacity (old: %lu, new: %lu)\n", this, _capacity, capacity);
+      TRACE_MB("%p: memory_buffer::ensure_capacity (old: %lu, new: %lu)", this, _capacity, capacity);
       //TODO: this may fail and must be managed
       byte* newData = new byte[capacity];
       memset(newData, 0, capacity);
@@ -161,12 +161,12 @@ public:
   {
     if (_size == _position)
     {
-      TRACE("%p: memory_buffer::read EOS", this);
+      TRACE_MB("%p: memory_buffer::read EOS", this);
       return END_OF_STREAM;
     }
     
     //TRACE("buffer read %lu (position: %lu/%lu)", amount, _size, _position);
-    TRACE("%p: memory_buffer::read %lu (size: %lu/%lu)", this, amount, _position, _capacity);
+    TRACE_MB("%p: memory_buffer::read %lu (size: %lu/%lu)", this, amount, _position, _capacity);
     return read(data, 1, amount);
   }
   
@@ -174,12 +174,12 @@ public:
   {
     if (amount != END_OF_STREAM)
     {
-      TRACE("%p: memory_buffer::write %lu (size: %lu/%lu)", this, amount, amount+_size, _capacity);
+      TRACE_MB("%p: memory_buffer::write %lu (size: %lu/%lu)", this, amount, amount+_size, _capacity);
       return write(data, 1, amount);
     }
     else
     {
-      TRACE("%p: memory_buffer::read write EOS -> EOS", this);
+      TRACE_MB("%p: memory_buffer::read write EOS -> EOS", this);
       return END_OF_STREAM;
     }
   }
@@ -198,7 +198,7 @@ public:
   void advance(size_t offset)
   {
     _size += offset;
-    TRACE("%p: memory_buffer::advance %lu (%lu/%lu)", this, offset, _size, _capacity);
+    TRACE_MB("%p: memory_buffer::advance %lu (%lu/%lu)", this, offset, _size, _capacity);
   }
   
   void consume(size_t amount)
@@ -206,7 +206,7 @@ public:
     if (_size != amount)
       memmove(_data, _data + amount, _size - amount);
     _size -= amount;
-    TRACE("%p: memory_buffer::consume %lu (%lu/%lu)", this, amount, _size, _capacity);
+    TRACE_MB("%p: memory_buffer::consume %lu (%lu/%lu)", this, amount, _size, _capacity);
   }
   
   byte* head() { return _data; }

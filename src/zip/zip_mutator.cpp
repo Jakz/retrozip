@@ -45,8 +45,6 @@ void zlib_filter<computer, finalizer, OPTIONS>::finalize()
 template<zlib_compute_function computer, zlib_end_function finalizer, typename OPTIONS>
 void zlib_filter<computer, finalizer, OPTIONS>::process()
 {
-  TRACE("%p: %s_filter::process()", this, std::is_same<OPTIONS, DeflateOptions>::value ? "deflater" : "inflater");
-
   _stream.avail_in = static_cast<uInt>(_in.used());
   _stream.next_in = _in.head();
   
@@ -65,8 +63,9 @@ void zlib_filter<computer, finalizer, OPTIONS>::process()
     _out.advance(produced);
   
   if (_result >= 0)
-    TRACE("%p: %s %lu bytes into %lu bytes (in: %lu out: %lu) (%s)\n",
+    TRACE("%p: %s_filter::process() %s %lu bytes into %lu bytes (in: %lu out: %lu) (%s)",
            this,
+           std::is_same<OPTIONS, DeflateOptions>::value ? "deflater" : "inflater",
            std::is_same<OPTIONS, DeflateOptions>::value ? "zipped" : "unzipped",
            consumed,
            produced,

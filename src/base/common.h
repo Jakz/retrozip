@@ -55,8 +55,24 @@ extern void debugnnprintf(const char* str, ...);
 #define LOG(...) do { } while (false);
 #endif
 
+#define TRACE_MEMORY_BUFFERS 0
+#define TRACE_PIPES 0
+
+
+#if defined(TRACE_MEMORY_BUFFERS) && TRACE_MEMORY_BUFFERS == 1
+#define TRACE_MB LOG
+#else
+#define TRACE_MB(...) do { } while (false);
+#endif
+
+#if defined(TRACE_PIPES) && TRACE_PIPES == 1
+#define TRACE_P LOG
+#else
+#define TRACE_P(...) do { } while (false);
+#endif
+
 #define TRACE LOG
-#define TRACE(...) do { } while (false);
+//#define TRACE(...) do { } while (false);
 
 namespace hidden
 {
