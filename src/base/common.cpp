@@ -37,6 +37,45 @@ bool strings::isPrefixOf(const std::string& string, const std::string& prefix)
   return std::mismatch(prefix.begin(), prefix.end(), string.begin()).first == prefix.end();
 }
 
+std::vector<byte> strings::toByteArray(const std::string& string)
+{
+  const size_t length = string.length();
+  
+  assert(length % 2 == 0);
+  
+  std::vector<byte> array = std::vector<byte>(length/2, 0);
+  
+  for (size_t i = 0; i < length; ++i)
+  {
+    u32 shift = i % 2 == 0 ? 4 : 0;
+    size_t position = i / 2;
+    
+    char c = string[i];
+    u8 v = 0;
+    
+    if (c >= '0' && c <= '9') v = c - '0';
+    else if (c >= 'a' && c <= 'f') v = c - 'a' + 0xa;
+    else if (c >= 'A' && c <= 'F') v = c - 'A' + 0xa;
+    else assert(false);
+      
+    array[position] |= v << shift;
+  }
+  
+  return array;
+}
+
+std::string strings::fromByteArray(const byte* data, size_t length)
+{
+  constexpr bool uppercase = false;
+  
+  char buf[length*2+1];
+  for (size_t i = 0; i < length; i++)
+    sprintf(buf+i*2, uppercase ? "%02X" : "%02x", data[i]);
+  
+  buf[length*2] = '\0';
+  return buf;
+}
+
 
 
 enum class ZlibResult : int

@@ -11,6 +11,8 @@
 		043225181FA6C6DE0022205E /* zip_mutator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 043225161FA6C6DE0022205E /* zip_mutator.cpp */; };
 		0478F16A1FAAE04A009183C7 /* xdelta3.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0478F1681FAAE04A009183C7 /* xdelta3.cpp */; };
 		0478F16B1FAAE04A009183C7 /* xdelta3.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0478F1681FAAE04A009183C7 /* xdelta3.cpp */; };
+		049CD8251FB1704C001E7DB8 /* aes.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 049CD8231FB1704C001E7DB8 /* aes.cpp */; };
+		049CD8261FB1704C001E7DB8 /* aes.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 049CD8231FB1704C001E7DB8 /* aes.cpp */; };
 		04ADC13A1FA376F300FF8D25 /* archive.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 04ADC1391FA376F300FF8D25 /* archive.cpp */; };
 		04ADC13B1FA376F300FF8D25 /* archive.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 04ADC1391FA376F300FF8D25 /* archive.cpp */; };
 		04D118161FA219BB00C59EC3 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 04D118151FA219BB00C59EC3 /* main.cpp */; };
@@ -68,6 +70,8 @@
 		0451D6BE1FA3970900DFBA90 /* memory_buffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = memory_buffer.h; sourceTree = "<group>"; };
 		0478F1681FAAE04A009183C7 /* xdelta3.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = xdelta3.cpp; sourceTree = "<group>"; };
 		0478F1691FAAE04A009183C7 /* xdelta3.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = xdelta3.h; sourceTree = "<group>"; };
+		049CD8231FB1704C001E7DB8 /* aes.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = aes.cpp; sourceTree = "<group>"; };
+		049CD8241FB1704C001E7DB8 /* crypto.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = crypto.h; sourceTree = "<group>"; };
 		04ADC1391FA376F300FF8D25 /* archive.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = archive.cpp; sourceTree = "<group>"; };
 		04B2D9B21FA21987007F61BE /* retrozip */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = retrozip; sourceTree = BUILT_PRODUCTS_DIR; };
 		04CAF3401FA4C87400259DCE /* data_source.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = data_source.h; sourceTree = "<group>"; };
@@ -185,6 +189,15 @@
 			path = xdelta3;
 			sourceTree = "<group>";
 		};
+		049CD8221FB1704C001E7DB8 /* crypto */ = {
+			isa = PBXGroup;
+			children = (
+				049CD8231FB1704C001E7DB8 /* aes.cpp */,
+				049CD8241FB1704C001E7DB8 /* crypto.h */,
+			);
+			path = crypto;
+			sourceTree = "<group>";
+		};
 		04B2D9A91FA21987007F61BE = {
 			isa = PBXGroup;
 			children = (
@@ -209,6 +222,7 @@
 				04D118171FA21A4900C59EC3 /* base */,
 				04360FA51FA2E3A20096F199 /* core */,
 				043225141FA6C5680022205E /* zip */,
+				049CD8221FB1704C001E7DB8 /* crypto */,
 				04D118361FA21AF600C59EC3 /* hash */,
 				0478F1661FAAE04A009183C7 /* patch */,
 				04D1181E1FA21A4900C59EC3 /* libs */,
@@ -362,6 +376,7 @@
 				04D1183B1FA21AF600C59EC3 /* md5.cpp in Sources */,
 				04D118161FA219BB00C59EC3 /* main.cpp in Sources */,
 				04D118311FA21A4900C59EC3 /* posix.cc in Sources */,
+				049CD8251FB1704C001E7DB8 /* aes.cpp in Sources */,
 				04D1182F1FA21A4900C59EC3 /* format.cc in Sources */,
 				04D1182E1FA21A4900C59EC3 /* path.cpp in Sources */,
 				04D118541FA25B4000C59EC3 /* sha1.cpp in Sources */,
@@ -382,6 +397,7 @@
 				04D118431FA21C5700C59EC3 /* md5.cpp in Sources */,
 				04D118451FA21C5700C59EC3 /* posix.cc in Sources */,
 				04D118461FA21C5700C59EC3 /* format.cc in Sources */,
+				049CD8261FB1704C001E7DB8 /* aes.cpp in Sources */,
 				04D118471FA21C5700C59EC3 /* path.cpp in Sources */,
 				04D118481FA21C5700C59EC3 /* crc32.cpp in Sources */,
 				04D118551FA25B4000C59EC3 /* sha1.cpp in Sources */,
@@ -426,7 +442,7 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
-					"XD3_DEBUG=2",
+					"XD3_DEBUG=0",
 					"$(inherited)",
 				);
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;

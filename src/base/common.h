@@ -52,30 +52,30 @@ extern void debugprintf(const char* str, ...);
 extern void debugnnprintf(const char* str, ...);
 #define LOG(...) debugprintf(__VA_ARGS__)
 #else
-#define LOG(...) do { } while (false);
+#define LOG(...) do { } while (false)
 #endif
 
 #define TRACE_MEMORY_BUFFERS 0
-#define TRACE_PIPES 1
-#define TRACE_ENABLED 1
+#define TRACE_PIPES 0
+#define TRACE_ENABLED 0
 
 
 #if defined(TRACE_MEMORY_BUFFERS) && TRACE_MEMORY_BUFFERS == 1
 #define TRACE_MB LOG
 #else
-#define TRACE_MB(...) do { } while (false);
+#define TRACE_MB(...) do { } while (false)
 #endif
 
 #if defined(TRACE_PIPES) && TRACE_PIPES == 1
 #define TRACE_P LOG
 #else
-#define TRACE_P(...) do { } while (false);
+#define TRACE_P(...) do { } while (false)
 #endif
 
 #if defined(TRACE_ENABLED) && TRACE_ENABLED == 1
 #define TRACE LOG
 #else
-#define TRACE(...) do { } while (false);
+#define TRACE(...) do { } while (false)
 #endif
 
 namespace hidden
@@ -160,6 +160,17 @@ using u16de = std::conditional<IS_LITTLE_ENDIAN_, u16be, u16le>::type;
 using u32se = std::conditional<IS_LITTLE_ENDIAN_, u32le, u32be>::type;
 using u32de = std::conditional<IS_LITTLE_ENDIAN_, u32be, u32le>::type;
 
+namespace strings
+{
+  std::string humanReadableSize(size_t bytes, bool si);
+  bool isPrefixOf(const std::string& string, const std::string& prefix);
+  
+  std::vector<byte> toByteArray(const std::string& string);
+  std::string fromByteArray(const byte* data, size_t length);
+  inline std::string fromByteArray(const std::vector<byte>& data) { return fromByteArray(data.data(), data.size()); }
+
+}
+
 template<typename T>
 struct optional
 {
@@ -197,6 +208,9 @@ public:
   u32 get() const { return _data & 0xFFFFFFFF; }
 };
 
+template <bool B, typename T, T trueval, T falseval>
+struct conditional_value : std::conditional<B, std::integral_constant<T, trueval>, std::integral_constant<T, falseval>>::type { };
+
 template<size_t LENGTH>
 struct wrapped_array
 {
@@ -206,6 +220,9 @@ private:
 public:
   wrapped_array() : _data({{0}}) { }
   wrapped_array(const std::array<byte, LENGTH>& data) : _data(data) { }
+  wrapped_array(const byte* data) {
+    std::copy(data, data + LENGTH, _data.begin());
+  }
   
   const byte* inner() const { return _data.data(); }
   byte* inner() { return _data.data(); }
@@ -215,15 +232,7 @@ public:
   
   operator std::string() const
   {
-    constexpr bool uppercase = false;
-    
-    char buf[LENGTH*2+1];
-    for (size_t i = 0; i < LENGTH; i++)
-      sprintf(buf+i*2, uppercase ? "%02X" : "%02x", _data[i]);
-    
-    buf[LENGTH*2] = '\0';
-    
-    return std::string(buf);
+    return strings::fromByteArray(_data.data(), LENGTH);
   }
   
   std::ostream& operator<<(std::ostream& o) const { o << operator std::string(); return o; }
@@ -276,10 +285,4 @@ enum class ZlibResult : int;
 namespace utils
 {
   int inflate(byte* src, size_t length, byte* dest, size_t destLength);
-}
-
-namespace strings
-{
-  std::string humanReadableSize(size_t bytes, bool si);
-  bool isPrefixOf(const std::string& string, const std::string& prefix);
 }

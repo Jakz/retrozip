@@ -7,6 +7,7 @@
 #include "core/file_data_source.h"
 #include "zip/zip_mutator.h"
 #include "hash/hash.h"
+#include "crypto/crypto.h"
 
 
 
@@ -22,11 +23,7 @@ namespace support {
 }
 
 
-TEST_CASE("catch library correctly setup", "[setup]") {
-  REQUIRE(true);
-}
-
-TEST_CASE("optional", "[optional values]") {
+TEST_CASE("optional", "[base]") {
   SECTION("u32") {
     constexpr u32 VALUE = 0x12345678;
     
@@ -41,7 +38,7 @@ TEST_CASE("optional", "[optional values]") {
   }
 }
 
-TEST_CASE("biendian integers", "[endianness]") {
+TEST_CASE("biendian integers", "[base]") {
   SECTION("u32 same endianness") {
     constexpr u32 VALUE = 0x12345678;
 
@@ -115,7 +112,18 @@ TEST_CASE("biendian integers", "[endianness]") {
     REQUIRE(p1[1] == p2[0]);
     REQUIRE(p1[0] == p2[1]);
   }
+}
 
+TEST_CASE("byte array / string conversions", "[base]")
+{
+  SECTION("test1") {
+    byte data[] = { 0xf3, 0x44, 0x81, 0xec, 0x3c, 0xc6, 0x27, 0xba, 0xcd, 0x5d, 0xc3, 0xfb, 0x08, 0xf2, 0x73, 0xe6 };
+    std::string converted = strings::fromByteArray(data, 16);
+    std::vector<byte> reconverted = strings::toByteArray(converted);
+    
+    REQUIRE(converted == "f34481ec3cc627bacd5dc3fb08f273e6");
+    REQUIRE(std::equal(reconverted.begin(), reconverted.end(), data));
+  }
 }
 
 #define WRITE_RANDOM_DATA_AND_REWIND(dest, name, length) byte name[(length)]; randomize(name, (length)); dest.write(name, 1, (length)); dest.rewind();
@@ -727,7 +735,7 @@ TEST_CASE("deflate", "[filters]") {
   }
 }
 
-#pragma mark hashes
+#pragma mark hashes/crypto
 TEST_CASE("crc32", "[checksums]") {
   SECTION("crc32-test1") {
     std::string testString = "The quick brown fox jumps over the lazy dog";
@@ -828,5 +836,21 @@ TEST_CASE("sha1", "[checksums]") {
     
     std::string sha1 = digester.get();
     REQUIRE(sha1 == "a851751e1e14c39a78f0a4b8debf69dba0b2ae0d");
+  }
+}
+
+TEST_CASE("aes", "[crypto]") {
+  SECTION("aes128") {
+    SECTION("test1") {
+      crypto::AES128 aes;
+      const std::vector<byte> key = strings::toByteArray("00000000000000000000000000000000");
+      const std::vector<byte> plain = strings::toByteArray("f34481ec3cc627bacd5dc3fb08f273e6");
+      std::vector<byte> cipher = std::vector<byte>(16, 0);
+      
+      aes.crypt(plain.data(), cipher.data(), key.data(), 16);
+      
+      //REQUIRE(strings::fromByteArray(cipher) == "0336763e966d92595a567cc9ce537f5e");
+      
+    }
   }
 }
