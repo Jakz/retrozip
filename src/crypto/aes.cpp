@@ -43,8 +43,8 @@ static const u8 rsbox[256] = {
 // x to th e power (i-1) being powers of x (x is denoted as {02}) in the field GF(2^8)
 static const u8 Rcon[11] = { 0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36 };
 
-template<AESKeyLength TYPE, AESMode MODE>
-void AES<TYPE, MODE>::keyExpansion()
+template<AESKeyLength TYPE>
+void AES<TYPE>::keyExpansion()
 {
   uint32_t i, k;
   uint8_t tempa[4]; // Used for the column/row operations
@@ -115,34 +115,34 @@ void AES<TYPE, MODE>::keyExpansion()
   }
 }
 
-template<AESKeyLength TYPE, AESMode MODE>
-void AES<TYPE, MODE>::addRoundKey(u8 round)
+template<AESKeyLength TYPE>
+void AES<TYPE>::addRoundKey(u8 round)
 {
   for (size_t i = 0; i < 4; ++i)
     for (size_t j = 0; j < 4; ++j)
       (*state)[i][j] ^= RoundKey[round * Nb * 4 + i * Nb + j];
 }
 
-template<AESKeyLength TYPE, AESMode MODE>
-void AES<TYPE, MODE>::subBytes()
+template<AESKeyLength TYPE>
+void AES<TYPE>::subBytes()
 {
   for (size_t i = 0; i < 4; ++i)
     for (size_t j = 0; j < 4; ++j)
       (*state)[j][i] = sbox[(*state)[j][i]];
 }
 
-template<AESKeyLength TYPE, AESMode MODE>
-void AES<TYPE, MODE>::invSubBytes()
+template<AESKeyLength TYPE>
+void AES<TYPE>::invSubBytes()
 {
   for (size_t i = 0; i < 4; ++i)
     for (size_t j = 0; j < 4; ++j)
       (*state)[j][i] = rsbox[(*state)[j][i]];
 }
 
-template<AESKeyLength TYPE, AESMode MODE>
-void AES<TYPE, MODE>::shiftRows()
+template<AESKeyLength TYPE>
+void AES<TYPE>::shiftRows()
 {
-  auto state = *this->state;
+  auto& state = *this->state;
   
   // Rotate first row 1 columns to left
   u8 temp = state[0][1];
@@ -168,10 +168,10 @@ void AES<TYPE, MODE>::shiftRows()
   state[1][3] = temp;
 }
 
-template<AESKeyLength TYPE, AESMode MODE>
-void AES<TYPE, MODE>::invShiftRows()
+template<AESKeyLength TYPE>
+void AES<TYPE>::invShiftRows()
 {
-  auto state = *this->state;
+  auto& state = *this->state;
   
   // Rotate first row 1 columns to right
   u8 temp     = state[3][1];
@@ -197,10 +197,10 @@ void AES<TYPE, MODE>::invShiftRows()
   state[3][3] = temp;
 }
 
-template<AESKeyLength TYPE, AESMode MODE>
-void AES<TYPE, MODE>::mixColumns()
+template<AESKeyLength TYPE>
+void AES<TYPE>::mixColumns()
 {
-  auto state = *this->state;
+  auto& state = *this->state;
   
   uint8_t Tmp,Tm,t;
   for (size_t i = 0; i < 4; ++i)
@@ -214,10 +214,10 @@ void AES<TYPE, MODE>::mixColumns()
   }
 }
 
-template<AESKeyLength TYPE, AESMode MODE>
-void AES<TYPE, MODE>::invMixColumns()
+template<AESKeyLength TYPE>
+void AES<TYPE>::invMixColumns()
 {
-  auto state = *this->state;
+  auto& state = *this->state;
   
   for (size_t i = 0; i < 4; ++i)
   {
@@ -233,8 +233,8 @@ void AES<TYPE, MODE>::invMixColumns()
   }
 }
 
-template<AESKeyLength TYPE, AESMode MODE>
-void AES<TYPE, MODE>::cipher()
+template<AESKeyLength TYPE>
+void AES<TYPE>::cipher()
 {
   u8 round = 0;
   
@@ -259,8 +259,8 @@ void AES<TYPE, MODE>::cipher()
   addRoundKey(Nr);
 }
 
-template<AESKeyLength TYPE, AESMode MODE>
-void AES<TYPE, MODE>::decipher()
+template<AESKeyLength TYPE>
+void AES<TYPE>::decipher()
 {
   u8 round=0;
   
@@ -284,6 +284,60 @@ void AES<TYPE, MODE>::decipher()
   invSubBytes();
   addRoundKey(0);
 }
+
+template<AESKeyLength TYPE>
+template<bool ENCRYPT>
+void AES<TYPE>::cbc(const byte* input, byte* output, const byte* key, size_t length, const byte* iv)
+{
+  
+  if (key)
+  {
+    this->key = key;
+    keyExpansion();
+  }
+  
+  if (iv)
+    this->iv = iv;
+  
+  for (size_t i = 0; i < length; i += BLOCKLEN)
+  {
+    if (ENCRYPT)
+    {
+      for (size_t k = 0; k < BLOCKLEN; ++k)
+        output[k] = input[k] ^ iv[k];
+    
+      this->state = (state_t*)output;
+      cipher();
+    }
+    else
+    {
+      std::copy(input, input + BLOCKLEN, output);
+      this->state = (state_t*)output;
+      decipher();
+      
+      for (size_t k = 0; k < BLOCKLEN; ++k)
+        output[k] = output[k] ^ iv[k];
+    }
+    
+    this->iv = output;
+        
+    input += BLOCKLEN;
+    output += BLOCKLEN;
+  }
+  
+  size_t leftover = length % BLOCKLEN;
+  if (leftover > 0)
+  {
+    memcpy(output, input, leftover);
+    state = (state_t*)output;
+    
+    if (ENCRYPT)
+      cipher();
+    else
+      decipher();
+  }
+}
+
 
 
 /* CBC
@@ -338,4 +392,6 @@ void AES_CBC_encrypt_buffer(uint8_t* output, uint8_t* input, uint32_t length, co
  
 
 
-template class crypto::AES<AESKeyLength::_128, AESMode::ECB>;
+template class crypto::AES<AESKeyLength::_128>;
+template class crypto::AES<AESKeyLength::_192>;
+template class crypto::AES<AESKeyLength::_256>;

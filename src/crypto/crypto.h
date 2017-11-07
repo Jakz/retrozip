@@ -12,17 +12,12 @@ namespace crypto
     _192 = 24,
     _256 = 32
   };
-  
-  enum class AESMode
-  {
-    CBC,
-    ECB
-  };
     
-  template<AESKeyLength TYPE, AESMode MODE>
+  template<AESKeyLength TYPE>
   class AES
   {
-  private:
+  public:
+    static constexpr size_t BLOCKLEN = 16;
     static constexpr size_t KEYLEN = static_cast<size_t>(TYPE);
     
     /* number of columns */
@@ -33,7 +28,7 @@ namespace crypto
     static constexpr size_t Nr = conditional_value<TYPE == AESKeyLength::_128, size_t, 10, conditional_value<TYPE == AESKeyLength::_192, size_t, 12, 14>::value>::value;
     static constexpr size_t keyExpSize = conditional_value<TYPE == AESKeyLength::_128, size_t, 176, conditional_value<TYPE == AESKeyLength::_192, size_t, 208, 240>::value>::value;
     
-    using iv_t = std::conditional<MODE == AESMode::CBC, wrapped_array<static_cast<size_t>(TYPE)>, void>;
+    using iv_t = wrapped_array<BLOCKLEN>;
     using key_t = wrapped_array<KEYLEN>;
     using state_t = std::array<std::array<u8, 4>, 4>;
 
@@ -80,7 +75,12 @@ namespace crypto
       keyExpansion();
     }
     
+    template<bool ENCRYPT> void cbc(const byte* input, byte* output, const byte* key, size_t length, const byte* iv);
+
+    
   public:
+    
+    size_t key_length() const { return KEYLEN; }
     
     void crypt(const byte* input, byte* output, const byte* key, size_t length)
     {
@@ -93,8 +93,19 @@ namespace crypto
       prepare(input, output, key, length);
       decipher();
     }
+    
+    void cryptBuffer(const byte* input, byte* output, const byte* key, size_t length, const byte* iv)
+    {
+      cbc<true>(input, output, key, length, iv);
+    }
+    
+    void decryptBuffer(const byte* input, byte* output, const byte* key, size_t length, const byte* iv)
+    {
+      cbc<false>(input, output, key, length, iv);
+    }
   };
   
-  using AES128 = AES<AESKeyLength::_128, AESMode::ECB>;
-  
+  using AES128 = AES<AESKeyLength::_128>;
+  using AES192 = AES<AESKeyLength::_192>;
+  using AES256 = AES<AESKeyLength::_256>;
 }
