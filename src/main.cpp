@@ -15,6 +15,8 @@
 
 #include "patch/xdelta3/xdelta3.h"
 
+
+
 #define REQUIRE assert
 
 const char* nameForXdeltaReturnValue(int value)
@@ -56,6 +58,8 @@ private:
   
   static int getBlockCallback(xd3_stream *stream, xd3_source *source, xoff_t blkno);
   
+  static constexpr bool isEncoder = FUNCTION == xd3_encode_input;
+
 public:
   xdelta3_filter(seekable_data_source* source, size_t bufferSize, usize_t xdeltaWindowSize, usize_t sourceBlockSize) :
     buffered_filter(bufferSize, bufferSize), _source(source),
@@ -64,6 +68,8 @@ public:
   void init() override;
   void process() override;
   void finalize() override;
+  
+  std::string name() override { return isEncoder ? "encoder" : "decoder"; }
 };
 
 template<xd3_function FUNCTION>
@@ -71,7 +77,7 @@ int xdelta3_filter<FUNCTION>::getBlockCallback(xd3_stream *stream, xd3_source *s
 {
   xdelta3_filter* filter = (xdelta3_filter*) source->ioh;
   
-  printf("%p: xdelta3::getBlockCallback block request %lu\n", filter, filter->_xsource.getblkno);
+  printf("%p: xdelta3_%s::getBlockCallback() XD3_GETSRCBLK block request %lu\n", filter, filter->isEncoder ? "encoder" : "decoder", filter->_xsource.getblkno);
   
   assert(filter->_sourceBuffer.capacity() >= filter->_sourceBlockSize);
   
@@ -106,7 +112,7 @@ void xdelta3_filter<FUNCTION>::init()
   _config.sprevsz = _windowSize >> 2;
   _config.getblk = getBlockCallback;
   
-  _config.flags = XD3_SEC_DJW | XD3_COMPLEVEL_9;
+  //_config.flags = XD3_SEC_DJW | XD3_COMPLEVEL_9;
   
   int r = xd3_config_stream(&_stream, &_config);
   assert(r == 0);
@@ -127,54 +133,79 @@ void xdelta3_filter<FUNCTION>::init()
   r = xd3_set_source(&_stream, &_xsource);
   assert(r == 0);
   
+  /* this is required because block size must be a power of two and xd3_set_source
+     adjusts it in case without signalling any error */
+  _sourceBlockSize = _xsource.blksize;
+  
   _state = XD3_INPUT;
 }
 
 template<xd3_function FUNCTION>
 void xdelta3_filter<FUNCTION>::process()
 {
-  if (_isEnded && _in.empty() && !(_stream.flags & XD3_FLUSH))
+#if defined(DEBUG)
+  const std::string sname = name();
+  const char* name = sname.c_str();
+#endif
+  
+  if (!isEncoder)
+    printf("Decoding\n");
+  
+  if (_isEnded && _in.empty() && (_stream.avail_in || _stream.buf_avail || _stream.buf_leftavail) && !(_stream.flags & XD3_FLUSH))
   {
-    printf("%p: xdelta3::process flush request (setting XD3_FLUSH flag)\n", this);
+    printf("%p: xdelta3_%s::process() flush request (setting XD3_FLUSH flag)\n", this, name);
     xd3_set_flags(&_stream, _stream.flags | XD3_FLUSH);
   }
   
   usize_t effective = xd3_min(_stream.winsize, _in.used());
   
-  if (_state == XD3_INPUT)
+  if (_state == XD3_INPUT || !isEncoder)
   {
     if (effective > 0)
     {
       xd3_avail_input(&_stream, _in.head(), effective);
-    
-      static size_t ___total_in = 0;
-      ___total_in += effective;
-      printf("%p: xdelta3::process consumed %lu bytes (XD3_INPUT) (total: %lu)\n", this, effective, ___total_in);
     }
     else
       xd3_avail_input(&_stream, _in.head(), 0);
   }
+  
+  /*if (!isEncoder)
+  {
+    for (size_t kk = 0; kk < _in.used() + _stream.total_in; ++kk)
+      printf("%02lu ", kk);
+    printf("\n");
+    for (size_t kk = 0; kk < _in.used() + _stream.total_in; ++kk)
+      if (kk < _stream.total_in) printf("   ");
+      else printf("%02X ", _in.raw()[kk - _stream.total_in]);
+
+    printf("\n");
+  }*/
 
   _state = FUNCTION(&_stream);
+  
+  if (!isEncoder)
+    effective = effective - _stream.avail_in;
 
-  if (_state == XD3_INPUT)
+  if (_state == XD3_INPUT || !isEncoder)
   {
+    printf("%p: xdelta3_%s::process() XD3_INPUT consumed %lu/%lu bytes (avail_in: %lu total_in: %lu)\n", this, name, effective, _in.used(), _stream.avail_in, _stream.total_in);
+
     _in.consume(effective);
+    
     
     if (_isEnded && _in.empty() && _stream.buf_avail == 0 && _stream.buf_leftover == 0)
     {
-      printf("%p: xdelta::process input was finished so encoding is finished\n", this);
+      printf("%p: xdelta3_%s::process() input was finished so encoding is finished\n", this, name);
       _finished = true;
     }
   }
-
-  printf("%p: xdelta3::process %s\n", this, nameForXdeltaReturnValue(_state));
   
   switch (_state)
   {
     case XD3_OUTPUT:
+    case XD3_GOTHEADER:
     {
-      printf("%p: xdelta3::process produced bytes (avail_out: %lu, total_out: %lu) (XD3_OUTPUT)\n", this, _stream.avail_out, _stream.total_out);
+      printf("%p: xdelta3_%s::process() %s produced bytes (avail_out: %lu, total_out: %lu)\n", this, name, nameForXdeltaReturnValue(_state), _stream.avail_out, _stream.total_out);
       
       size_t produced = _stream.avail_out;
       
@@ -189,29 +220,30 @@ void xdelta3_filter<FUNCTION>::process()
     }
       
     case XD3_INPUT:
+      printf("%p: xdelta3_%s::process() XD3_INPUT awaiting more input (total_out: %lu)\n", this, name, _stream.total_out);
       break;
       
-    case XD3_GOTHEADER:
+    /*case XD3_GOTHEADER:
     {
-      printf("%p: xdelta3::process got %s\n", this, nameForXdeltaReturnValue(_state));
+      printf("%p: xdelta3_%s::process() XD3_GOTHEADER\n", this, name);
       break;
-    }
+    }*/
       
     case XD3_WINSTART:
     {
-      printf("%p: xdelta3::process started window (avail_in: %lu) (XD3_WINSTART)\n", this, _stream.avail_in);
+      printf("%p: xdelta3_%s::process() XD3_WINSTART started window (avail_in: %lu total_in: %lu)\n", this, name, _stream.avail_in, _stream.total_in);
       break;
     }
       
     case XD3_WINFINISH:
     {
-      printf("%p: xdelta3::process finished window (XD3_WINFINISH)\n", this);
+      printf("%p: xdelta3_%s::process() XD3_WINFINISH finished window\n", this, name);
       break;
     }
       
     case XD3_GETSRCBLK:
     {
-      printf("%p: xdelta3::process block request %lu (XD3_GETSRCBLK)\n", this, _xsource.getblkno);
+      printf("%p: xdelta3_%s::process() XD3_GETSRCBLK block request %lu\n", this, name, _xsource.getblkno);
       
       assert(_sourceBuffer.capacity() >= _sourceBlockSize);
 
@@ -229,7 +261,15 @@ void xdelta3_filter<FUNCTION>::process()
       break;
     }
       
+    case XD3_INVALID_INPUT:
+    {
+      printf("%p: xdelta3_%s::process() invalid input: %s\n", this, name, _stream.msg);
+      assert(false);
+      break;
+    }
+      
     default:
+      printf("%p: xdelta3_%s::process() %s\n", this, name, nameForXdeltaReturnValue(_state));
       assert(false);
   }
 }
@@ -244,16 +284,30 @@ void xdelta3_filter<FUNCTION>::finalize()
 #include <sstream>
 
 static std::stringstream ss;
+static std::stringstream sc;
 void test_xdelta3_encoding(size_t testLength, size_t modificationCount, size_t bufferSize, size_t windowSize, size_t blockSize)
 {
   constexpr bool TEST_WITH_REAL_TOOL = false;
+  constexpr bool USE_DEFLATER = true;
   
   assert(windowSize >= KB16 && windowSize <= MB16);
   
-  remove("source.bin");
-  remove("input.bin");
-  remove("generated.bin");
-  remove("patch.xdelta3");
+  if (TEST_WITH_REAL_TOOL)
+  {
+    /*remove("source.bin");
+    remove("input.bin");
+    remove("generated.bin");
+    remove("patch.xdelta3");*/
+  }
+  
+  sc.str("");
+  sc << " (source: " << strings::humanReadableSize(testLength, false) << ", mods: ";
+  sc << modificationCount << ", winsize: ";
+  sc << strings::humanReadableSize(windowSize, false) << ", blksize: ";
+  sc << strings::humanReadableSize(blockSize, false) << ", bufsize: " ;
+  sc << strings::humanReadableSize(bufferSize, false) << ")";
+  
+  std::cout << ">>>>>>>> TEST" << std::endl << sc.str() << std::endl << std::endl;
   
   byte* bsource = new byte[testLength];
   for (size_t i = 0; i < testLength; ++i) bsource[i] = rand()%256;
@@ -269,11 +323,14 @@ void test_xdelta3_encoding(size_t testLength, size_t modificationCount, size_t b
   memory_buffer generated(testLength);
   
   {
-    buffered_source_filter<xdelta3_encoder> filter(&input, &source, bufferSize, windowSize, blockSize);
+    buffered_source_filter<xdelta3_encoder> encoder(&input, &source, bufferSize, windowSize, blockSize);
+    buffered_source_filter<compression::deflater_filter> deflater(&encoder, bufferSize);
 
-    passthrough_pipe pipe(&filter, &sink, windowSize);
+    passthrough_pipe pipe(USE_DEFLATER ? &deflater : (data_source*)&encoder, &sink, windowSize);
     pipe.process();
   }
+  
+  std::cout << std::endl << std::endl << ">>>>>>>> DECODING" << std::endl;
   
   if (TEST_WITH_REAL_TOOL)
   {
@@ -285,17 +342,16 @@ void test_xdelta3_encoding(size_t testLength, size_t modificationCount, size_t b
     
     sink.serialize(file_handle("patch.xdelta3", file_mode::WRITING));
     
-    system("/usr/local/bin/xdelta3 -f -d -s source.bin patch.xdelta3 generated.bin");
-    
-    memory_buffer generated;
+    assert(system("/usr/local/bin/xdelta3 -f -d -s source.bin patch.xdelta3 generated.bin") == 0);
     generated.unserialize(file_handle("generated.bin", file_mode::READING));
   }
   else
   {
     sink.rewind();
     
-    buffered_source_filter<xdelta3_decoder> filter(&sink, &source, bufferSize, windowSize, blockSize);
-    passthrough_pipe pipe(&filter, &generated, windowSize);
+    buffered_source_filter<compression::inflater_filter> inflater(&sink, bufferSize);
+    buffered_source_filter<xdelta3_decoder> decoder(USE_DEFLATER ? (data_source*)&inflater : &sink, &source, bufferSize, windowSize, blockSize);
+    passthrough_pipe pipe(&decoder, &generated, windowSize);
     pipe.process();
   }
   
@@ -303,12 +359,8 @@ void test_xdelta3_encoding(size_t testLength, size_t modificationCount, size_t b
   
   bool success = generated == input;
   
-  ss << "Test " << (success ? "success" : "failed") << " (source: ";
-  ss << strings::humanReadableSize(testLength, false) << ", mods: ";
-  ss << modificationCount << ", winsize: ";
-  ss << strings::humanReadableSize(windowSize, false) << ", blksize: ";
-  ss << strings::humanReadableSize(blockSize, false) << ", bufsize: " ;
-  ss << strings::humanReadableSize(bufferSize, false) << ")";
+  ss << "Test " << (success ? "success" : "failed") << " ";
+  ss << sc.str();
 
   if (success)
     ss << std::endl;
@@ -344,6 +396,14 @@ int main(int argc, const char * argv[])
   size_t dsteps[] = { 16000, 32000, 64000, 256000, 1000000, 2000000 };
   const size_t count = 4;
   
+  /*{
+    int i = 0;
+    size_t modCount = 0;//steps[i] >> 2;
+
+   test_xdelta3_encoding(steps[i] << 1, modCount << 1, steps[i], steps[i], steps[i]);
+  }*/
+
+  
   // size_t testLength, size_t modificationCount, size_t bufferSize, size_t windowSize, size_t blockSize
   
   for (size_t i = 0; i < count; ++i)
@@ -371,7 +431,7 @@ int main(int argc, const char * argv[])
     // uneven buffer
     test_xdelta3_encoding(steps[i], modCount, dsteps[i], steps[i], steps[i]);
     // uneven block size
-    test_xdelta3_encoding(steps[i], modCount, steps[i], steps[i], dsteps[i]);
+    test_xdelta3_encoding(steps[i], modCount, steps[i], steps[i], steps[i]);
 
 
   }

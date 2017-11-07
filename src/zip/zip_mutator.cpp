@@ -65,7 +65,7 @@ void zlib_filter<computer, finalizer, OPTIONS>::process()
   if (_result >= 0)
     TRACE("%p: %s_filter::process() %s %lu bytes into %lu bytes (in: %lu out: %lu) (%s)",
            this,
-           std::is_same<OPTIONS, DeflateOptions>::value ? "deflater" : "inflater",
+           name().c_str(),
            std::is_same<OPTIONS, DeflateOptions>::value ? "zipped" : "unzipped",
            consumed,
            produced,

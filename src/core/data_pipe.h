@@ -34,7 +34,7 @@ public:
   
   void stepInput()
   {
-    TRACE_P("%p: pipe::stepInput", this);
+    TRACE_P("%p: pipe::stepInput()", this);
     /* available data to read is minimum between free room in buffer and remaining data */
     //size_t available = std::min(_bufferSize - _bufferPosition, _source->length() - _done);
     size_t available = _buffer.available();
@@ -57,7 +57,7 @@ public:
   
   void stepOutput()
   {
-    TRACE_P("%p: pipe::stepOutput", this);
+    TRACE_P("%p: pipe::stepOutput()", this);
     
     /* if there is data to process */
     if (!_buffer.empty())

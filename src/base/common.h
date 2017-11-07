@@ -50,13 +50,14 @@ constexpr bool IS_LITTLE_ENDIAN_ = true;
 #ifdef DEBUG
 extern void debugprintf(const char* str, ...);
 extern void debugnnprintf(const char* str, ...);
-#define LOG(...) debugprintf(__VA_ARGS__);
+#define LOG(...) debugprintf(__VA_ARGS__)
 #else
 #define LOG(...) do { } while (false);
 #endif
 
 #define TRACE_MEMORY_BUFFERS 0
-#define TRACE_PIPES 0
+#define TRACE_PIPES 1
+#define TRACE_ENABLED 1
 
 
 #if defined(TRACE_MEMORY_BUFFERS) && TRACE_MEMORY_BUFFERS == 1
@@ -71,8 +72,11 @@ extern void debugnnprintf(const char* str, ...);
 #define TRACE_P(...) do { } while (false);
 #endif
 
+#if defined(TRACE_ENABLED) && TRACE_ENABLED == 1
 #define TRACE LOG
-//#define TRACE(...) do { } while (false);
+#else
+#define TRACE(...) do { } while (false);
+#endif
 
 namespace hidden
 {

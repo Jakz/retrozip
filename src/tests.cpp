@@ -199,7 +199,6 @@ TEST_CASE("memory buffer", "[support]") {
       REQUIRE(b.position() == LEN1 + OFF);
       WRITE_RANDOM_DATA(b, temp2, LEN2);
       
-      REQUIRE(b.capacity() == LEN1 + OFF + LEN2);
       REQUIRE(b.size() == LEN1 + OFF + LEN2);
       REQUIRE(b.position() == LEN1 + OFF + LEN2);
       
@@ -218,7 +217,6 @@ TEST_CASE("memory buffer", "[support]") {
       REQUIRE(b.position() == LEN1 + OFF);
       WRITE_RANDOM_DATA(b, temp2, LEN2);
       
-      REQUIRE(b.capacity() == LEN1 + OFF + LEN2);
       REQUIRE(b.size() == LEN1 + OFF + LEN2);
       REQUIRE(b.position() == LEN1 + OFF + LEN2);
       
@@ -636,7 +634,7 @@ TEST_CASE("deflate", "[filters]") {
     passthrough_pipe pipe(&deflated, &sink, 200);
     pipe.process();
 
-    REQUIRE(deflated.zstream().total_out == sink.size());
+    REQUIRE(deflated.filter().zstream().total_out == sink.size());
     
     memory_buffer source2(sink.raw(), sink.size());
     memory_buffer sink2;
@@ -671,9 +669,9 @@ TEST_CASE("deflate", "[filters]") {
     passthrough_pipe pipe(&inflater, &sink, 1024);
     pipe.process();
     
-    REQUIRE(deflater.zstream().total_in == source.size());
-    REQUIRE(deflater.zstream().total_out == inflater.zstream().total_in);
-    REQUIRE(inflater.zstream().total_out == source.size());
+    REQUIRE(deflater.filter().zstream().total_in == source.size());
+    REQUIRE(deflater.filter().zstream().total_out == inflater.filter().zstream().total_in);
+    REQUIRE(inflater.filter().zstream().total_out == source.size());
     
     REQUIRE(source == sink);
   }
@@ -696,9 +694,9 @@ TEST_CASE("deflate", "[filters]") {
     passthrough_pipe pipe(&source, &deflater, 1024);
     pipe.process();
     
-    REQUIRE(deflater.zstream().total_in == source.size());
-    REQUIRE(deflater.zstream().total_out == inflater.zstream().total_in);
-    REQUIRE(inflater.zstream().total_out == source.size());
+    REQUIRE(deflater.filter().zstream().total_in == source.size());
+    REQUIRE(deflater.filter().zstream().total_out == inflater.filter().zstream().total_in);
+    REQUIRE(inflater.filter().zstream().total_out == source.size());
     
     REQUIRE(source == sink);
   }
@@ -721,9 +719,9 @@ TEST_CASE("deflate", "[filters]") {
     passthrough_pipe pipe(&deflater, &inflater, 1000);
     pipe.process();
     
-    REQUIRE(deflater.zstream().total_in == source.size());
-    REQUIRE(deflater.zstream().total_out == inflater.zstream().total_in);
-    REQUIRE(inflater.zstream().total_out == source.size());
+    REQUIRE(deflater.filter().zstream().total_in == source.size());
+    REQUIRE(deflater.filter().zstream().total_out == inflater.filter().zstream().total_in);
+    REQUIRE(inflater.filter().zstream().total_out == source.size());
     
     REQUIRE(source == sink);
   }

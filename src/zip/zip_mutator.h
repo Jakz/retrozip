@@ -15,98 +15,129 @@ protected:
   bool _finished;
   bool _isEnded;
   
+public:
+  buffered_filter(size_t inBufferSize, size_t outBufferSize) : _in(inBufferSize), _out(outBufferSize), _started(false), _finished(false), _isEnded(false) { }
+  
+  memory_buffer& in() { return _in; }
+  memory_buffer& out() { return _out; }
+  
   virtual void init() = 0;
   virtual void process() = 0;
   virtual void finalize() = 0;
   
-public:
-  buffered_filter(size_t inBufferSize, size_t outBufferSize) : _in(inBufferSize), _out(outBufferSize), _started(false), _finished(false), _isEnded(false) { }
+  void start() { _started = true; }
+  void markEnded() { _isEnded = true; }
+  
+  bool started() const { return _started; }
+  bool finished() const { return _finished; }
+  bool ended() const { return _isEnded; }
+  
+  /* for debugging purposes */
+  virtual std::string name() = 0;
 };
 
 template<typename F>
-class buffered_source_filter : public data_source, public F
+class buffered_source_filter : public data_source
 {
 private:
   data_source* _source;
-  
+  F _filter;
+
 protected:
   
   void fetchInput()
   {
-    TRACE_P("%p: source_filter::fetchInput()", this);
+    memory_buffer& in = _filter.in();
     
-    if (!this->_in.full())
+    if (!in.full())
     {
-      size_t effective = _source->read(this->_in.tail(), this->_in.available());
+      size_t effective = _source->read(in.tail(), in.available());
+      
+#if defined (DEBUG)
+      if (effective != END_OF_STREAM)
+        TRACE_P("%p: %s_filter_source::fetchInput(%lu/%lu)", this, _filter.name().c_str(), effective, in.available());
+      else
+        TRACE_P("%p: %s_filter_source::fetchInput(EOS)", this, _filter.name().c_str(), effective, in.available());
+#endif
       
       if (effective != END_OF_STREAM)
-        this->_in.advance(effective);
+        in.advance(effective);
       else
-        this->_isEnded = true;
-        
+        _filter.markEnded();
+      
     }
   }
   
   size_t dumpOutput(byte* dest, size_t length)
   {
-    TRACE_P("%p: source_filter::dumpOutput(%lu)", this, length);
+    memory_buffer& out = _filter.out();
     
-    if (!this->_out.empty())
+    if (!out.empty())
     {
-      size_t effective = std::min(this->_out.used(), length);
-      std::copy(this->_out.head(), this->_out.head() + effective, dest);
-      this->_out.consume(effective);
+      size_t effective = std::min(out.used(), length);
+      std::copy(out.head(), out.head() + effective, dest);
+      out.consume(effective);
+      
+      TRACE_P("%p: %s_filter_source::dumpOutput(%lu/%lu)", this, _filter.name().c_str(), effective, length);
+
+      
       return effective;
     }
     
     return 0;
   }
   
+  
 public:
-  template<typename... Args> buffered_source_filter(data_source* source, Args... args) : _source(source), F(args...) { }
+  template<typename... Args> buffered_source_filter(data_source* source, Args... args) : _source(source), _filter(args...) { }
   
   size_t read(byte* dest, size_t amount) override
   {
-    if (!this->_started)
+    if (!_filter.started())
     {
-      this->init();
-      this->_started = true;
+      _filter.init();
+      _filter.start();
     }
     
     fetchInput();
     
-    if (!this->_finished && (!this->_in.empty() || !this->_out.full()))
-      this->process();
+    if (!_filter.finished() && (!_filter.in().empty() || !_filter.out().full()))
+      _filter.process();
     
     size_t effective = dumpOutput(dest, amount);
     
-    if (this->_isEnded && this->_finished)
+    if (_filter.ended() && _filter.finished())
     {
-      this->finalize();
+      _filter.finalize();
     }
     
-    if (effective == 0 && this->_isEnded && this->_in.empty() && this->_out.empty() && this->_finished)
+    if (effective == 0 && _filter.ended() && _filter.in().empty() && _filter.out().empty() && _filter.finished())
       return END_OF_STREAM;
     else
       return effective;
   }
+  
+  F& filter() { return _filter; }
 };
 
 template<typename F>
-class buffered_sink_filter : public data_sink, public F
+class buffered_sink_filter : public data_sink
 {
 private:
   data_sink* _sink;
+  F _filter;
   
 protected:
   
   size_t fetchInput(const byte* src, size_t length)
   {
-    if (!this->_in.full())
+    memory_buffer& in = _filter.in();
+    
+    if (!in.full())
     {
-      size_t effective = std::min(this->_in.available(), length);
-      std::copy(src, src + effective, this->_in.tail());
-      this->_in.advance(effective);
+      size_t effective = std::min(in.available(), length);
+      std::copy(src, src + effective, in.tail());
+      in.advance(effective);
       return effective;
     }
     
@@ -115,15 +146,18 @@ protected:
   
   size_t dumpOutput()
   {
-    if (!this->_out.empty())
+    memory_buffer& out = _filter.out();
+
+    
+    if (!out.empty())
     {
-      size_t effective = _sink->write(this->_out.head(), this->_out.used());
-      this->_out.consume(effective);
+      size_t effective = _sink->write(out.head(), out.used());
+      out.consume(effective);
       return effective;
     }
     else
     {
-      if (this->_finished)
+      if (_filter.finished())
         return _sink->write(nullptr, END_OF_STREAM);
       else
         return 0;
@@ -131,40 +165,42 @@ protected:
   }
   
 public:
-  template<typename... Args> buffered_sink_filter(data_sink* sink, Args... args) : _sink(sink), F(args...) { }
+  template<typename... Args> buffered_sink_filter(data_sink* sink, Args... args) : _sink(sink), _filter(args...) { }
   
   size_t write(const byte* src, size_t amount) override
   {
-    if (!this->_started)
+    if (!_filter.started())
     {
-      this->init();
-      this->_started = true;
+      _filter.init();
+      _filter.start();
     }
     
     size_t effective = 0;
     if (amount != END_OF_STREAM)
     {
       effective = fetchInput(src, amount);
-      if (!this->_finished && (!this->_in.empty() || !this->_out.full()))
-        this->process();
+      if (!_filter.finished() && (!_filter.in().empty() || !_filter.out().full()))
+        _filter.process();
       dumpOutput();
     }
     else
     {
-      this->_isEnded = true;
-      while (!this->_finished)
-        this->process();
+      _filter.markEnded();
+      while (!_filter.finished())
+        _filter.process();
       while (dumpOutput() != END_OF_STREAM) ;
       effective = END_OF_STREAM;
     }
     
-    if (this->_isEnded && this->_in.empty() && this->_out.empty() && this->_finished)
+    if (_filter.ended() && _filter.in().empty() && _filter.out().empty() && _filter.finished())
     {
-      this->finalize();
+      _filter.finalize();
     }
     
     return effective;
   }
+  
+  F& filter() { return _filter; }
 };
 
 
@@ -218,12 +254,14 @@ namespace compression
     int _result;
     int _failed;
     
-  protected:
+  public:
     zlib_filter(size_t bufferSize) : buffered_filter(bufferSize, bufferSize) { }
     
     void init() override;
     void process() override;
     void finalize() override;
+    
+    std::string name() override { return std::is_same<OPTIONS, DeflateOptions>::value ? "deflater" : "inflater"; }
     
   public:
     const z_stream& zstream() { return _stream; }
