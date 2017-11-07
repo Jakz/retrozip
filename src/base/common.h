@@ -59,21 +59,29 @@ extern void debugnnprintf(const char* str, ...);
 #define TRACE_PIPES 0
 #define TRACE_ENABLED 0
 
+#define TRACE_FORCE_DISABLE 1
+
+
+#if defined(TRACE_FORCE_DISABLE) && TRACE_FORCE_DISABLE == 1
+#define TRACEL do { } while (false)
+#else
+#define TRACEL LOG
+#endif
 
 #if defined(TRACE_MEMORY_BUFFERS) && TRACE_MEMORY_BUFFERS == 1
-#define TRACE_MB LOG
+#define TRACE_MB TRACEL
 #else
 #define TRACE_MB(...) do { } while (false)
 #endif
 
 #if defined(TRACE_PIPES) && TRACE_PIPES == 1
-#define TRACE_P LOG
+#define TRACE_P TRACEL
 #else
 #define TRACE_P(...) do { } while (false)
 #endif
 
 #if defined(TRACE_ENABLED) && TRACE_ENABLED == 1
-#define TRACE LOG
+#define TRACE TRACEL
 #else
 #define TRACE(...) do { } while (false)
 #endif
@@ -285,4 +293,14 @@ enum class ZlibResult : int;
 namespace utils
 {
   int inflate(byte* src, size_t length, byte* dest, size_t destLength);
+  
+  u64 random64(u64 first, u64 last);
+  
+  inline static u64 nextPowerOfTwo(u64 v)
+  {
+    v--; v |= v >> 1; v |= v >> 2; v |= v >> 4;
+    v |= v >> 8; v |= v >> 16; v |= v >> 32;
+    v++;
+    return v;
+  }
 }

@@ -123,3 +123,14 @@ int inflate(byte* src, size_t length, byte* dest, size_t destLength)
   inflateEnd(&strm);
   return r == Z_STREAM_END ? Z_OK : Z_DATA_ERROR;
 }
+
+#include <random>
+  
+static std::random_device device;
+static std::default_random_engine engine(device());
+  
+u64 utils::random64(u64 first, u64 last)
+{
+  return (engine() % (last - first + 1)) + first;
+}
+

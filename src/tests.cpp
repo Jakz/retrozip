@@ -126,6 +126,45 @@ TEST_CASE("byte array / string conversions", "[base]")
   }
 }
 
+TEST_CASE("bit hacks", "[base]")
+{
+  SECTION("next power of two") {
+    
+    /* next power(x) when x is a power of two should be x */
+    for (u64 i = 0; i < 64; ++i)
+    {
+      u64 x = 1ULL << i;
+      REQUIRE(utils::nextPowerOfTwo(x) == x);
+    }
+    
+    for (u64 i = 2; i < 64; ++i)
+    {
+      u64 x = 1ULL << i;
+      u64 m = 0, M = (1LL << std::min(32ULL, i - 1)) - 1;
+      
+      for (size_t j = 0; j < 32; ++j)
+      {
+        u64 y = x - utils::random64(m, M);
+        u64 z = utils::nextPowerOfTwo(y);
+        REQUIRE(z == x);
+      }
+    }
+    
+    for (u64 i = 3; i < 64; ++i)
+    {
+      u64 x = 1ULL << i;
+      u64 m = 0, M = (1LL << std::min(32ULL, i - 2)) - 1;
+      
+      for (size_t j = 0; j < 32; ++j)
+      {
+        u64 y = x - utils::random64(m, M) - (x >> 1);
+        u64 z = utils::nextPowerOfTwo(y);
+        REQUIRE(z == (x >> 1));
+      }
+    }
+  }
+}
+
 #define WRITE_RANDOM_DATA_AND_REWIND(dest, name, length) byte name[(length)]; randomize(name, (length)); dest.write(name, 1, (length)); dest.rewind();
 #define WRITE_RANDOM_DATA(dest, name, length) byte name[(length)]; randomize(name, (length)); dest.write(name, 1, (length));
 void randomize(byte* data, size_t len) { for (size_t i = 0; i < len; ++i) { data[i] = support::random(256); } }
