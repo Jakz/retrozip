@@ -1,4 +1,4 @@
-#include "zip_mutator.h"
+#include "deflate_filter.h"
 
 using namespace compression;
 

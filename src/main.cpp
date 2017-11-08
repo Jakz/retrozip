@@ -9,9 +9,9 @@
 #include <iostream>
 #include "core/header.h"
 #include "core/archive.h"
-#include "core/filters.h"
+#include "filters/filters.h"
 #include "core/data_source.h"
-#include "zip/zip_mutator.h"
+#include "filters/deflate_filter.h"
 
 #include "patch/xdelta3/xdelta3.h"
 

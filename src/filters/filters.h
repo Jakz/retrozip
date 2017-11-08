@@ -1,7 +1,7 @@
 #pragma once
 
 #include "hash/hash.h"
-#include "data_filter.h"
+#include "core/data_filter.h"
 
 namespace filters
 {

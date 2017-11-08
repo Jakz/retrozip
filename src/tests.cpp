@@ -3,9 +3,9 @@
 
 #include "core/memory_buffer.h"
 #include "core/data_source.h"
-#include "core/filters.h"
+#include "filters/filters.h"
 #include "core/file_data_source.h"
-#include "zip/zip_mutator.h"
+#include "filters/deflate_filter.h"
 #include "hash/hash.h"
 #include "crypto/crypto.h"
 

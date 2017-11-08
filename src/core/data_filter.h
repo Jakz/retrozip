@@ -1,5 +1,7 @@
 #pragma once
 
+#include "memory_buffer.h"
+
 class unbuffered_data_filter
 {
 protected:
