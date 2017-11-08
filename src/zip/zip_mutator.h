@@ -5,7 +5,7 @@
 
 #include <zlib.h>
 
-class buffered_filter
+class data_filter
 {
 protected:
   memory_buffer _in;
@@ -16,7 +16,7 @@ protected:
   bool _isEnded;
   
 public:
-  buffered_filter(size_t inBufferSize, size_t outBufferSize) : _in(inBufferSize), _out(outBufferSize), _started(false), _finished(false), _isEnded(false) { }
+  data_filter(size_t inBufferSize, size_t outBufferSize) : _in(inBufferSize), _out(outBufferSize), _started(false), _finished(false), _isEnded(false) { }
   
   memory_buffer& in() { return _in; }
   memory_buffer& out() { return _out; }
@@ -37,7 +37,7 @@ public:
 };
 
 template<typename F>
-class buffered_source_filter : public data_source
+class source_filter : public data_source
 {
 private:
   data_source* _source;
@@ -89,7 +89,7 @@ protected:
   
   
 public:
-  template<typename... Args> buffered_source_filter(data_source* source, Args... args) : _source(source), _filter(args...) { }
+  template<typename... Args> source_filter(data_source* source, Args... args) : _source(source), _filter(args...) { }
   
   size_t read(byte* dest, size_t amount) override
   {
@@ -245,7 +245,7 @@ namespace compression
   using zlib_end_function = int(*)(z_streamp);
   
   template<zlib_compute_function computer, zlib_end_function finalizer, typename OPTIONS>
-  class zlib_filter : public buffered_filter
+  class zlib_filter : public data_filter
   {
   private:
     z_stream _stream;
@@ -255,7 +255,7 @@ namespace compression
     int _failed;
     
   public:
-    zlib_filter(size_t bufferSize) : buffered_filter(bufferSize, bufferSize) { }
+    zlib_filter(size_t bufferSize) : data_filter(bufferSize, bufferSize) { }
     
     void init() override;
     void process() override;

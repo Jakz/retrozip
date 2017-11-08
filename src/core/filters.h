@@ -1,62 +1,12 @@
 #pragma once
 
 #include "hash/hash.h"
-
-class data_filter
-{
-protected:
-  virtual void process(const byte* data, size_t amount, size_t effective) = 0;
-};
-
-class lambda_data_filter : data_filter
-{
-public:
-  using lambda_t = std::function<void(const byte*, size_t, size_t)>;
-  lambda_data_filter(lambda_t lambda) : _lambda(lambda) { }
-private:
-  lambda_t _lambda;
-protected:
-  void process(const byte* data, size_t amount, size_t effective) override final { _lambda(data, amount, effective); }
-};
-
-template<typename T>
-class source_filter : public data_source, public T
-{
-protected:
-  data_source* _source;
-  //data_filter* _filter;
-public:
-  source_filter(data_source* source/*, data_filter* filter*/) : _source(source)/*, _filter(filter)*/ { }
-    
-  size_t read(byte* dest, size_t amount) override
-  {
-    size_t read = _source->read(dest, amount);
-    /*_filter->*/this->process(dest, amount, read);
-    return read;
-  }
-};
-
-template<typename T>
-class sink_filter : public data_sink, public T
-{
-protected:
-  data_sink* _sink;
-  data_filter* _filter;
-public:
-  sink_filter(data_sink* sink/*, data_filter* filter*/) : _sink(sink)/*, _filter(filter)*/ { }
-    
-  size_t write(const byte* src, size_t amount) override
-  {
-    size_t written = _sink->write(src, amount);
-    /*_filter->*/this->process(src, amount, written);
-    return written;
-  }
-};
+#include "data_filter.h"
 
 namespace filters
 {
   template<typename D>
-  class digest_filter : public data_filter
+  class digest_filter : public unbuffered_data_filter
   {
   private:
     std::function<void(const typename D::computed_type&)> _callback;
@@ -79,7 +29,7 @@ namespace filters
   using md5_filter = digest_filter<hash::md5_digester>;
   using sha1_filter = digest_filter<hash::sha1_digester>;
   
-  class multiple_digest_filter : public data_filter
+  class multiple_digest_filter : public unbuffered_data_filter
   {
   private:
     mutable hash::crc32_digester _crc32;
@@ -108,7 +58,7 @@ namespace filters
     hash::sha1_t sha1() { assert(_sha1enabled); return _sha1.get(); }
   };
   
-  class data_counter : public data_filter
+  class data_counter : public unbuffered_data_filter
   {
   private:
     mutable size_t _count;

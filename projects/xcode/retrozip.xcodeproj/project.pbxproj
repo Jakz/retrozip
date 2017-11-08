@@ -68,6 +68,7 @@
 		04360FA61FA2E3A20096F199 /* header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = header.h; sourceTree = "<group>"; };
 		04360FA71FA366040096F199 /* archive.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = archive.h; sourceTree = "<group>"; };
 		0451D6BE1FA3970900DFBA90 /* memory_buffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = memory_buffer.h; sourceTree = "<group>"; };
+		046B66D31FB2B45C007B58BD /* data_filter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = data_filter.h; sourceTree = "<group>"; };
 		0478F1681FAAE04A009183C7 /* xdelta3.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = xdelta3.cpp; sourceTree = "<group>"; };
 		0478F1691FAAE04A009183C7 /* xdelta3.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = xdelta3.h; sourceTree = "<group>"; };
 		049CD8231FB1704C001E7DB8 /* aes.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = aes.cpp; sourceTree = "<group>"; };
@@ -155,6 +156,7 @@
 				04CAF3401FA4C87400259DCE /* data_source.h */,
 				04262F981FA76E3700B025B6 /* data_pipe.h */,
 				04262F991FA7725700B025B6 /* file_data_source.h */,
+				046B66D31FB2B45C007B58BD /* data_filter.h */,
 				04DA99D51FA6338600B83C76 /* filters.h */,
 				04360FA61FA2E3A20096F199 /* header.h */,
 			);

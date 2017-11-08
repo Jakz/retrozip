@@ -508,14 +508,14 @@ TEST_CASE("counter", "[filters]") {
     constexpr size_t LEN = 2048;
     memory_buffer source;
     memory_buffer sink;
-    source_filter<filters::data_counter> counter(&source);
+    unbuffered_source_filter<filters::data_counter> counter(&source);
     
     WRITE_RANDOM_DATA_AND_REWIND(source, test, LEN);
     
     passthrough_pipe pipe = passthrough_pipe(&counter, &sink, 8);
     pipe.process();
 
-    REQUIRE(counter.count() == LEN);
+    REQUIRE(counter.filter().count() == LEN);
     REQUIRE(sink.size() == LEN);
   }
   
@@ -523,14 +523,14 @@ TEST_CASE("counter", "[filters]") {
     constexpr size_t LEN = 2048;
     memory_buffer source;
     memory_buffer sink;
-    sink_filter<filters::data_counter> counter(&sink);
+    unbuffered_sink_filter<filters::data_counter> counter(&sink);
     
     WRITE_RANDOM_DATA_AND_REWIND(source, test, LEN);
     
     passthrough_pipe pipe = passthrough_pipe(&source, &counter, 8);
     pipe.process();
     
-    REQUIRE(counter.count() == LEN);
+    REQUIRE(counter.filter().count() == LEN);
     REQUIRE(sink.size() == LEN);
   }
   
@@ -538,16 +538,16 @@ TEST_CASE("counter", "[filters]") {
     constexpr size_t LEN = 2048;
     memory_buffer source;
     memory_buffer sink;
-    sink_filter<filters::data_counter> sinkCounter(&sink);
-    source_filter<filters::data_counter> sourceCounter(&source);
+    unbuffered_sink_filter<filters::data_counter> sinkCounter(&sink);
+    unbuffered_source_filter<filters::data_counter> sourceCounter(&source);
     
     WRITE_RANDOM_DATA_AND_REWIND(source, test, LEN);
     
     passthrough_pipe pipe = passthrough_pipe(&sourceCounter, &sinkCounter, 8);
     pipe.process();
     
-    REQUIRE(sinkCounter.count() == LEN);
-    REQUIRE(sourceCounter.count() == LEN);
+    REQUIRE(sinkCounter.filter().count() == LEN);
+    REQUIRE(sourceCounter.filter().count() == LEN);
     REQUIRE(sink.size() == LEN);
   }
 }
@@ -610,7 +610,7 @@ TEST_CASE("hash filters", "[filters]") {
     constexpr size_t LEN = 256;
     memory_buffer source;
     memory_buffer sink;
-    source_filter<filters::crc32_filter> filter(&source);
+    unbuffered_source_filter<filters::crc32_filter> filter(&source);
     hash::crc32_digester digester;
     
     WRITE_RANDOM_DATA_AND_REWIND(source, test, LEN);
@@ -621,14 +621,14 @@ TEST_CASE("hash filters", "[filters]") {
     passthrough_pipe pipe(&filter, &sink, 30);
     pipe.process();
     
-    REQUIRE(value == filter.get());
+    REQUIRE(value == filter.filter().get());
   }
   
   SECTION("md5") {
     constexpr size_t LEN = 256;
     memory_buffer source;
     memory_buffer sink;
-    source_filter<filters::md5_filter> filter(&source);
+    unbuffered_source_filter<filters::md5_filter> filter(&source);
     hash::md5_digester digester;
     
     WRITE_RANDOM_DATA_AND_REWIND(source, test, LEN);
@@ -639,14 +639,14 @@ TEST_CASE("hash filters", "[filters]") {
     passthrough_pipe pipe(&filter, &sink, 30);
     pipe.process();
     
-    REQUIRE(value == filter.get());
+    REQUIRE(value == filter.filter().get());
   }
   
   SECTION("sha1") {
     constexpr size_t LEN = 256;
     memory_buffer source;
     memory_buffer sink;
-    source_filter<filters::sha1_filter> filter(&source);
+    unbuffered_source_filter<filters::sha1_filter> filter(&source);
     hash::sha1_digester digester;
     
     WRITE_RANDOM_DATA_AND_REWIND(source, test, LEN);
@@ -657,7 +657,7 @@ TEST_CASE("hash filters", "[filters]") {
     passthrough_pipe pipe(&filter, &sink, 30);
     pipe.process();
     
-    REQUIRE(value == filter.get());
+    REQUIRE(value == filter.filter().get());
   }
 }
 
@@ -674,7 +674,7 @@ TEST_CASE("deflate", "[filters]") {
     memory_buffer source(testData, LEN);
     delete [] testData;
     
-    buffered_source_filter<compression::deflater_filter> deflated(&source, 1024);
+    source_filter<compression::deflater_filter> deflated(&source, 1024);
     
     memory_buffer sink;
 
@@ -708,8 +708,8 @@ TEST_CASE("deflate", "[filters]") {
     memory_buffer source(testData, LEN);
     delete [] testData;
     
-    buffered_source_filter<compression::deflater_filter> deflater(&source, 1024);
-    buffered_source_filter<compression::inflater_filter> inflater(&deflater, 512);
+    source_filter<compression::deflater_filter> deflater(&source, 1024);
+    source_filter<compression::inflater_filter> inflater(&deflater, 512);
     
     memory_buffer sink;
     
@@ -760,7 +760,7 @@ TEST_CASE("deflate", "[filters]") {
     delete [] testData;
     memory_buffer sink;
 
-    buffered_source_filter<compression::deflater_filter> deflater(&source, 500);
+    source_filter<compression::deflater_filter> deflater(&source, 500);
     buffered_sink_filter<compression::inflater_filter> inflater(&sink, 800);
     
     passthrough_pipe pipe(&deflater, &inflater, 1000);

@@ -42,7 +42,7 @@ const char* nameForXdeltaReturnValue(int value)
 using xd3_function = int (*) (xd3_stream*);
 
 template<xd3_function FUNCTION>
-class xdelta3_filter : public buffered_filter
+class xdelta3_filter : public data_filter
 {
 private:
   seekable_data_source* _source;
@@ -62,7 +62,7 @@ private:
 
 public:
   xdelta3_filter(seekable_data_source* source, size_t bufferSize, usize_t xdeltaWindowSize, usize_t sourceBlockSize) :
-    buffered_filter(bufferSize, bufferSize), _source(source),
+    data_filter(bufferSize, bufferSize), _source(source),
     _windowSize(xdeltaWindowSize), _sourceBuffer(sourceBlockSize), _sourceBlockSize(sourceBlockSize) { }
   
   void init() override;
@@ -316,8 +316,8 @@ void test_xdelta3_encoding(size_t testLength, size_t modificationCount, size_t b
   memory_buffer generated(testLength);
   
   {
-    buffered_source_filter<xdelta3_encoder> encoder(&input, &source, bufferSize, windowSize, blockSize);
-    buffered_source_filter<compression::deflater_filter> deflater(&encoder, bufferSize);
+    source_filter<xdelta3_encoder> encoder(&input, &source, bufferSize, windowSize, blockSize);
+    source_filter<compression::deflater_filter> deflater(&encoder, bufferSize);
 
     passthrough_pipe pipe(USE_DEFLATER ? &deflater : (data_source*)&encoder, &sink, windowSize);
     pipe.process();
@@ -342,8 +342,8 @@ void test_xdelta3_encoding(size_t testLength, size_t modificationCount, size_t b
   {
     sink.rewind();
     
-    buffered_source_filter<compression::inflater_filter> inflater(&sink, bufferSize);
-    buffered_source_filter<xdelta3_decoder> decoder(USE_DEFLATER ? (data_source*)&inflater : &sink, &source, bufferSize, windowSize, blockSize);
+    source_filter<compression::inflater_filter> inflater(&sink, bufferSize);
+    source_filter<xdelta3_decoder> decoder(USE_DEFLATER ? (data_source*)&inflater : &sink, &source, bufferSize, windowSize, blockSize);
     passthrough_pipe pipe(&decoder, &generated, windowSize);
     pipe.process();
   }
@@ -460,7 +460,7 @@ int main(int argc, const char * argv[])
     sink.ensure_capacity(MB32);
     
     // size_t bufferSize, usize_t xdeltaWindowSize, usize_t sourceBlockSize
-    buffered_source_filter<xdelta3_encoder> filter(&input, &source, MB1, MB1, MB1);
+    source_filter<xdelta3_encoder> filter(&input, &source, MB1, MB1, MB1);
     
     passthrough_pipe pipe(&filter, &sink, MB1);
     pipe.process();
