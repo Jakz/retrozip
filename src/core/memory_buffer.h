@@ -274,13 +274,19 @@ public:
 template<typename T> data_reference<T> memory_buffer::reserve()
 {
   off_t mark = tell();
+  assert(mark == _size);
   reserve(sizeof(T));
+  _size += sizeof(T);
+  _position += sizeof(T);
   return data_reference<T>(*this, mark);
 }
 
 template<typename T> array_reference<T> memory_buffer::reserveArray(size_t size)
 {
   off_t mark = tell();
+  assert(mark == _size);
   reserve(sizeof(T)*size);
+  _size += sizeof(T)*size;
+  _position += sizeof(T)*size;
   return array_reference<T>(*this, mark, size);
 }

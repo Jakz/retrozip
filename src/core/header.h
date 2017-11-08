@@ -25,7 +25,10 @@ namespace box
     FILE_NAME_TABLE
   };
   
-  enum class HeaderFlags : u32;
+  enum class HeaderFlags : u64
+  {
+    INTEGRITY_CHECKSUM_ENABLED = 0x01LLU
+  };
   
   struct Header
   {

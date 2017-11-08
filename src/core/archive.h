@@ -54,13 +54,15 @@ public:
   box::StreamEntry& streamEntry() const { return _streamEntry; }
 };
 
-struct ArchiveOptions
+struct Options
 {
   bool computeCRC32;
   bool computeMD5;
   bool computeSHA1;
   
-  ArchiveOptions() : computeCRC32(true), computeMD5(true), computeSHA1(true) { }
+  bool calculateSanityChecksums;
+  
+  Options() : computeCRC32(true), computeMD5(true), computeSHA1(true), calculateSanityChecksums(true) { }
 };
 
 class memory_buffer;
@@ -69,6 +71,8 @@ using W = memory_buffer;
 class Archive
 {
 private:
+  Options options;
+  
   box::Header header;
   
   std::vector<Entry> entries;
@@ -76,9 +80,14 @@ private:
   
   std::queue<box::Section> ordering;
   
+  template<typename WW> void finalizeHeader(W& w);
+  
+  template<typename WW> void writeStream(W& w, Stream& stream);
+  
 public:
   Archive();
   template<typename WW> void write(W& w);
+  
   
   Stream& streamByRef(Stream::ref ref) { return streams[ref]; }
 };

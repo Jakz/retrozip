@@ -132,4 +132,61 @@ template<typename WW> void Archive::write(W& w)
       }
     }
   }
+  
+  /* when we arrive here we suppose all streams have been written and all data
+     in StreamEntry and TableEntry has been prepared and filled */
+  
+  
+  /* we fill the array of file entries */
+  for (size_t i = 0; i < entries.size(); ++i)
+    refs.entryTable.write(entries[i].tableEntry(), i);
+  
+  /* we fill the array of stream entries */
+  for (size_t i = 0; i < streams.size(); ++i)
+    refs.streamTable.write(streams[i].streamEntry(), i);
+  
+  finalizeHeader<WW>(w);
+  refs.header.write(header);
 }
+
+template<typename WW>
+void Archive::finalizeHeader(W& w)
+{
+  w.seek(0, Seek::END);
+  header.fileLength = w.tell();
+
+  if (options.calculateSanityChecksums)
+  {
+    header.flags.set(box::HeaderFlags::INTEGRITY_CHECKSUM_ENABLED);
+  }
+  
+  /* we need to calculate checksum of file but we need to skip the checksum itself */
+  offset_t checksumOffset = offsetof(box::Header, fileChecksum);
+
+  box::digester_t digester;
+  w.seek(0);
+  const size_t bufferLength = MB1;
+  byte* buffer = new byte[bufferLength]; //TODO: adjustable buffer
+  
+  digester.update(&header, checksumOffset);
+  digester.update(&header + sizeof(box::checksum_t), sizeof(box::Header) - checksumOffset - sizeof(box::checksum_t));
+  w.seek(sizeof(box::Header), Seek::SET);
+  
+  size_t read = 0;
+  while ((read = w.read(buffer, 1, bufferLength)) > 0)
+  {
+    digester.update(buffer, read);
+  }
+  
+  header.fileChecksum = digester.get();
+}
+
+template<typename WW>
+void Archive::writeStream(W& w, Stream& stream)
+{
+  
+  
+}
+
+template void Archive::write<bool>(W& w);
+template void Archive::finalizeHeader<bool>(W& w);
