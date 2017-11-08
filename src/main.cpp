@@ -7,8 +7,8 @@
 //
 
 #include <iostream>
-#include "core/header.h"
-#include "core/archive.h"
+#include "box/header.h"
+#include "box/archive.h"
 #include "filters/filters.h"
 #include "core/data_source.h"
 #include "filters/deflate_filter.h"
@@ -245,14 +245,14 @@ int mainzzz(int argc, const char * argv[])
 }
 
 
-#include "core/archive.h"
+#include "box/archive.h"
 
 int main(int argc, const char * argv[])
 {
   Archive archive;
   
   memory_buffer out;
-  archive.write<bool>(out);
+  archive.write(out);
   
   return 0;
 }

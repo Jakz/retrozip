@@ -2,7 +2,7 @@
 
 #include "base/common.h"
 
-#include "data_source.h"
+#include "core/data_source.h"
 #include "header.h"
 #include <queue>
 
@@ -67,6 +67,7 @@ struct Options
 
 class memory_buffer;
 using W = memory_buffer;
+using R = memory_buffer;
 
 class Archive
 {
@@ -80,15 +81,18 @@ private:
   
   std::queue<box::Section> ordering;
   
-  template<typename WW> void finalizeHeader(W& w);
+  void finalizeHeader(W& w);
   
-  template<typename WW> void writeStream(W& w, Stream& stream);
+  void writeStream(W& w, Stream& stream);
   
 public:
   Archive();
-  template<typename WW> void write(W& w);
+  void write(W& w);
+  void read(R& r);
   
   
   Stream& streamByRef(Stream::ref ref) { return streams[ref]; }
+  
+  
 };
 

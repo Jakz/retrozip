@@ -1,6 +1,6 @@
 #include "archive.h"
 
-#include "memory_buffer.h"
+#include "core/memory_buffer.h"
 
 template<typename T> using ref = data_reference<T>;
 template<typename T> using aref = array_reference<T>;
@@ -23,7 +23,7 @@ Archive::Archive()
   ordering.push(box::Section::FILE_NAME_TABLE);
 }
 
-template<typename WW> void Archive::write(W& w)
+void Archive::write(W& w)
 {
   assert(ordering.front() == box::Section::HEADER);
   ordering.pop();
@@ -145,15 +145,19 @@ template<typename WW> void Archive::write(W& w)
   for (size_t i = 0; i < streams.size(); ++i)
     refs.streamTable.write(streams[i].streamEntry(), i);
   
-  finalizeHeader<WW>(w);
+  /* this should be the last thing we do since it optionally computes hash for the whole file */
+  finalizeHeader(w);
   refs.header.write(header);
 }
 
-template<typename WW>
+void Archive::read(R& r)
+{
+  r.seek(0);
+  r.read(header);
+}
+
 void Archive::finalizeHeader(W& w)
 {
-  w.seek(0, Seek::END);
-  header.fileLength = w.tell();
 
   if (options.calculateSanityChecksums)
   {
@@ -174,19 +178,15 @@ void Archive::finalizeHeader(W& w)
   
   size_t read = 0;
   while ((read = w.read(buffer, 1, bufferLength)) > 0)
-  {
     digester.update(buffer, read);
-  }
   
   header.fileChecksum = digester.get();
+  w.seek(0, Seek::END);
+  header.fileLength = w.tell();
 }
 
-template<typename WW>
 void Archive::writeStream(W& w, Stream& stream)
 {
   
-  
-}
 
-template void Archive::write<bool>(W& w);
-template void Archive::finalizeHeader<bool>(W& w);
+}
