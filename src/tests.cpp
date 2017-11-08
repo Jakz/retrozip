@@ -688,7 +688,7 @@ TEST_CASE("deflate", "[filters]") {
     
     REQUIRE(source2.size() == sink.size());
     
-    buffered_sink_filter<compression::inflater_filter> inflater(&sink2, 1024);
+    sink_filter<compression::inflater_filter> inflater(&sink2, 1024);
     
     passthrough_pipe pipe2(&source2, &inflater, 200);
 
@@ -735,8 +735,8 @@ TEST_CASE("deflate", "[filters]") {
     delete [] testData;
     
     memory_buffer sink;
-    buffered_sink_filter<compression::inflater_filter> inflater(&sink, 512);
-    buffered_sink_filter<compression::deflater_filter> deflater(&inflater, 1024);
+    sink_filter<compression::inflater_filter> inflater(&sink, 512);
+    sink_filter<compression::deflater_filter> deflater(&inflater, 1024);
     
     passthrough_pipe pipe(&source, &deflater, 1024);
     pipe.process();
@@ -761,7 +761,7 @@ TEST_CASE("deflate", "[filters]") {
     memory_buffer sink;
 
     source_filter<compression::deflater_filter> deflater(&source, 500);
-    buffered_sink_filter<compression::inflater_filter> inflater(&sink, 800);
+    sink_filter<compression::inflater_filter> inflater(&sink, 800);
     
     passthrough_pipe pipe(&deflater, &inflater, 1000);
     pipe.process();
