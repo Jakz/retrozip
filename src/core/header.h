@@ -3,7 +3,7 @@
 #include "base/common.h"
 #include "hash/hash.h"
 
-namespace rzip
+namespace box
 {
   using version_t = u32;
   using offset_t = u64;
@@ -29,7 +29,7 @@ namespace rzip
   
   struct Header
   {
-    std::array<u8, 4> magic; // must be rzip
+    std::array<u8, 4> magic; // must be box!
     u32 version;
     
     bit_mask<HeaderFlags> flags;
@@ -45,7 +45,7 @@ namespace rzip
     length_t fileLength;
     checksum_t fileChecksum;
     
-    Header() : magic({{'r','z','i','p'}}) { }
+    Header() : magic({{'b','o','x','!'}}) { }
     
   } __attribute__((packed));
   

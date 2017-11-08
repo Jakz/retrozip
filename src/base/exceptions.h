@@ -12,12 +12,12 @@ namespace args
 
 namespace exceptions
 {
-  class rzip_exception : public std::exception
+  class box_exception : public std::exception
   {
     
   };
   
-  class file_not_found : public rzip_exception
+  class file_not_found : public box_exception
   {
   private:
     path _path;
@@ -28,7 +28,7 @@ namespace exceptions
     const char* what() const noexcept override { return _path.c_str(); }
   };
   
-  class path_non_relative : public rzip_exception
+  class path_non_relative : public box_exception
   {
   private:
     path _parent;
@@ -40,7 +40,7 @@ namespace exceptions
     const char* what() const noexcept override { return _parent.c_str(); }
   };
   
-  class error_opening_file : public rzip_exception
+  class error_opening_file : public box_exception
   {
   private:
     path _path;
@@ -51,7 +51,7 @@ namespace exceptions
     const char* what() const noexcept override { return _path.c_str(); }
   };
   
-  class error_reading_from_file : public rzip_exception
+  class error_reading_from_file : public box_exception
   {
   private:
     path _path;
@@ -62,7 +62,7 @@ namespace exceptions
     const char* what() const noexcept override { return _path.c_str(); }
   };
   
-  class parse_help_request : public rzip_exception
+  class parse_help_request : public box_exception
   {
   private:
     const args::ArgumentParser& _parser;
@@ -72,7 +72,7 @@ namespace exceptions
     const char* what() const noexcept override { return nullptr; }
   };
   
-  class not_enough_memory : public rzip_exception
+  class not_enough_memory : public box_exception
   {
   private:
     const std::string _source;

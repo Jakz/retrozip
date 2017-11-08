@@ -7,62 +7,62 @@ template<typename T> using aref = array_reference<T>;
 
 struct refs
 {
-  ref<rzip::Header> header;
-  aref<rzip::TableEntry> entryTable;
-  aref<rzip::StreamEntry> streamTable;
+  ref<box::Header> header;
+  aref<box::TableEntry> entryTable;
+  aref<box::StreamEntry> streamTable;
 };
 
 Archive::Archive()
 {
-  ordering.push(rzip::Section::HEADER);
-  ordering.push(rzip::Section::ENTRY_TABLE);
-  ordering.push(rzip::Section::ENTRY_PAYLOAD);
-  ordering.push(rzip::Section::STREAM_TABLE);
-  ordering.push(rzip::Section::STREAM_PAYLOAD);
-  ordering.push(rzip::Section::STREAM_DATA);
-  ordering.push(rzip::Section::FILE_NAME_TABLE);
+  ordering.push(box::Section::HEADER);
+  ordering.push(box::Section::ENTRY_TABLE);
+  ordering.push(box::Section::ENTRY_PAYLOAD);
+  ordering.push(box::Section::STREAM_TABLE);
+  ordering.push(box::Section::STREAM_PAYLOAD);
+  ordering.push(box::Section::STREAM_DATA);
+  ordering.push(box::Section::FILE_NAME_TABLE);
 }
 
 template<typename WW> void Archive::write(W& w)
 {
-  assert(ordering.front() == rzip::Section::HEADER);
+  assert(ordering.front() == box::Section::HEADER);
   ordering.pop();
   
   refs refs;
   
-  refs.header = w.reserve<rzip::Header>();
+  refs.header = w.reserve<box::Header>();
 
-  header.version = rzip::CURRENT_VERSION;
-  header.entryCount = static_cast<rzip::count_t>(entries.size());
-  header.streamCount = static_cast<rzip::count_t>(streams.size());
+  header.version = box::CURRENT_VERSION;
+  header.entryCount = static_cast<box::count_t>(entries.size());
+  header.streamCount = static_cast<box::count_t>(streams.size());
   
 
   while (!ordering.empty())
   {
-    rzip::Section section = ordering.front();
+    box::Section section = ordering.front();
     ordering.pop();
     
     switch (section)
     {
-      case rzip::Section::HEADER: /* already managed */ break;
+      case box::Section::HEADER: /* already managed */ break;
         
-      case rzip::Section::ENTRY_TABLE:
+      case box::Section::ENTRY_TABLE:
       {
         /* save offset to the entry table and store it into header */
-        refs.entryTable = w.reserveArray<rzip::TableEntry>(header.entryCount);
+        refs.entryTable = w.reserveArray<box::TableEntry>(header.entryCount);
         header.entryTableOffset = refs.entryTable;
         break;
       }
         
-      case rzip::Section::STREAM_TABLE:
+      case box::Section::STREAM_TABLE:
       {
         /* save offset to the stream table and store it into header */
-        refs.streamTable = w.reserveArray<rzip::StreamEntry>(header.streamCount);
+        refs.streamTable = w.reserveArray<box::StreamEntry>(header.streamCount);
         header.streamTableOffset = refs.streamTable;
         break;
       }
         
-      case rzip::Section::ENTRY_PAYLOAD:
+      case box::Section::ENTRY_PAYLOAD:
       {
         off_t base = w.tell();
         off_t length = 0;
@@ -73,7 +73,7 @@ template<typename WW> void Archive::write(W& w)
          */
         for (const Entry& entry : entries)
         {
-          rzip::TableEntry& tentry = entry.tableEntry();
+          box::TableEntry& tentry = entry.tableEntry();
           tentry.payload = base + length;
           tentry.payloadLength = entry.payloadLength();
           
@@ -84,7 +84,7 @@ template<typename WW> void Archive::write(W& w)
         break;
       }
         
-      case rzip::Section::STREAM_PAYLOAD:
+      case box::Section::STREAM_PAYLOAD:
       {
         off_t base = w.tell();
         off_t length = 0;
@@ -95,7 +95,7 @@ template<typename WW> void Archive::write(W& w)
          */
         for (const Stream& stream : streams)
         {
-          rzip::StreamEntry& sentry = stream.streamEntry();
+          box::StreamEntry& sentry = stream.streamEntry();
           sentry.payload = base + length;
           sentry.payloadLength = stream.payloadLength();
           
@@ -106,7 +106,7 @@ template<typename WW> void Archive::write(W& w)
         break;
       }
         
-      case rzip::Section::FILE_NAME_TABLE:
+      case box::Section::FILE_NAME_TABLE:
       {
         off_t base = w.tell();
         off_t offset = w.tell();
@@ -122,11 +122,11 @@ template<typename WW> void Archive::write(W& w)
           offset = w.tell();
         }
         
-        header.nameTableLength = static_cast<rzip::count_t>(offset - base);
+        header.nameTableLength = static_cast<box::count_t>(offset - base);
         break;
       }
         
-      case rzip::Section::STREAM_DATA:
+      case box::Section::STREAM_DATA:
       {
         /* main stream writing */
       }

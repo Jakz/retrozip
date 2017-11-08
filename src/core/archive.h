@@ -21,7 +21,7 @@ public:
   using ref = size_t;
   
 private:
-  mutable rzip::TableEntry _tableEntry;
+  mutable box::TableEntry _tableEntry;
 
   std::unique_ptr<data_source> _source;
   std::string _name;
@@ -31,9 +31,9 @@ public:
   
   const std::string& name() const { return _name; }
   
-  rzip::count_t payloadLength() const { return 0 ; }
+  box::count_t payloadLength() const { return 0 ; }
   
-  rzip::TableEntry& tableEntry() const { return _tableEntry; }
+  box::TableEntry& tableEntry() const { return _tableEntry; }
 };
 
 class Stream
@@ -42,16 +42,16 @@ public:
   using ref = size_t;
   
 private:
-  mutable rzip::StreamEntry _streamEntry;
+  mutable box::StreamEntry _streamEntry;
   
   std::vector<Entry::ref> entries;
 
 public:
   Stream() { }
   
-  rzip::count_t payloadLength() const { return 0 ; }
+  box::count_t payloadLength() const { return 0 ; }
   
-  rzip::StreamEntry& streamEntry() const { return _streamEntry; }
+  box::StreamEntry& streamEntry() const { return _streamEntry; }
 };
 
 struct ArchiveOptions
@@ -69,12 +69,12 @@ using W = memory_buffer;
 class Archive
 {
 private:
-  rzip::Header header;
+  box::Header header;
   
   std::vector<Entry> entries;
   std::vector<Stream> streams;
   
-  std::queue<rzip::Section> ordering;
+  std::queue<box::Section> ordering;
   
 public:
   Archive();
