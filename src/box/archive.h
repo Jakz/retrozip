@@ -15,43 +15,43 @@ namespace header
   };
 }
 
-class Entry
+class ArchiveEntry
 {
 public:
   using ref = size_t;
   
 private:
-  mutable box::TableEntry _tableEntry;
+  mutable box::Entry _tableEntry;
 
   std::unique_ptr<data_source> _source;
   std::string _name;
   
 public:
-  Entry(const std::string& name, data_source* source) : _source(source), _name(name) { }
+  ArchiveEntry(const std::string& name, data_source* source) : _source(source), _name(name) { }
   
   const std::string& name() const { return _name; }
   
   box::count_t payloadLength() const { return 0 ; }
   
-  box::TableEntry& tableEntry() const { return _tableEntry; }
+  box::Entry& tableEntry() const { return _tableEntry; }
 };
 
-class Stream
+class ArchiveStream
 {
 public:
   using ref = size_t;
   
 private:
-  mutable box::StreamEntry _streamEntry;
+  mutable box::Stream _streamEntry;
   
-  std::vector<Entry::ref> entries;
+  std::vector<ArchiveEntry::ref> entries;
 
 public:
-  Stream() { }
+  ArchiveStream() { }
   
   box::count_t payloadLength() const { return 0 ; }
   
-  box::StreamEntry& streamEntry() const { return _streamEntry; }
+  box::Stream& streamEntry() const { return _streamEntry; }
 };
 
 struct Options
@@ -80,15 +80,15 @@ private:
   
   box::Header _header;
   
-  std::vector<Entry> entries;
-  std::vector<Stream> streams;
+  std::vector<ArchiveEntry> entries;
+  std::vector<ArchiveStream> streams;
   
   std::queue<box::Section> ordering;
   
   void finalizeHeader(W& w);
   box::checksum_t calculateGlobalChecksum(W& w, size_t bufferSize) const;
   
-  void writeStream(W& w, Stream& stream);
+  void writeStream(W& w, ArchiveStream& stream);
   
 public:
   Archive();

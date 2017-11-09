@@ -86,7 +86,7 @@
  feature, combined with double instructions, provides a nice
  challenge.  Search in this file for "black magic", a heuristic.
  
- 3. STREAM ALIGNMENT.  Stream alignment is needed to compress large
+ 3. STREAM ALIGNMENT.  ArchiveStream alignment is needed to compress large
  inputs in constant space.  See xd3_srcwin_move_point().
  
  4. WINDOW SELECTION.  When the IOPT buffer flushes, in the first call
@@ -1636,7 +1636,7 @@ static const char* xd3_rtype_to_string (xd3_rtype type, int print_mode)
 #endif
 
 /****************************************************************
- Stream configuration
+ ArchiveStream configuration
  ******************************************************************/
 
 int xd3_config_stream(xd3_stream *stream, xd3_config *config)
@@ -1894,7 +1894,7 @@ static int xd3_getblk (xd3_stream *stream, xoff_t blkno)
 }
 
 /***********************************************************
- Stream open/close
+ ArchiveStream open/close
  ***************************************************************/
 
 int xd3_set_source (xd3_stream *stream, xd3_source *src)

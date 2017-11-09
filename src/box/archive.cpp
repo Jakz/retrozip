@@ -8,8 +8,8 @@ template<typename T> using aref = array_reference<T>;
 struct refs
 {
   ref<box::Header> header;
-  aref<box::TableEntry> entryTable;
-  aref<box::StreamEntry> streamTable;
+  aref<box::Entry> entryTable;
+  aref<box::Stream> streamTable;
 };
 
 Archive::Archive()
@@ -55,7 +55,7 @@ void Archive::write(W& w)
       case box::Section::ENTRY_TABLE:
       {
         /* save offset to the entry table and store it into header */
-        refs.entryTable = w.reserveArray<box::TableEntry>(_header.entryCount);
+        refs.entryTable = w.reserveArray<box::Entry>(_header.entryCount);
         _header.entryTableOffset = refs.entryTable;
         break;
       }
@@ -63,7 +63,7 @@ void Archive::write(W& w)
       case box::Section::STREAM_TABLE:
       {
         /* save offset to the stream table and store it into header */
-        refs.streamTable = w.reserveArray<box::StreamEntry>(_header.streamCount);
+        refs.streamTable = w.reserveArray<box::Stream>(_header.streamCount);
         _header.streamTableOffset = refs.streamTable;
         break;
       }
@@ -77,9 +77,9 @@ void Archive::write(W& w)
            offset inside the file, we also compute the total entry payload 
            length to reserve it
          */
-        for (const Entry& entry : entries)
+        for (const ArchiveEntry& entry : entries)
         {
-          box::TableEntry& tentry = entry.tableEntry();
+          box::Entry& tentry = entry.tableEntry();
           tentry.payload = base + length;
           tentry.payloadLength = entry.payloadLength();
           
@@ -99,9 +99,9 @@ void Archive::write(W& w)
          offset inside the file, we also compute the total entry payload
          length to reserve it
          */
-        for (const Stream& stream : streams)
+        for (const ArchiveStream& stream : streams)
         {
-          box::StreamEntry& sentry = stream.streamEntry();
+          box::Stream& sentry = stream.streamEntry();
           sentry.payload = base + length;
           sentry.payloadLength = stream.payloadLength();
           
@@ -119,7 +119,7 @@ void Archive::write(W& w)
         
         _header.nameTableOffset = base;
         
-        for (const Entry& entry : entries)
+        for (const ArchiveEntry& entry : entries)
         {
           entry.tableEntry().entryNameOffset = offset;
           w.write(entry.name().c_str(), 1, entry.name().length());
@@ -140,7 +140,7 @@ void Archive::write(W& w)
   }
   
   /* when we arrive here we suppose all streams have been written and all data
-     in StreamEntry and TableEntry has been prepared and filled */
+     in Stream and Entry has been prepared and filled */
   
   
   /* we fill the array of file entries */
@@ -201,7 +201,7 @@ box::checksum_t Archive::calculateGlobalChecksum(W& w, size_t bufferSize) const
   return digester.get();
 }
 
-void Archive::writeStream(W& w, Stream& stream)
+void Archive::writeStream(W& w, ArchiveStream& stream)
 {
   
 }

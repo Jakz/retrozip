@@ -84,7 +84,7 @@ void zlib_filter<computer, finalizer, OPTIONS>::process()
       
     case Z_STREAM_END:
     {
-      //printf("Stream end\n");
+      //printf("ArchiveStream end\n");
       break;
     }
       

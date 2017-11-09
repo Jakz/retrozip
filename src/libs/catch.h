@@ -630,7 +630,7 @@ namespace Catch {
 namespace Catch {
   
   class TestCase;
-  class Stream;
+  class ArchiveStream;
   struct IResultCapture;
   struct IRunner;
   struct IGeneratorsForTest;
@@ -658,7 +658,7 @@ namespace Catch {
   IContext& getCurrentContext();
   IMutableContext& getCurrentMutableContext();
   void cleanUpContext();
-  Stream createStream( std::string const& streamName );
+  ArchiveStream createStream( std::string const& streamName );
   
 }
 

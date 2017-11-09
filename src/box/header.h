@@ -67,7 +67,7 @@ namespace box
   enum class StorageMode : u32;
   enum class StorageSubmode : u32;
   
-  struct TableEntry
+  struct Entry
   {
     StorageMode mode;
     StorageSubmode submode;
@@ -89,7 +89,7 @@ namespace box
   
   enum class StreamType : u32;
   
-  struct StreamEntry
+  struct Stream
   {
     StreamType type;
     
