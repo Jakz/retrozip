@@ -25,7 +25,7 @@ namespace box
     FILE_NAME_TABLE
   };
   
-  enum class HeaderFlags : u64
+  enum class HeaderFlag : u64
   {
     INTEGRITY_CHECKSUM_ENABLED = 0x01LLU
   };
@@ -35,7 +35,7 @@ namespace box
     std::array<u8, 4> magic; // must be box!
     u32 version;
     
-    bit_mask<HeaderFlags> flags;
+    bit_mask<HeaderFlag> flags;
     
     count_t entryCount;
     count_t streamCount;
@@ -49,6 +49,8 @@ namespace box
     checksum_t fileChecksum;
     
     Header() : magic({{'b','o','x','!'}}) { }
+    
+    bool hasFlag(HeaderFlag flag) const { return flags && flag; }
     
   } __attribute__((packed));
   

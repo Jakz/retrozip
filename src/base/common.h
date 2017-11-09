@@ -270,6 +270,8 @@ struct bit_mask
     mask.value = this->value | static_cast<utype>(flag);
     return mask;
   }
+  
+  bool operator&&(T flag) const { return (value & static_cast<utype>(flag)) != 0; }
 };
 
 constexpr size_t KB8 = 8192;

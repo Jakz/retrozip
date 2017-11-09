@@ -60,9 +60,13 @@ struct Options
   bool computeMD5;
   bool computeSHA1;
   
-  bool calculateSanityChecksums;
+  struct
+  {
+    bool calculateGlobalChecksum;
+    size_t digesterBuffer;
+  } checksum;
   
-  Options() : computeCRC32(true), computeMD5(true), computeSHA1(true), calculateSanityChecksums(true) { }
+  Options() : computeCRC32(true), computeMD5(true), computeSHA1(true), checksum({true, MB1}) { }
 };
 
 class memory_buffer;
@@ -72,9 +76,9 @@ using R = memory_buffer;
 class Archive
 {
 private:
-  Options options;
+  Options _options;
   
-  box::Header header;
+  box::Header _header;
   
   std::vector<Entry> entries;
   std::vector<Stream> streams;
@@ -82,17 +86,20 @@ private:
   std::queue<box::Section> ordering;
   
   void finalizeHeader(W& w);
+  box::checksum_t calculateGlobalChecksum(W& w, size_t bufferSize) const;
   
   void writeStream(W& w, Stream& stream);
   
 public:
   Archive();
+  
   void write(W& w);
   void read(R& r);
   
+  const box::Header& header() const { return _header; }
+  Options& options() { return _options; }
   
-  Stream& streamByRef(Stream::ref ref) { return streams[ref]; }
-  
-  
+  bool isValidMagicNumber() const;
+  bool isValidGlobalChecksum(W& w) const;
 };
 

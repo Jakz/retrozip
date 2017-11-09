@@ -160,8 +160,8 @@
 				046B66D71FB2B76E007B58BD /* filters.h */,
 				046B66D61FB2B76E007B58BD /* deflate_filter.h */,
 				046B66D51FB2B76E007B58BD /* deflate_filter.cpp */,
-				0497EC0C1FB3499900011D57 /* xdelta3_filter.cpp */,
 				0497EC0D1FB3499900011D57 /* xdelta3_filter.h */,
+				0497EC0C1FB3499900011D57 /* xdelta3_filter.cpp */,
 			);
 			path = filters;
 			sourceTree = "<group>";
@@ -197,9 +197,9 @@
 		0497EC101FB384E400011D57 /* box */ = {
 			isa = PBXGroup;
 			children = (
-				0497EC111FB384E400011D57 /* archive.cpp */,
-				0497EC121FB384E400011D57 /* archive.h */,
 				0497EC131FB384E400011D57 /* header.h */,
+				0497EC121FB384E400011D57 /* archive.h */,
+				0497EC111FB384E400011D57 /* archive.cpp */,
 			);
 			path = box;
 			sourceTree = "<group>";
@@ -253,11 +253,11 @@
 			isa = PBXGroup;
 			children = (
 				04D118181FA21A4900C59EC3 /* arguments.h */,
+				04D1181B1FA21A4900C59EC3 /* exceptions.h */,
 				04D1181A1FA21A4900C59EC3 /* common.h */,
 				04D118191FA21A4900C59EC3 /* common.cpp */,
-				04D1181B1FA21A4900C59EC3 /* exceptions.h */,
-				04D1181C1FA21A4900C59EC3 /* path.cpp */,
 				04D1181D1FA21A4900C59EC3 /* path.h */,
+				04D1181C1FA21A4900C59EC3 /* path.cpp */,
 			);
 			path = base;
 			sourceTree = "<group>";

@@ -3,11 +3,15 @@
 
 #include "core/memory_buffer.h"
 #include "core/data_source.h"
-#include "filters/filters.h"
 #include "core/file_data_source.h"
+
+#include "filters/filters.h"
 #include "filters/deflate_filter.h"
+
 #include "hash/hash.h"
 #include "crypto/crypto.h"
+
+#include "box/archive.h"
 
 
 
@@ -1058,4 +1062,30 @@ TEST_CASE("aes", "[crypto]") {
       REQUIRE(plain == original);
     }
   }
+}
+
+#pragma mark Box Archive
+
+TEST_CASE("empty archive", "box archive")
+{
+  memory_buffer buffer;
+  
+  Archive source, result;
+  
+  source.options().checksum.calculateGlobalChecksum = true;
+  source.options().checksum.digesterBuffer = KB16;
+  
+  source.write(buffer);
+  result.read(buffer);
+  
+  REQUIRE(buffer.size() == sizeof(box::Header));
+  REQUIRE(buffer.size() == result.header().fileLength);
+  
+  REQUIRE(result.header().entryTableOffset == sizeof(box::Header));
+  REQUIRE(result.header().streamTableOffset == sizeof(box::Header));
+  REQUIRE(result.header().nameTableOffset == sizeof(box::Header));
+  
+  REQUIRE(result.isValidMagicNumber());
+  REQUIRE(result.header().hasFlag(box::HeaderFlag::INTEGRITY_CHECKSUM_ENABLED));
+  REQUIRE(result.isValidGlobalChecksum(buffer));
 }

@@ -23,6 +23,13 @@ Archive::Archive()
   ordering.push(box::Section::FILE_NAME_TABLE);
 }
 
+bool Archive::isValidMagicNumber() const { return _header.magic == std::array<u8, 4>({ 'b', 'o', 'x', '!' }); }
+
+bool Archive::isValidGlobalChecksum(W& w) const
+{
+  return !_header.hasFlag(box::HeaderFlag::INTEGRITY_CHECKSUM_ENABLED) || _header.fileChecksum == calculateGlobalChecksum(w, _options.checksum.digesterBuffer);
+}
+
 void Archive::write(W& w)
 {
   assert(ordering.front() == box::Section::HEADER);
@@ -32,9 +39,8 @@ void Archive::write(W& w)
   
   refs.header = w.reserve<box::Header>();
 
-  header.version = box::CURRENT_VERSION;
-  header.entryCount = static_cast<box::count_t>(entries.size());
-  header.streamCount = static_cast<box::count_t>(streams.size());
+  _header.entryCount = static_cast<box::count_t>(entries.size());
+  _header.streamCount = static_cast<box::count_t>(streams.size());
   
 
   while (!ordering.empty())
@@ -49,16 +55,16 @@ void Archive::write(W& w)
       case box::Section::ENTRY_TABLE:
       {
         /* save offset to the entry table and store it into header */
-        refs.entryTable = w.reserveArray<box::TableEntry>(header.entryCount);
-        header.entryTableOffset = refs.entryTable;
+        refs.entryTable = w.reserveArray<box::TableEntry>(_header.entryCount);
+        _header.entryTableOffset = refs.entryTable;
         break;
       }
         
       case box::Section::STREAM_TABLE:
       {
         /* save offset to the stream table and store it into header */
-        refs.streamTable = w.reserveArray<box::StreamEntry>(header.streamCount);
-        header.streamTableOffset = refs.streamTable;
+        refs.streamTable = w.reserveArray<box::StreamEntry>(_header.streamCount);
+        _header.streamTableOffset = refs.streamTable;
         break;
       }
         
@@ -111,7 +117,7 @@ void Archive::write(W& w)
         off_t base = w.tell();
         off_t offset = w.tell();
         
-        header.nameTableOffset = base;
+        _header.nameTableOffset = base;
         
         for (const Entry& entry : entries)
         {
@@ -122,7 +128,7 @@ void Archive::write(W& w)
           offset = w.tell();
         }
         
-        header.nameTableLength = static_cast<box::count_t>(offset - base);
+        _header.nameTableLength = static_cast<box::count_t>(offset - base);
         break;
       }
         
@@ -147,46 +153,55 @@ void Archive::write(W& w)
   
   /* this should be the last thing we do since it optionally computes hash for the whole file */
   finalizeHeader(w);
-  refs.header.write(header);
+  refs.header.write(_header);
 }
 
 void Archive::read(R& r)
 {
   r.seek(0);
-  r.read(header);
+  r.read(_header);
 }
 
 void Archive::finalizeHeader(W& w)
 {
-
-  if (options.calculateSanityChecksums)
-  {
-    header.flags.set(box::HeaderFlags::INTEGRITY_CHECKSUM_ENABLED);
-  }
   
+  w.seek(0, Seek::END);
+  _header.fileLength = w.tell();
+  
+  _header.version = box::CURRENT_VERSION;
+  
+
+  /* this must be done last */
+  if (_options.checksum.calculateGlobalChecksum)
+  {
+    _header.flags.set(box::HeaderFlag::INTEGRITY_CHECKSUM_ENABLED);
+    _header.fileChecksum = calculateGlobalChecksum(w, _options.checksum.digesterBuffer);
+  }
+}
+
+box::checksum_t Archive::calculateGlobalChecksum(W& w, size_t bufferSize) const
+{
   /* we need to calculate checksum of file but we need to skip the checksum itself */
   offset_t checksumOffset = offsetof(box::Header, fileChecksum);
 
   box::digester_t digester;
   w.seek(0);
-  const size_t bufferLength = MB1;
-  byte* buffer = new byte[bufferLength]; //TODO: adjustable buffer
+  byte* buffer = new byte[bufferSize];
   
-  digester.update(&header, checksumOffset);
-  digester.update(&header + sizeof(box::checksum_t), sizeof(box::Header) - checksumOffset - sizeof(box::checksum_t));
+  digester.update(&_header, checksumOffset);
+  digester.update(&_header + sizeof(box::checksum_t), sizeof(box::Header) - checksumOffset - sizeof(box::checksum_t));
   w.seek(sizeof(box::Header), Seek::SET);
   
   size_t read = 0;
-  while ((read = w.read(buffer, 1, bufferLength)) > 0)
+  while ((read = w.read(buffer, 1, bufferSize)) > 0)
     digester.update(buffer, read);
   
-  header.fileChecksum = digester.get();
-  w.seek(0, Seek::END);
-  header.fileLength = w.tell();
+  delete [] buffer;
+  
+  return digester.get();
 }
 
 void Archive::writeStream(W& w, Stream& stream)
 {
   
-
 }
