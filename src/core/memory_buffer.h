@@ -72,8 +72,12 @@ public:
   size_t size() const override { return _size; }
   size_t capacity() const { return _capacity; }
   off_t position() const { return _position; }
+  
   const byte* raw() const { return _data; }
   byte* raw() { return _data; }
+  
+  const byte* data() const { return _data; }
+  byte* data() { return _data; }
   
   off_t tell() const override { return _position; }
   

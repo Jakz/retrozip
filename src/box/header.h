@@ -105,8 +105,8 @@ namespace box
   
   struct Payload
   {
-    length_t length;
     payload_uid identifier;
+    length_t length;
     u32 hasNext; /* to pad to 16 bytes */
   } __attribute__((packed));
 }

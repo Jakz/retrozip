@@ -76,4 +76,47 @@ namespace filters
     }
     
   };
+  
+  
+  /* simple xor encryption */
+  class xor_filter : public data_filter
+  {
+  private:
+    std::vector<byte> _key;
+    size_t _counter;
+  public:
+    xor_filter(size_t bufferSize, const std::vector<byte>& key) : data_filter(bufferSize, bufferSize), _key(key), _counter(0) { }
+    
+    xor_filter(size_t bufferSize, const byte* key, size_t length) : data_filter(bufferSize, bufferSize), _counter(0)
+    {
+      _key.resize(length);
+      std::copy(key, key + length, _key.begin());
+    }
+    
+    void init() override { }
+    void finalize() override { }
+    
+    void process() override
+    {
+      size_t effective = std::min(_in.used(), _out.available());
+      
+      std::copy(_in.head(), _in.head() + effective, _out.tail());
+      
+      byte* ptr = _out.tail();
+      for (size_t i = 0; i < effective; ++i)
+      {
+        *ptr ^= _key[_counter++];
+        ++ptr;
+        _counter %= _key.size();
+      }
+      
+      _in.consume(effective);
+      _out.advance(effective);
+      
+      if (ended() && _in.empty() && _out.empty())
+        _finished = true;
+    }
+    
+    std::string name() override { return "xor"; }
+  };
 };

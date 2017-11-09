@@ -15,6 +15,10 @@
 #include "filters/xdelta3_filter.h"
 
 #define REQUIRE assert
+#define WRITE_RANDOM_DATA_AND_REWIND(dest, name, length) byte name[(length)]; randomize(name, (length)); dest.write(name, 1, (length)); dest.rewind();
+#define WRITE_RANDOM_DATA(dest, name, length) byte name[(length)]; randomize(name, (length)); dest.write(name, 1, (length));
+void randomize(byte* data, size_t len) { for (size_t i = 0; i < len; ++i) { data[i] = rand()%256; } }
+#define READ_DATA(dest, name, length, res) byte name[(length)]; size_t res = dest.read(name, 1, (length));
 
 #include <sstream>
 
@@ -249,10 +253,10 @@ int mainzzz(int argc, const char * argv[])
 
 int main(int argc, const char * argv[])
 {
-  Archive archive;
+  /*Archive archive;
   
   memory_buffer out;
-  archive.write(out);
-  
+  archive.write(out);*/
+
   return 0;
 }

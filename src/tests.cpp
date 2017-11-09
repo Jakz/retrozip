@@ -736,6 +736,47 @@ TEST_CASE("hash filters", "[filters]") {
   }
 }
 
+TEST_CASE("misc filters", "[filters]") {
+  SECTION("xor filter") {
+    constexpr size_t LEN = 256;
+    const char* KEY = "foobar";
+    constexpr size_t KEYLEN = 6;
+    
+    memory_buffer source;
+    memory_buffer sink;
+    memory_buffer sink2;
+    
+    WRITE_RANDOM_DATA_AND_REWIND(source, test, LEN);
+
+    {
+      source_filter<filters::xor_filter> filter(&source, 16, (const byte*)KEY, KEYLEN);
+    
+      passthrough_pipe pipe(&filter, &sink, 16);
+      pipe.process();
+    }
+    
+    {
+      sink.rewind();
+      source_filter<filters::xor_filter> filter(&sink, 16, (const byte*)KEY, KEYLEN);
+
+      passthrough_pipe pipe(&filter, &sink2, 16);
+      pipe.process();
+    }
+
+    REQUIRE(sink.size() == source.size());
+    REQUIRE(sink2.size() == source.size());
+    REQUIRE(source == sink2);
+    
+    size_t counter = 0;
+    for (size_t i = 0; i < LEN; ++i)
+    {
+      test[i] ^= KEY[counter++];
+      counter %= KEYLEN;
+    }
+    
+    REQUIRE(std::equal(test, test + LEN, sink.raw()));
+  }
+}
 
 TEST_CASE("deflate", "[filters]") {
   SECTION("deflate/inflate source") {
