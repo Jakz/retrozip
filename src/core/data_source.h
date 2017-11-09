@@ -10,13 +10,6 @@ struct data_source
   virtual size_t read(byte* dest, size_t amount) = 0;
 };
 
-struct seekable_data_source : public data_source
-{
-  virtual void seek(off_t position) = 0;
-  virtual off_t tell() const = 0;
-  virtual size_t size() const = 0;
-};
-
 struct data_sink
 {
   virtual ~data_sink() { }
@@ -26,7 +19,17 @@ struct data_sink
   T* as() { return static_cast<T*>(this); }
 };
 
+struct seekable
+{
+  virtual void seek(off_t position) = 0;
+  virtual off_t tell() const = 0;
+  virtual size_t size() const = 0;
+};
 
+struct seekable_data_source : public data_source, public seekable { };
+struct seekable_data_sink : public data_sink, public seekable { };
+struct seekable_data : public data_source, public data_sink, public seekable { };
+struct data : public data_source, public data_sink { };
 
 struct data_buffer
 {

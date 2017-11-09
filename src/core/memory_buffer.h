@@ -47,6 +47,22 @@ public:
     }
   }
   
+  memory_buffer(memory_buffer&& other) : _data(other._data), _position(other._position), _size(other._size), _capacity(other._capacity), _dataOwned(other._dataOwned)
+  {
+    if (_dataOwned)
+    {
+      other._data = nullptr;
+      other._position = 0;
+      other._capacity = 0;
+      other._size = 0;
+      other._dataOwned = false;
+    }
+  }
+  
+  memory_buffer(memory_buffer&) = delete;
+  memory_buffer& operator=(memory_buffer&) = delete;
+
+  
   memory_buffer(size_t capacity) : _data(new byte[capacity]), _capacity(capacity), _size(0), _position(0), _dataOwned(true) { }
   ~memory_buffer() { if (_dataOwned) delete [] _data; }
   
@@ -123,7 +139,7 @@ public:
     return available;
   }
   
-  void trim()
+  memory_buffer& trim()
   {
     if (_capacity > _size)
     {
@@ -133,6 +149,8 @@ public:
       _data = data;
       _capacity = _size;
     }
+    
+    return *this;
   }
   
   bool serialize(const file_handle& file) const

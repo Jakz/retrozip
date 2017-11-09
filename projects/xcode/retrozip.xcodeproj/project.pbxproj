@@ -77,6 +77,7 @@
 		0497EC111FB384E400011D57 /* archive.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = archive.cpp; sourceTree = "<group>"; };
 		0497EC121FB384E400011D57 /* archive.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = archive.h; sourceTree = "<group>"; };
 		0497EC131FB384E400011D57 /* header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = header.h; sourceTree = "<group>"; };
+		0497EC161FB40D9D00011D57 /* filter_queue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = filter_queue.h; sourceTree = "<group>"; };
 		049CD8231FB1704C001E7DB8 /* aes.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = aes.cpp; sourceTree = "<group>"; };
 		049CD8241FB1704C001E7DB8 /* crypto.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = crypto.h; sourceTree = "<group>"; };
 		04B2D9B21FA21987007F61BE /* retrozip */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = retrozip; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -200,6 +201,7 @@
 				0497EC131FB384E400011D57 /* header.h */,
 				0497EC121FB384E400011D57 /* archive.h */,
 				0497EC111FB384E400011D57 /* archive.cpp */,
+				0497EC161FB40D9D00011D57 /* filter_queue.h */,
 			);
 			path = box;
 			sourceTree = "<group>";

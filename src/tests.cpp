@@ -333,6 +333,77 @@ TEST_CASE("memory buffer", "[support]") {
       REQUIRE(b.size() == LEN);
       REQUIRE(b.position() == LEN);
     }
+    
+    SECTION("not owned data is not released on destruction")
+    {
+      constexpr size_t LEN = 256;
+      
+      byte* raw = new byte[LEN], *raw2 = new byte[LEN];
+      for (size_t i = 0; i < LEN; ++i)
+      {
+        raw[i] = rand()%256;
+        raw2[i] = raw[i];
+      }
+      
+      {
+        memory_buffer source(raw, 256, false);
+      }
+      
+      REQUIRE(std::equal(raw, raw + LEN, raw2));
+      raw[0] = !raw[0];
+    }
+    
+    SECTION("move constructor takes ownership when data is owned")
+    {
+      constexpr size_t LEN = 256;
+      memory_buffer source(LEN*2);
+      
+      WRITE_RANDOM_DATA(source, temp, LEN);
+      
+      const byte* raw = source.raw();
+      
+      memory_buffer dest(std::move(source));
+      
+      REQUIRE(dest.size() == LEN);
+      REQUIRE(dest.position() == LEN);
+      REQUIRE(dest.capacity() == LEN*2);
+      REQUIRE(dest.raw() == raw);
+      
+      REQUIRE(source.size() == 0);
+      REQUIRE(source.position() == 0);
+      REQUIRE(source.capacity() == 0);
+      REQUIRE(source.raw() == nullptr);
+      
+      REQUIRE(std::equal(dest.raw(), dest.raw() + LEN, temp));
+    }
+    
+    SECTION("move constructor shares ownership when data is not owned")
+    {
+      constexpr size_t LEN = 256;
+      
+      byte* raw = new byte[LEN];
+      for (size_t i = 0; i < LEN; ++i) raw[i] = rand()%256;
+      
+      memory_buffer source(raw, 256, false);
+      
+      memory_buffer dest(std::move(source));
+      
+      REQUIRE(dest.size() == LEN);
+      REQUIRE(dest.position() == 0);
+      REQUIRE(dest.capacity() == LEN);
+      REQUIRE(dest.raw() == raw);
+      
+      REQUIRE(source.size() == dest.size());
+      REQUIRE(source.position() == dest.position());
+      REQUIRE(source.capacity() == dest.capacity());
+      REQUIRE(source.raw() == dest.raw());
+      
+      raw[0] = !raw[0];
+      
+      REQUIRE(std::equal(dest.raw(), dest.raw() + LEN, raw));
+      REQUIRE(std::equal(source.raw(), source.raw() + LEN, raw));
+
+    }
   }
   
   SECTION("write with references") {

@@ -11,6 +11,7 @@ namespace box
   using length_t = u64;
   using checksum_t = hash::crc32_t;
   using digester_t = hash::crc32_digester;
+  using payload_uid = u32;
   
   static constexpr version_t CURRENT_VERSION = 0x00000001;
   
@@ -100,5 +101,12 @@ namespace box
     offset_t payload;
     count_t payloadLength;
     
+  } __attribute__((packed));
+  
+  struct Payload
+  {
+    length_t length;
+    payload_uid identifier;
+    u32 hasNext; /* to pad to 16 bytes */
   } __attribute__((packed));
 }

@@ -3,17 +3,11 @@
 #include "base/common.h"
 
 #include "core/data_source.h"
-#include "header.h"
-#include <queue>
 
-namespace header
-{
-  enum StorageMode
-  {
-    UNCOMPRESSED = 1,
-    
-  };
-}
+#include "filter_queue.h"
+#include "header.h"
+
+#include <queue>
 
 class ArchiveEntry
 {
@@ -21,19 +15,23 @@ public:
   using ref = size_t;
   
 private:
-  mutable box::Entry _tableEntry;
+  mutable box::Entry _binary;
 
-  std::unique_ptr<data_source> _source;
+  std::unique_ptr<seekable_data_source> _source;
   std::string _name;
   
 public:
-  ArchiveEntry(const std::string& name, data_source* source) : _source(source), _name(name) { }
+  ArchiveEntry(const std::string& name, seekable_data_source* source) : _source(source), _name(name) { }
   
+  void setName(const std::string& name) { this->_name = name; }
   const std::string& name() const { return _name; }
+  
+  void setSource(seekable_data_source* source) { this->_source = std::unique_ptr<seekable_data_source>(source); }
+  const std::unique_ptr<seekable_data_source>& source() { return _source; }
   
   box::count_t payloadLength() const { return 0 ; }
   
-  box::Entry& tableEntry() const { return _tableEntry; }
+  box::Entry& binary() const { return _binary; }
 };
 
 class ArchiveStream
@@ -42,7 +40,7 @@ public:
   using ref = size_t;
   
 private:
-  mutable box::Stream _streamEntry;
+  mutable box::Stream _binary;
   
   std::vector<ArchiveEntry::ref> entries;
 
@@ -51,7 +49,7 @@ public:
   
   box::count_t payloadLength() const { return 0 ; }
   
-  box::Stream& streamEntry() const { return _streamEntry; }
+  box::Stream& binary() const { return _binary; }
 };
 
 struct Options

@@ -79,7 +79,7 @@ void Archive::write(W& w)
          */
         for (const ArchiveEntry& entry : entries)
         {
-          box::Entry& tentry = entry.tableEntry();
+          box::Entry& tentry = entry.binary();
           tentry.payload = base + length;
           tentry.payloadLength = entry.payloadLength();
           
@@ -101,7 +101,7 @@ void Archive::write(W& w)
          */
         for (const ArchiveStream& stream : streams)
         {
-          box::Stream& sentry = stream.streamEntry();
+          box::Stream& sentry = stream.binary();
           sentry.payload = base + length;
           sentry.payloadLength = stream.payloadLength();
           
@@ -121,7 +121,7 @@ void Archive::write(W& w)
         
         for (const ArchiveEntry& entry : entries)
         {
-          entry.tableEntry().entryNameOffset = offset;
+          entry.binary().entryNameOffset = offset;
           w.write(entry.name().c_str(), 1, entry.name().length());
           w.write((char)'\0');
           
@@ -143,13 +143,13 @@ void Archive::write(W& w)
      in Stream and Entry has been prepared and filled */
   
   
-  /* we fill the array of file entries */
+  /* fill the array of file entries */
   for (size_t i = 0; i < entries.size(); ++i)
-    refs.entryTable.write(entries[i].tableEntry(), i);
+    refs.entryTable.write(entries[i].binary(), i);
   
-  /* we fill the array of stream entries */
+  /* fill the array of stream entries */
   for (size_t i = 0; i < streams.size(); ++i)
-    refs.streamTable.write(streams[i].streamEntry(), i);
+    refs.streamTable.write(streams[i].binary(), i);
   
   /* this should be the last thing we do since it optionally computes hash for the whole file */
   finalizeHeader(w);
