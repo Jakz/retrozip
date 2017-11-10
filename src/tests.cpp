@@ -1176,10 +1176,98 @@ TEST_CASE("aes", "[crypto]") {
   }
 }
 
+#pragma mark Filter Queue
+
+TEST_CASE("filter builder queue", "[box archive]") {
+  constexpr size_t LEN = 256;
+  const char *key1 = "foobar", *key2 = "baz";
+  
+  memory_buffer source(LEN);
+  memory_buffer sink(LEN);
+  WRITE_RANDOM_DATA_AND_REWIND(source, temp, LEN);
+  
+  
+  
+  filter_builder_queue queue;
+  
+  queue.add(new builders::xor_builder(16, key1));
+  queue.add(new builders::xor_builder(16, key2));
+  
+  filter_cache cache = queue.apply(&source);
+  data_source* result = cache.get();
+  
+  passthrough_pipe pipe(result, &sink, 16);
+  pipe.process();
+  
+  for (size_t i = 0; i < LEN; ++i)
+    temp[i] = temp[i] ^ key1[i % 6] ^ key2[i % 3];
+  
+  REQUIRE(sink.size() == source.size());
+  REQUIRE(std::equal(sink.raw(), sink.raw() + LEN, temp));
+  
+  filter_cache rcache = queue.unapply(&sink);
+  data_source* rsource = rcache.get();
+  memory_buffer original(LEN);
+  
+  {
+    sink.rewind();
+    passthrough_pipe pipe(rsource, &original, 16);
+    pipe.process();
+  }
+  
+  REQUIRE(original.size() == source.size());
+  REQUIRE(original == source);
+}
+
+TEST_CASE("payload generation", "[box archive]")
+{
+  const std::string key = "foobar";
+  const std::string key2 = "baz";
+
+  
+  SECTION("single xor filter") {
+    const auto builder = builders::xor_builder(16, key);
+    const auto payload = builder.payload();
+    
+    REQUIRE(payload.size() == sizeof(size_t) + key.length());
+  }
+  
+  SECTION("builder queue with single filter") {
+    filter_builder_queue queue;
+    queue.add(new builders::xor_builder(16, key));
+    memory_buffer payload = queue.payload();
+    
+    REQUIRE(payload.size() == sizeof(box::Payload) + sizeof(size_t) + key.length());
+  }
+  
+  SECTION("builder queue with double filter") {
+    filter_builder_queue queue;
+    queue.add(new builders::xor_builder(16, key));
+    queue.add(new builders::xor_builder(16, key2));
+
+    memory_buffer payload = queue.payload();
+    
+    size_t finalPayloadLength = sizeof(box::Payload)*2 + sizeof(size_t)*2 + key.length() + key2.length();
+    
+    REQUIRE(payload.size() == finalPayloadLength);
+    
+    const box::Payload* first = (const box::Payload*)payload.raw();
+    
+    REQUIRE(first->identifier == builders::identifier::XOR_FILTER);
+    REQUIRE(first->length == sizeof(box::Payload) + sizeof(size_t) + key.length());
+    REQUIRE(first->hasNext == true);
+    
+    const box::Payload* second = (const box::Payload*)(payload.raw() + first->length);
+    
+    REQUIRE(second->identifier == builders::identifier::XOR_FILTER);
+    REQUIRE(second->length == sizeof(box::Payload) + sizeof(size_t) + key2.length());
+    REQUIRE(second->hasNext == false);
+  }
+}
+
 #pragma mark Box Archive
 
-TEST_CASE("empty archive", "box archive")
-{
+TEST_CASE("empty archive", "[box archive]") {
   memory_buffer buffer;
   
   Archive source, result;

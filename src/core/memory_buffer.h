@@ -66,6 +66,8 @@ public:
   memory_buffer(size_t capacity) : _data(new byte[capacity]), _capacity(capacity), _size(0), _position(0), _dataOwned(true) { }
   ~memory_buffer() { if (_dataOwned) delete [] _data; }
   
+  byte operator[](size_t index) const { return _data[index]; }
+  
   bool operator==(const memory_buffer& other) const { return _size == other._size && std::equal(_data, _data+_size, other._data); }
   bool operator!=(const memory_buffer& other) { return !operator==(other); }
   

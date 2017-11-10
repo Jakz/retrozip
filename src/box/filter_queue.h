@@ -28,33 +28,6 @@ public:
   data_source* unapply(data_source* source) const override final { return apply(source); }
 };
 
-class filter_builder_queue
-{
-private:
-  std::vector<std::unique_ptr<filter_builder>> _builders;
-  
-public:
-  /* construct whole payload for all the filters of the queue */
-  memory_buffer serializePayload()
-  {
-    memory_buffer total(256);
-    
-    for (auto it = _builders.begin(); it != _builders.end(); ++it)
-    {
-      const auto& builder = *it;
-      
-      memory_buffer current = builder->payload();
-      
-      box::Payload payload = { builder->identifier(), current.size(), it != _builders.end() - 1 };
-      
-      total.write(payload);
-      total.write(current.data(), 1, current.size());
-    }
-    
-    return total;
-  }
-};
-
 class filter_cache
 {
 private:
@@ -80,6 +53,58 @@ public:
   data_source* get() { return _tail; }
 };
 
+class filter_builder_queue
+{
+private:
+  std::vector<std::unique_ptr<filter_builder>> _builders;
+  
+public:
+  /* construct whole payload for all the filters of the queue */
+  memory_buffer payload()
+  {
+    memory_buffer total(256);
+    
+    for (auto it = _builders.begin(); it != _builders.end(); ++it)
+    {
+      const auto& builder = *it;
+      
+      memory_buffer current = builder->payload();
+      
+      box::Payload payload = { builder->identifier(), current.size() + sizeof(box::Payload), it != _builders.end() - 1 };
+      
+      total.write(payload);
+      total.write(current.data(), 1, current.size());
+    }
+    
+    return total;
+  }
+  
+  void add(filter_builder* builder)
+  {
+    _builders.push_back(std::unique_ptr<filter_builder>(builder));
+  }
+  
+  filter_cache apply(data_source* source)
+  {
+    filter_cache cache = filter_cache(source);
+    for (const auto& builder : _builders)
+      cache.apply(*builder.get());
+    
+    return cache;
+  }
+  
+  filter_cache unapply(data_source* source)
+  {
+    filter_cache cache = filter_cache(source);
+    for (const auto& builder : _builders)
+      cache.unapply(*builder.get());
+    
+    return cache;
+  }
+};
+
+
+
 #include <vector>
 namespace builders
 {
@@ -91,9 +116,15 @@ namespace builders
   class xor_builder : public symmetric_filter_builder
   {
   private:
-    const std::vector<byte> _key;
+    std::vector<byte> _key;
     
   public:
+    xor_builder(size_t bufferSize, const std::string key) : symmetric_filter_builder(bufferSize)
+    {
+      _key.resize(key.size(), 0);
+      std::copy(key.begin(), key.end(), _key.begin());
+    }
+    
     xor_builder(size_t bufferSize, const std::vector<byte> key) : symmetric_filter_builder(bufferSize), _key(key) { }
     
     data_source* apply(data_source* source) const override
