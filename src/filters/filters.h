@@ -48,9 +48,12 @@ namespace filters
 
     void process(const byte* data, size_t amount, size_t effective) override
     {
-      if (_crc32enabled) _crc32.update(data, effective);
-      if (_md5enabled) _md5.update(data, effective);
-      if (_sha1enabled) _sha1.update(data, effective);
+      if (effective != END_OF_STREAM)
+      {
+        if (_crc32enabled) _crc32.update(data, effective);
+        if (_md5enabled) _md5.update(data, effective);
+        if (_sha1enabled) _sha1.update(data, effective);
+      }
     }
     
     hash::crc32_t crc32() { assert(_crc32enabled); return _crc32.get(); }

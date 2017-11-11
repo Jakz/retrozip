@@ -1289,3 +1289,16 @@ TEST_CASE("empty archive", "[box archive]") {
   REQUIRE(result.header().hasFlag(box::HeaderFlag::INTEGRITY_CHECKSUM_ENABLED));
   REQUIRE(result.isValidGlobalChecksum(buffer));
 }
+
+TEST_CASE("single entry archive", "[box archive]") {
+  constexpr size_t LEN = 256;
+  memory_buffer source, destination;
+  
+  WRITE_RANDOM_DATA_AND_REWIND(source, temp, LEN);
+  
+  Archive archive = Archive::ofSingleEntry("foobar.bin", &source, {});
+  archive.write(destination);
+  
+  
+
+}

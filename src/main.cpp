@@ -259,42 +259,14 @@ int main(int argc, const char * argv[])
   archive.write(out);*/
   
   constexpr size_t LEN = 256;
-  const char *key1 = "foobar", *key2 = "baz";
+  memory_buffer source, destination;
   
-  memory_buffer source(LEN);
-  memory_buffer sink(LEN);
   WRITE_RANDOM_DATA_AND_REWIND(source, temp, LEN);
   
-
-  filter_builder_queue queue;
+  Archive archive = Archive::ofSingleEntry("foobar.bin", &source, {});
+  archive.write(destination);
   
-  queue.add(new builders::xor_builder(16, key1));
-  queue.add(new builders::xor_builder(16, key2));
-  
-  filter_cache cache = queue.apply(&source);
-  data_source* result = cache.get();
-  
-  passthrough_pipe pipe(result, &sink, 16);
-  pipe.process();
-  
-  for (size_t i = 0; i < LEN; ++i)
-    temp[i] = temp[i] ^ key1[i % 6] ^ key2[i % 3];
-  
-  REQUIRE(sink.size() == source.size());
-  REQUIRE(std::equal(sink.raw(), sink.raw() + LEN, temp));
-  
-  filter_cache rcache = queue.unapply(&sink);
-  data_source* rsource = rcache.get();
-  memory_buffer original(LEN);
-  
-  {
-    sink.rewind();
-    passthrough_pipe pipe(rsource, &original, 16);
-    pipe.process();
-  }
-  
-  REQUIRE(original.size() == source.size());
-  REQUIRE(original == source);
+  printf("archive: %lu", destination.size());
 
   return 0;
 }

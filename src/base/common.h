@@ -55,11 +55,11 @@ extern void debugnnprintf(const char* str, ...);
 #define LOG(...) do { } while (false)
 #endif
 
-#define TRACE_MEMORY_BUFFERS 0
-#define TRACE_PIPES 0
-#define TRACE_ENABLED 0
+#define TRACE_MEMORY_BUFFERS 1
+#define TRACE_PIPES 1
+#define TRACE_ENABLED 1
 
-#define TRACE_FORCE_DISABLE 1
+#define TRACE_FORCE_DISABLE 0
 
 
 #if defined(TRACE_FORCE_DISABLE) && TRACE_FORCE_DISABLE == 1

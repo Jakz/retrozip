@@ -31,6 +31,21 @@ bool Archive::isValidGlobalChecksum(W& w) const
   return !_header.hasFlag(box::HeaderFlag::INTEGRITY_CHECKSUM_ENABLED) || _header.fileChecksum == calculateGlobalChecksum(w, _options.checksum.digesterBuffer);
 }
 
+Archive Archive::ofSingleEntry(const std::string& name, seekable_data_source* source, std::initializer_list<filter_builder*> builders)
+{
+  Archive archive;
+  
+  
+  archive.entries.emplace_back(name, source);
+  archive.streams.push_back(ArchiveStream());
+  
+  for (auto* builder : builders) archive.entries.front().addFilter(builder);
+  
+  archive.streams.front().assignEntry(0UL);
+  
+  return archive;
+}
+
 void Archive::write(W& w)
 {
   assert(ordering.front() == box::Section::HEADER);
@@ -136,9 +151,18 @@ void Archive::write(W& w)
       case box::Section::STREAM_DATA:
       {
         /* main stream writing */
+
+        for (ArchiveStream& stream : streams)
+          for (ArchiveEntry::ref ref : stream.entries())
+            writeEntry(w, stream, entryForRef(ref));
+        
+        break;
       }
     }
   }
+  
+  writeEntryPayloads(w);
+  writeStreamPayloads(w);
   
   /* when we arrive here we suppose all streams have been written and all data
      in Stream and Entry has been prepared and filled */
@@ -228,8 +252,49 @@ void Archive::writeEntry(W& w, ArchiveStream& stream, ArchiveEntry& entry)
   
   source = &outputCounter;
   
+  assert(_options.bufferSize > 0);
   passthrough_pipe pipe(source, &w, _options.bufferSize);
   pipe.process();
+  
+  entry.binary().originalSize = inputCounter.filter().count();
+  entry.binary().entrySize = filteredInputCounter.filter().count();
+  entry.binary().compressedSize = outputCounter.filter().count();
+  
+  if (_options.digest.crc32)
+    entry.binary().digest.crc32 = digester.filter().crc32();
+
+  if (_options.digest.md5)
+    entry.binary().digest.md5 = digester.filter().md5();
+
+  if (_options.digest.sha1)
+    entry.binary().digest.sha1 = digester.filter().sha1();
+  
+  //entry.binary().indexInStream
+  //entry.binary().stream
+}
+
+/* precondition: payload offset has been set for entries */
+void Archive::writeEntryPayloads(W& w)
+{
+  for (const ArchiveEntry& entry : entries)
+  {
+    const memory_buffer& payload = entry.payload();
+    
+    w.seek(entry.binary().payload);
+    w.write(payload.raw(), 1, payload.size());
+  }
+}
+
+/* precondition: payload offset has been set for entries */
+void Archive::writeStreamPayloads(W& w)
+{
+  for (const ArchiveStream& stream : streams)
+  {
+    const memory_buffer& payload = stream.payload();
+    
+    w.seek(stream.binary().payload);
+    w.write(payload.raw(), 1, payload.size());
+  }
 }
 
 void Archive::writeStream(W& w, ArchiveStream& stream)

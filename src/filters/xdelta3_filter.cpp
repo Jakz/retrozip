@@ -124,7 +124,7 @@ void xdelta3_filter<FUNCTION>::process()
     case XD3_OUTPUT:
     case XD3_GOTHEADER:
     {
-      TRACE("%p: xdelta3_%s::process() %s produced bytes (avail_out: %lu, total_out: %lu)", this, name().c_str(), nameForXdeltaReturnValue(_state), _stream.avail_out, _stream.total_out);
+      TRACE("%p: xdelta3_%s::process() %s produced bytes (avail_out: %lu, total_out: %lu)", this, name().c_str(), printableErrorCode(_state), _stream.avail_out, _stream.total_out);
       
       size_t produced = _stream.avail_out;
       
@@ -188,7 +188,7 @@ void xdelta3_filter<FUNCTION>::process()
     }
       
     default:
-      TRACE("%p: xdelta3_%s::process() %s", this, name().c_str(), nameForXdeltaReturnValue(_state));
+      TRACE("%p: xdelta3_%s::process() %s", this, name().c_str(), printableErrorCode(_state));
       assert(false);
   }
 }

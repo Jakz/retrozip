@@ -42,6 +42,7 @@ public:
     return static_cast<box::count_t>(payload().size());
   }
   
+  void addFilter(filter_builder* builder) { _filters.add(builder); }
   const filter_builder_queue& filters() { return _filters; }
   
   box::Entry& binary() const { return _binary; }
@@ -62,6 +63,9 @@ private:
 public:
   ArchiveStream() { }
   
+  void assignEntry(ArchiveEntry::ref entry) { _entries.push_back(entry); }
+  const std::vector<ArchiveEntry::ref> entries() { return _entries; }
+  
   const memory_buffer& payload() const
   {
     _payload = _filters.payload();
@@ -73,6 +77,7 @@ public:
     return static_cast<box::count_t>(payload().size());
   }
   
+  void addFilter(filter_builder* builder) { _filters.add(builder); }
   const filter_builder_queue& filters() { return _filters; }
   
   box::Stream& binary() const { return _binary; }
@@ -95,7 +100,7 @@ struct Options
     size_t digesterBuffer;
   } checksum;
   
-  Options() : digest({true, true, true}), checksum({true, MB1}) { }
+  Options() : bufferSize(16), digest({true, true, true}), checksum({true, MB1}) { }
 };
 
 class memory_buffer;
@@ -120,17 +125,24 @@ private:
   void writeStream(W& w, ArchiveStream& stream);
   
   void writeEntry(W& w, ArchiveStream& stream, ArchiveEntry& entry);
+  void writeEntryPayloads(W& w);
+  void writeStreamPayloads(W& w);
+  
+  const ArchiveEntry& entryForRef(ArchiveEntry::ref ref) const { return entries[ref]; }
+  ArchiveEntry& entryForRef(ArchiveEntry::ref ref) { return entries[ref]; }
   
 public:
   Archive();
   
   void write(W& w);
   void read(R& r);
-  
+
   const box::Header& header() const { return _header; }
   Options& options() { return _options; }
   
   bool isValidMagicNumber() const;
   bool isValidGlobalChecksum(W& w) const;
+  
+  static Archive ofSingleEntry(const std::string& name, seekable_data_source* source, std::initializer_list<filter_builder*> builders);
 };
 
