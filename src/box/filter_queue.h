@@ -60,7 +60,7 @@ private:
   
 public:
   /* construct whole payload for all the filters of the queue */
-  memory_buffer payload()
+  memory_buffer payload() const
   {
     memory_buffer total(256);
     
@@ -84,7 +84,7 @@ public:
     _builders.push_back(std::unique_ptr<filter_builder>(builder));
   }
   
-  filter_cache apply(data_source* source)
+  filter_cache apply(data_source* source) const
   {
     filter_cache cache = filter_cache(source);
     for (const auto& builder : _builders)
@@ -93,7 +93,7 @@ public:
     return cache;
   }
   
-  filter_cache unapply(data_source* source)
+  filter_cache unapply(data_source* source) const
   {
     filter_cache cache = filter_cache(source);
     for (const auto& builder : _builders)

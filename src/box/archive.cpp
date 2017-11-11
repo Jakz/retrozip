@@ -1,6 +1,7 @@
 #include "archive.h"
 
 #include "core/memory_buffer.h"
+#include "core/data_pipe.h"
 
 template<typename T> using ref = data_reference<T>;
 template<typename T> using aref = array_reference<T>;
@@ -103,7 +104,7 @@ void Archive::write(W& w)
         {
           box::Stream& sentry = stream.binary();
           sentry.payload = base + length;
-          sentry.payloadLength = stream.payloadLength();
+          sentry.payloadLength = stream.payload().size();
           
           length += sentry.payloadLength;
         }
@@ -199,6 +200,36 @@ box::checksum_t Archive::calculateGlobalChecksum(W& w, size_t bufferSize) const
   delete [] buffer;
   
   return digester.get();
+}
+
+void Archive::writeEntry(W& w, ArchiveStream& stream, ArchiveEntry& entry)
+{
+  data_source* source = entry.source().get();
+  
+  /* first we wrap with a counter filter to calculate the original input size */
+  unbuffered_source_filter<filters::data_counter> inputCounter(source);
+  /* then we apply digest calculator filter */
+  unbuffered_source_filter<filters::multiple_digest_filter> digester(&inputCounter, _options.digest.crc32, _options.digest.md5, _options.digest.sha1);
+  
+  /* then we apply all filters from entry */
+  filter_cache entryCache = entry.filters().apply(&digester);
+  source = entryCache.get();
+  
+  /* size of input transformed by entry filters before being sent to stream */
+  unbuffered_source_filter<filters::data_counter> filteredInputCounter(source);
+
+  
+  /* then we apply all filters from stream */
+  filter_cache streamCache = entry.filters().apply(&filteredInputCounter);
+  source = entryCache.get();
+
+  /* effectve written input */
+  unbuffered_source_filter<filters::data_counter> outputCounter(source);
+  
+  source = &outputCounter;
+  
+  passthrough_pipe pipe(source, &w, _options.bufferSize);
+  pipe.process();
 }
 
 void Archive::writeStream(W& w, ArchiveStream& stream)

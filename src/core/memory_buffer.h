@@ -59,6 +59,20 @@ public:
     }
   }
   
+  memory_buffer& operator=(memory_buffer&& other)
+  {
+    if (_dataOwned)
+      delete [] _data;
+    
+    _data = other._data;
+    _position = other._position;
+    _size = other._size;
+    _capacity = other._capacity;
+    _dataOwned = other._dataOwned;
+    
+    return *this;
+  }
+  
   memory_buffer(memory_buffer&) = delete;
   memory_buffer& operator=(memory_buffer&) = delete;
 

@@ -16,9 +16,11 @@ public:
   
 private:
   mutable box::Entry _binary;
-
+  
   std::unique_ptr<seekable_data_source> _source;
   std::string _name;
+  filter_builder_queue _filters;
+  mutable memory_buffer _payload;
   
 public:
   ArchiveEntry(const std::string& name, seekable_data_source* source) : _source(source), _name(name) { }
@@ -29,7 +31,18 @@ public:
   void setSource(seekable_data_source* source) { this->_source = std::unique_ptr<seekable_data_source>(source); }
   const std::unique_ptr<seekable_data_source>& source() { return _source; }
   
-  box::count_t payloadLength() const { return 0 ; }
+  const memory_buffer& payload() const
+  {
+    _payload = _filters.payload();
+    return _payload;
+  }
+  
+  box::count_t payloadLength() const
+  {
+    return static_cast<box::count_t>(payload().size());
+  }
+  
+  const filter_builder_queue& filters() { return _filters; }
   
   box::Entry& binary() const { return _binary; }
 };
@@ -42,21 +55,39 @@ public:
 private:
   mutable box::Stream _binary;
   
-  std::vector<ArchiveEntry::ref> entries;
+  std::vector<ArchiveEntry::ref> _entries;
+  filter_builder_queue _filters;
+  mutable memory_buffer _payload;
 
 public:
   ArchiveStream() { }
   
-  box::count_t payloadLength() const { return 0 ; }
+  const memory_buffer& payload() const
+  {
+    _payload = _filters.payload();
+    return _payload;
+  }
+  
+  box::count_t payloadLength() const
+  {
+    return static_cast<box::count_t>(payload().size());
+  }
+  
+  const filter_builder_queue& filters() { return _filters; }
   
   box::Stream& binary() const { return _binary; }
 };
 
 struct Options
 {
-  bool computeCRC32;
-  bool computeMD5;
-  bool computeSHA1;
+  size_t bufferSize;
+  
+  struct
+  {
+    bool crc32;
+    bool md5;
+    bool sha1;
+  } digest;
   
   struct
   {
@@ -64,7 +95,7 @@ struct Options
     size_t digesterBuffer;
   } checksum;
   
-  Options() : computeCRC32(true), computeMD5(true), computeSHA1(true), checksum({true, MB1}) { }
+  Options() : digest({true, true, true}), checksum({true, MB1}) { }
 };
 
 class memory_buffer;
@@ -87,6 +118,8 @@ private:
   box::checksum_t calculateGlobalChecksum(W& w, size_t bufferSize) const;
   
   void writeStream(W& w, ArchiveStream& stream);
+  
+  void writeEntry(W& w, ArchiveStream& stream, ArchiveEntry& entry);
   
 public:
   Archive();

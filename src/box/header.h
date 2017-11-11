@@ -73,7 +73,7 @@ namespace box
     StorageMode mode;
     StorageSubmode submode;
     
-    length_t realSize;
+    length_t originalSize;
     length_t uncompressedSize;
     length_t compressedSize;
     
