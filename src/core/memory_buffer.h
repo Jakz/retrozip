@@ -25,7 +25,9 @@ private:
   bool _dataOwned;
   
 public:
-  memory_buffer() : memory_buffer(KB16)
+  memory_buffer(size_t capacity) : _data(new byte[capacity]), _capacity(capacity), _size(0), _position(0), _dataOwned(true) { }
+
+  memory_buffer() : memory_buffer(0)
   {
     static_assert(sizeof(off_t) == 8, "");
     static_assert(sizeof(size_t) == 8, "");
@@ -62,13 +64,18 @@ public:
   memory_buffer& operator=(memory_buffer&& other)
   {
     if (_dataOwned)
+    {
       delete [] _data;
+    }
     
     _data = other._data;
     _position = other._position;
     _size = other._size;
     _capacity = other._capacity;
     _dataOwned = other._dataOwned;
+    
+    other._data = nullptr;
+    other._dataOwned = false;
     
     return *this;
   }
@@ -77,7 +84,6 @@ public:
   memory_buffer& operator=(memory_buffer&) = delete;
 
   
-  memory_buffer(size_t capacity) : _data(new byte[capacity]), _capacity(capacity), _size(0), _position(0), _dataOwned(true) { }
   ~memory_buffer() { if (_dataOwned) delete [] _data; }
   
   byte operator[](size_t index) const { return _data[index]; }

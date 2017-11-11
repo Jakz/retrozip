@@ -228,7 +228,7 @@ box::checksum_t Archive::calculateGlobalChecksum(W& w, size_t bufferSize) const
 
 void Archive::writeEntry(W& w, ArchiveStream& stream, ArchiveEntry& entry)
 {
-  data_source* source = entry.source().get();
+  data_source* source = entry.source();
   
   /* first we wrap with a counter filter to calculate the original input size */
   unbuffered_source_filter<filters::data_counter> inputCounter(source);

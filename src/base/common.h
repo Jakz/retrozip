@@ -59,11 +59,11 @@ extern void debugnnprintf(const char* str, ...);
 #define TRACE_PIPES 1
 #define TRACE_ENABLED 1
 
-#define TRACE_FORCE_DISABLE 0
+#define TRACE_FORCE_DISABLE 1
 
 
 #if defined(TRACE_FORCE_DISABLE) && TRACE_FORCE_DISABLE == 1
-#define TRACEL do { } while (false)
+#define TRACEL(...) do { } while (false)
 #else
 #define TRACEL LOG
 #endif

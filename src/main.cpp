@@ -266,7 +266,10 @@ int main(int argc, const char * argv[])
   Archive archive = Archive::ofSingleEntry("foobar.bin", &source, {});
   archive.write(destination);
   
-  printf("archive: %lu", destination.size());
-
+  size_t destinationSize =
+    sizeof(box::Header) + sizeof(box::Entry)*1 + sizeof(box::Stream)*1
+  
+  ;
+  
   return 0;
 }

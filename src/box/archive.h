@@ -17,7 +17,8 @@ public:
 private:
   mutable box::Entry _binary;
   
-  std::unique_ptr<seekable_data_source> _source;
+  /* TODO: manage data ownership */
+  /*std::unique_ptr<*/seekable_data_source*/*>*/ _source;
   std::string _name;
   filter_builder_queue _filters;
   mutable memory_buffer _payload;
@@ -28,8 +29,8 @@ public:
   void setName(const std::string& name) { this->_name = name; }
   const std::string& name() const { return _name; }
   
-  void setSource(seekable_data_source* source) { this->_source = std::unique_ptr<seekable_data_source>(source); }
-  const std::unique_ptr<seekable_data_source>& source() { return _source; }
+  void setSource(seekable_data_source* source) { this->_source = source; /*std::unique_ptr<seekable_data_source>(source);*/ }
+  const decltype(_source)& source() { return _source; }
   
   const memory_buffer& payload() const
   {
