@@ -5,6 +5,7 @@
 
 #include "header.h"
 #include <vector>
+#include <unordered_map>
 
 struct filter_builder
 {
@@ -100,6 +101,23 @@ public:
       cache.unapply(*builder.get());
     
     return cache;
+  }
+};
+
+class filter_repository
+{
+public:
+  using generator_t = std::function<std::function<filter_builder*(size_t)>(const byte* payload)>;
+  
+private:
+  std::unordered_map<box::payload_uid, generator_t> repository;
+  
+public:
+  void registerGenerator(box::payload_uid identifier, generator_t generator)
+  {
+    repository.emplace(std::make_pair(identifier, generator));
+    
+    repository[identifier] = generator;
   }
 };
 

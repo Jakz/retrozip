@@ -1299,6 +1299,25 @@ TEST_CASE("single entry archive", "[box archive]") {
   Archive archive = Archive::ofSingleEntry("foobar.bin", &source, {});
   archive.write(destination);
   
+  REQUIRE(archive.entries().size() == 1);
+  REQUIRE(archive.streams().size() == 1);
   
+  /* expected size */
+  size_t destinationSize =
+  sizeof(box::Header) /* header */
+  + sizeof(box::Entry)*1 + sizeof(box::Stream)*1 /* stream and entry tables */
+  + strlen("foobar.bin") + 1 + /* entry file name */
+  LEN /* stream */
+  ;
+  
+  destination.rewind();
+  
+  REQUIRE(destination.size() == destinationSize);
+  
+  Archive verify;
+  verify.read(destination);
+  
+  REQUIRE(archive.entries().size() == verify.entries().size());
+  REQUIRE(archive.streams().size() == verify.streams().size());
 
 }

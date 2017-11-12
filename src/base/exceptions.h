@@ -81,4 +81,14 @@ namespace exceptions
     not_enough_memory(const std::string& source) : _source(source) { }
     const char* what() const noexcept override { return _source.c_str(); }
   };
+  
+  class unserialization_exception : public box_exception
+  {
+  private:
+    const std::string _what;
+    
+  public:
+    unserialization_exception(const std::string& what) : _what(what) { }
+    const char* what() const noexcept override { return _what.c_str(); }
+  };
 }

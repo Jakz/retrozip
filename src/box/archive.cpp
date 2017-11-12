@@ -31,6 +31,75 @@ bool Archive::isValidGlobalChecksum(W& w) const
   return !_header.hasFlag(box::HeaderFlag::INTEGRITY_CHECKSUM_ENABLED) || _header.fileChecksum == calculateGlobalChecksum(w, _options.checksum.digesterBuffer);
 }
 
+bool Archive::checkEntriesMappingToStreams() const
+{
+  struct index_pair
+  {
+    box::index_t stream;
+    box::index_t indexInStream;
+    size_t entryIndex;
+    
+    bool operator==(const index_pair& other) const { return stream == other.stream && indexInStream == other.indexInStream; }
+  };
+  
+  struct mapping_hash
+  {
+    size_t operator()(const index_pair& pair) const
+    {
+      static_assert(sizeof(size_t) == sizeof(box::index_t)*2, "");
+      return ((size_t)pair.stream << 32ULL) | pair.indexInStream;
+    }
+  };
+  
+  std::unordered_set<index_pair, mapping_hash> mapping;
+  
+  size_t index = 0;
+  for (const auto& entry : _entries)
+  {
+    const auto& binary = entry.binary();
+    const box::index_t stream = binary.stream;
+    const box::index_t indexInStream = binary.indexInStream;
+    
+    /* check that stream index and index in stream are set */
+    if (indexInStream == box::INVALID_INDEX)
+      throw exceptions::unserialization_exception(fmt::sprintf("indexInStream not set for entry %lu", index));
+    else if (stream == box::INVALID_INDEX)
+      throw exceptions::unserialization_exception(fmt::sprintf("stream index not set for entry %lu", index));
+    
+    /* check that no other entry is mapped in the same position */
+    auto existing = mapping.find({ stream, indexInStream });
+    
+    if (existing != mapping.end())
+      throw exceptions::unserialization_exception(fmt::sprintf("entry %lu and %lu are both mapped to stream %lu:%lu ", index, existing->entryIndex, stream, indexInStream));
+    
+    /* check that mapping is consistent */
+    if (stream >= _streams.size())
+      throw exceptions::unserialization_exception(fmt::sprintf("stream index out of bounds for entry %lu", index));
+    else if (indexInStream >= _streams[binary.stream].entries().size())
+      throw exceptions::unserialization_exception(fmt::sprintf("index in stream out of bounds (%lu:%lu) for entry %lu", stream, indexInStream, index));
+    
+    mapping.insert({ stream, indexInStream, index });
+
+    ++index;
+  }
+  
+  /* check that all ref to entries are correct */
+  index = 0;
+  for (const auto& stream : _streams)
+  {
+    for (const auto entry : stream.entries())
+    {
+      if (entry >= _entries.size())
+        throw exceptions::unserialization_exception(fmt::sprintf("entry %lu out of bounds for stream %lu", entry, index));
+    }
+    
+    ++index;
+  }
+
+  
+  return true;
+}
+
 Archive Archive::ofSingleEntry(const std::string& name, seekable_data_source* source, std::initializer_list<filter_builder*> builders)
 {
   Archive archive;
@@ -42,6 +111,9 @@ Archive Archive::ofSingleEntry(const std::string& name, seekable_data_source* so
   for (auto* builder : builders) archive._entries.front().addFilter(builder);
   
   archive._streams.front().assignEntry(0UL);
+  
+  archive._entries.front().binary().stream = 0;
+  archive._entries.front().binary().indexInStream = 0;
   
   return archive;
 }
@@ -153,9 +225,19 @@ void Archive::write(W& w)
       {
         /* main stream writing */
 
+        box::index_t streamIndex = 0, indexInStream = 0;
         for (ArchiveStream& stream : _streams)
+        {
           for (ArchiveEntry::ref ref : stream.entries())
+          {
+            ArchiveEntry& entry = entryForRef(ref);
+            entry.mapToStream(streamIndex, indexInStream);
             writeEntry(w, stream, entryForRef(ref));
+                              
+            ++indexInStream;
+          }
+          ++streamIndex;
+        }
         
         break;
       }

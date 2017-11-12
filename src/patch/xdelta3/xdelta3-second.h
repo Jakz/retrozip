@@ -240,16 +240,10 @@ static inline int xd3_encode_bits (xd3_stream      *stream,
   return 0;
 }
 
-static int
-xd3_encode_secondary (xd3_stream      *stream,
-		      xd3_output     **head,
-		      xd3_output     **tail,
-		      xd3_sec_stream **sec_streamp,
-		      xd3_sec_cfg     *cfg,
-		      int             *did_it)
+static int xd3_encode_secondary(xd3_stream* stream, xd3_output** head, xd3_output** tail, xd3_sec_stream** sec_streamp, xd3_sec_cfg* cfg, int* did_it)
 {
-  xd3_output     *tmp_head;
-  xd3_output     *tmp_tail;
+  xd3_output* tmp_head;
+  xd3_output* tmp_tail;
 
   usize_t comp_size;
   usize_t orig_size;

@@ -46,6 +46,12 @@ public:
     return static_cast<box::count_t>(payload().size());
   }
   
+  void mapToStream(box::index_t streamIndex, box::index_t indexInStream)
+  {
+    _binary.stream = streamIndex;
+    _binary.indexInStream = indexInStream;
+  }
+  
   void addFilter(filter_builder* builder) { _filters.add(builder); }
   const filter_builder_queue& filters() { return _filters; }
   
@@ -67,8 +73,12 @@ private:
 public:
   ArchiveStream() { }
   
-  void assignEntry(ArchiveEntry::ref entry) { _entries.push_back(entry); }
-  const std::vector<ArchiveEntry::ref> entries() { return _entries; }
+  void assignEntry(ArchiveEntry::ref entry)
+  {
+    _entries.push_back(entry);
+  }
+  
+  const std::vector<ArchiveEntry::ref>& entries() const { return _entries; }
   
   const memory_buffer& payload() const
   {
@@ -146,6 +156,10 @@ public:
   
   bool isValidMagicNumber() const;
   bool isValidGlobalChecksum(W& w) const;
+  bool checkEntriesMappingToStreams() const;
+  
+  const decltype(_entries)& entries() { return _entries; }
+  const decltype(_streams)& streams() { return _streams; }
   
   static Archive ofSingleEntry(const std::string& name, seekable_data_source* source, std::initializer_list<filter_builder*> builders);
 };

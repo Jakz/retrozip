@@ -9,9 +9,12 @@ namespace box
   using offset_t = u64;
   using count_t = u32;
   using length_t = u64;
+  using index_t = s32;
   using checksum_t = hash::crc32_t;
   using digester_t = hash::crc32_digester;
   using payload_uid = u32;
+  
+  static constexpr index_t INVALID_INDEX = -1;
   
   static constexpr version_t CURRENT_VERSION = 0x00000001;
   
@@ -33,7 +36,7 @@ namespace box
   
   struct Header
   {
-    std::array<u8, 4> magic; // must be box!
+    std::array<u8, 4> magic; // must be "box!"
     u32 version;
     
     bit_mask<HeaderFlag> flags;
@@ -79,13 +82,15 @@ namespace box
     
     DigestInfo digest;
     
-    count_t stream;
-    count_t indexInStream;
+    index_t stream = INVALID_INDEX;
+    index_t indexInStream = INVALID_INDEX;
     
     offset_t payload;
     count_t payloadLength;
     
     offset_t entryNameOffset;
+    
+    Entry() : stream(INVALID_INDEX), indexInStream(INVALID_INDEX) { }
   } __attribute__((packed));
   
   enum class StreamType : u32;

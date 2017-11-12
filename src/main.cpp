@@ -253,11 +253,6 @@ int mainzzz(int argc, const char * argv[])
 
 int main(int argc, const char * argv[])
 {
-  /*Archive archive;
-  
-  memory_buffer out;
-  archive.write(out);*/
-  
   constexpr size_t LEN = 256;
   memory_buffer source, destination;
   
@@ -277,8 +272,8 @@ int main(int argc, const char * argv[])
 
   REQUIRE(destination.size() == destinationSize);
 
-  Archive archive2;
-  archive2.read(destination);
+  Archive verify;
+  verify.read(destination);
   
   return 0;
 }

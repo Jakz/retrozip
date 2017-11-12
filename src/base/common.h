@@ -19,6 +19,7 @@ using u64 = uint64_t;
 using byte = u8;
 using offset_t = u32;
 
+using s32 = int32_t;
 using s64 = int64_t;
 
 #if defined(__BYTE_ORDER) && __BYTE_ORDER == __BIG_ENDIAN || \
