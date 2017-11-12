@@ -267,9 +267,18 @@ int main(int argc, const char * argv[])
   archive.write(destination);
   
   size_t destinationSize =
-    sizeof(box::Header) + sizeof(box::Entry)*1 + sizeof(box::Stream)*1
-  
+    sizeof(box::Header) /* header */
+  + sizeof(box::Entry)*1 + sizeof(box::Stream)*1 /* stream and entry tables */
+  + strlen("foobar.bin") + 1 + /* entry file name */
+    LEN /* stream */
   ;
+  
+  destination.rewind();
+
+  REQUIRE(destination.size() == destinationSize);
+
+  Archive archive2;
+  archive2.read(destination);
   
   return 0;
 }

@@ -18,20 +18,23 @@ private:
   mutable box::Entry _binary;
   
   /* TODO: manage data ownership */
-  /*std::unique_ptr<*/seekable_data_source*/*>*/ _source;
+  seekable_data_source* _source;
   std::string _name;
   filter_builder_queue _filters;
   mutable memory_buffer _payload;
   
 public:
+  ArchiveEntry(const std::string& name, const box::Entry& binary) :
+    _name(name), _source(nullptr), _binary(binary) { }
+  
   ArchiveEntry(const std::string& name, seekable_data_source* source) : _source(source), _name(name) { }
   
   void setName(const std::string& name) { this->_name = name; }
   const std::string& name() const { return _name; }
   
-  void setSource(seekable_data_source* source) { this->_source = source; /*std::unique_ptr<seekable_data_source>(source);*/ }
   const decltype(_source)& source() { return _source; }
   
+  memory_buffer& payload() { return _payload; }
   const memory_buffer& payload() const
   {
     _payload = _filters.payload();
@@ -115,10 +118,10 @@ private:
   
   box::Header _header;
   
-  std::vector<ArchiveEntry> entries;
-  std::vector<ArchiveStream> streams;
+  std::vector<ArchiveEntry> _entries;
+  std::vector<ArchiveStream> _streams;
   
-  std::queue<box::Section> ordering;
+  std::queue<box::Section> _ordering;
   
   void finalizeHeader(W& w);
   box::checksum_t calculateGlobalChecksum(W& w, size_t bufferSize) const;
@@ -129,8 +132,8 @@ private:
   void writeEntryPayloads(W& w);
   void writeStreamPayloads(W& w);
   
-  const ArchiveEntry& entryForRef(ArchiveEntry::ref ref) const { return entries[ref]; }
-  ArchiveEntry& entryForRef(ArchiveEntry::ref ref) { return entries[ref]; }
+  const ArchiveEntry& entryForRef(ArchiveEntry::ref ref) const { return _entries[ref]; }
+  ArchiveEntry& entryForRef(ArchiveEntry::ref ref) { return _entries[ref]; }
   
 public:
   Archive();

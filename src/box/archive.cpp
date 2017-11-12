@@ -15,13 +15,13 @@ struct refs
 
 Archive::Archive()
 {
-  ordering.push(box::Section::HEADER);
-  ordering.push(box::Section::ENTRY_TABLE);
-  ordering.push(box::Section::ENTRY_PAYLOAD);
-  ordering.push(box::Section::STREAM_TABLE);
-  ordering.push(box::Section::STREAM_PAYLOAD);
-  ordering.push(box::Section::STREAM_DATA);
-  ordering.push(box::Section::FILE_NAME_TABLE);
+  _ordering.push(box::Section::HEADER);
+  _ordering.push(box::Section::ENTRY_TABLE);
+  _ordering.push(box::Section::ENTRY_PAYLOAD);
+  _ordering.push(box::Section::STREAM_TABLE);
+  _ordering.push(box::Section::STREAM_PAYLOAD);
+  _ordering.push(box::Section::STREAM_DATA);
+  _ordering.push(box::Section::FILE_NAME_TABLE);
 }
 
 bool Archive::isValidMagicNumber() const { return _header.magic == std::array<u8, 4>({ 'b', 'o', 'x', '!' }); }
@@ -36,33 +36,33 @@ Archive Archive::ofSingleEntry(const std::string& name, seekable_data_source* so
   Archive archive;
   
   
-  archive.entries.emplace_back(name, source);
-  archive.streams.push_back(ArchiveStream());
+  archive._entries.emplace_back(name, source);
+  archive._streams.push_back(ArchiveStream());
   
-  for (auto* builder : builders) archive.entries.front().addFilter(builder);
+  for (auto* builder : builders) archive._entries.front().addFilter(builder);
   
-  archive.streams.front().assignEntry(0UL);
+  archive._streams.front().assignEntry(0UL);
   
   return archive;
 }
 
 void Archive::write(W& w)
 {
-  assert(ordering.front() == box::Section::HEADER);
-  ordering.pop();
+  assert(_ordering.front() == box::Section::HEADER);
+  _ordering.pop();
   
   refs refs;
   
   refs.header = w.reserve<box::Header>();
 
-  _header.entryCount = static_cast<box::count_t>(entries.size());
-  _header.streamCount = static_cast<box::count_t>(streams.size());
+  _header.entryCount = static_cast<box::count_t>(_entries.size());
+  _header.streamCount = static_cast<box::count_t>(_streams.size());
   
 
-  while (!ordering.empty())
+  while (!_ordering.empty())
   {
-    box::Section section = ordering.front();
-    ordering.pop();
+    box::Section section = _ordering.front();
+    _ordering.pop();
     
     switch (section)
     {
@@ -93,7 +93,7 @@ void Archive::write(W& w)
            offset inside the file, we also compute the total entry payload 
            length to reserve it
          */
-        for (const ArchiveEntry& entry : entries)
+        for (const ArchiveEntry& entry : _entries)
         {
           box::Entry& tentry = entry.binary();
           tentry.payload = base + length;
@@ -115,7 +115,7 @@ void Archive::write(W& w)
          offset inside the file, we also compute the total entry payload
          length to reserve it
          */
-        for (const ArchiveStream& stream : streams)
+        for (const ArchiveStream& stream : _streams)
         {
           box::Stream& sentry = stream.binary();
           sentry.payload = base + length;
@@ -135,7 +135,8 @@ void Archive::write(W& w)
         
         _header.nameTableOffset = base;
         
-        for (const ArchiveEntry& entry : entries)
+        /* write NUL terminated name */
+        for (const ArchiveEntry& entry : _entries)
         {
           entry.binary().entryNameOffset = offset;
           w.write(entry.name().c_str(), 1, entry.name().length());
@@ -152,7 +153,7 @@ void Archive::write(W& w)
       {
         /* main stream writing */
 
-        for (ArchiveStream& stream : streams)
+        for (ArchiveStream& stream : _streams)
           for (ArchiveEntry::ref ref : stream.entries())
             writeEntry(w, stream, entryForRef(ref));
         
@@ -169,12 +170,12 @@ void Archive::write(W& w)
   
   
   /* fill the array of file entries */
-  for (size_t i = 0; i < entries.size(); ++i)
-    refs.entryTable.write(entries[i].binary(), i);
+  for (size_t i = 0; i < _entries.size(); ++i)
+    refs.entryTable.write(_entries[i].binary(), i);
   
   /* fill the array of stream entries */
-  for (size_t i = 0; i < streams.size(); ++i)
-    refs.streamTable.write(streams[i].binary(), i);
+  for (size_t i = 0; i < _streams.size(); ++i)
+    refs.streamTable.write(_streams[i].binary(), i);
   
   /* this should be the last thing we do since it optionally computes hash for the whole file */
   finalizeHeader(w);
@@ -185,6 +186,31 @@ void Archive::read(R& r)
 {
   r.seek(0);
   r.read(_header);
+  
+  //TODO: check validity
+  
+  /* read entries */
+  r.seek(_header.entryTableOffset);
+  for (size_t i = 0; i < _header.entryCount; ++i)
+  {
+    /* read entry */
+    box::Entry entry;
+    r.read(entry);
+    
+    /* read entry name */
+    r.seek(entry.entryNameOffset);
+    //TODO: ugly
+    std::string name;
+    char c;
+    r.read(&c, sizeof(char), 1);
+    while (c) {
+      name += c;
+      r.read(&c, sizeof(char), 1);
+    }
+    
+    _entries.emplace_back(name, entry);
+  }
+  
 }
 
 void Archive::finalizeHeader(W& w)
@@ -276,7 +302,7 @@ void Archive::writeEntry(W& w, ArchiveStream& stream, ArchiveEntry& entry)
 /* precondition: payload offset has been set for entries */
 void Archive::writeEntryPayloads(W& w)
 {
-  for (const ArchiveEntry& entry : entries)
+  for (const ArchiveEntry& entry : _entries)
   {
     const memory_buffer& payload = entry.payload();
     
@@ -288,7 +314,7 @@ void Archive::writeEntryPayloads(W& w)
 /* precondition: payload offset has been set for entries */
 void Archive::writeStreamPayloads(W& w)
 {
-  for (const ArchiveStream& stream : streams)
+  for (const ArchiveStream& stream : _streams)
   {
     const memory_buffer& payload = stream.payload();
     

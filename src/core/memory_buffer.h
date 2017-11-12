@@ -80,7 +80,8 @@ public:
     return *this;
   }
   
-  memory_buffer(memory_buffer&) = delete;
+  memory_buffer(const memory_buffer&) = delete;
+                
   memory_buffer& operator=(memory_buffer&) = delete;
 
   
