@@ -264,8 +264,8 @@ int main(int argc, const char * argv[])
   size_t destinationSize =
     sizeof(box::Header) /* header */
   + sizeof(box::Entry)*1 + sizeof(box::Stream)*1 /* stream and entry tables */
-  + strlen("foobar.bin") + 1 + /* entry file name */
-    LEN /* stream */
+  + strlen("foobar.bin") + 1 /* entry file name */
+  + LEN /* stream */
   ;
   
   destination.rewind();

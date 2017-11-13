@@ -3,6 +3,8 @@
 #include "core/memory_buffer.h"
 #include "core/data_pipe.h"
 
+using uexc = exceptions::unserialization_exception;
+
 template<typename T> using ref = data_reference<T>;
 template<typename T> using aref = array_reference<T>;
 
@@ -62,21 +64,21 @@ bool Archive::checkEntriesMappingToStreams() const
     
     /* check that stream index and index in stream are set */
     if (indexInStream == box::INVALID_INDEX)
-      throw exceptions::unserialization_exception(fmt::sprintf("indexInStream not set for entry %lu", index));
+      throw uexc(fmt::sprintf("indexInStream not set for entry %lu", index));
     else if (stream == box::INVALID_INDEX)
-      throw exceptions::unserialization_exception(fmt::sprintf("stream index not set for entry %lu", index));
+      throw uexc(fmt::sprintf("stream index not set for entry %lu", index));
     
     /* check that no other entry is mapped in the same position */
     auto existing = mapping.find({ stream, indexInStream });
     
     if (existing != mapping.end())
-      throw exceptions::unserialization_exception(fmt::sprintf("entry %lu and %lu are both mapped to stream %lu:%lu ", index, existing->entryIndex, stream, indexInStream));
+      throw uexc(fmt::sprintf("entry %lu and %lu are both mapped to stream %lu:%lu ", index, existing->entryIndex, stream, indexInStream));
     
     /* check that mapping is consistent */
     if (stream >= _streams.size())
-      throw exceptions::unserialization_exception(fmt::sprintf("stream index out of bounds for entry %lu", index));
+      throw uexc(fmt::sprintf("stream index out of bounds for entry %lu", index));
     else if (indexInStream >= _streams[binary.stream].entries().size())
-      throw exceptions::unserialization_exception(fmt::sprintf("index in stream out of bounds (%lu:%lu) for entry %lu", stream, indexInStream, index));
+      throw uexc(fmt::sprintf("index in stream out of bounds (%lu:%lu) for entry %lu", stream, indexInStream, index));
     
     mapping.insert({ stream, indexInStream, index });
 
@@ -89,21 +91,21 @@ bool Archive::checkEntriesMappingToStreams() const
   {
     for (const auto entry : stream.entries())
     {
+      if (entry == box::INVALID_INDEX)
+        throw uexc(fmt::sprintf("entry not set stream %lu", index));
       if (entry >= _entries.size())
-        throw exceptions::unserialization_exception(fmt::sprintf("entry %lu out of bounds for stream %lu", entry, index));
+        throw uexc(fmt::sprintf("entry %lu out of bounds for stream %lu", entry, index));
     }
     
     ++index;
   }
 
-  
   return true;
 }
 
 Archive Archive::ofSingleEntry(const std::string& name, seekable_data_source* source, std::initializer_list<filter_builder*> builders)
 {
   Archive archive;
-  
   
   archive._entries.emplace_back(name, source);
   archive._streams.push_back(ArchiveStream());
@@ -269,7 +271,9 @@ void Archive::read(R& r)
   r.seek(0);
   r.read(_header);
   
-  //TODO: check validity
+  if (!isValidMagicNumber())
+    throw uexc("invalid magic number, expecting 'box!'");
+  //TODO: check validity checksum etc
   
   /* read entries */
   r.seek(_header.entryTableOffset);
@@ -290,14 +294,47 @@ void Archive::read(R& r)
       r.read(&c, sizeof(char), 1);
     }
     
-    _entries.emplace_back(name, entry);
+    /* load payload */
+    std::vector<byte> payload;
+    if (entry.payloadLength > 0)
+    {
+      r.seek(entry.payload);
+      r.read(payload.data(), 1, entry.payloadLength);
+    }
+    
+    _entries.emplace_back(name, entry, payload);
   }
   
+  /* read stream headers */
+  r.seek(_header.streamTableOffset);
+  for (size_t i = 0; i < _header.streamCount; ++i)
+  {
+    /* read stream header */
+    box::Stream stream;
+    r.read(stream);
+    
+    _streams.emplace_back(stream);
+  }
+  
+  /* for each entry map it to the correct stream at correct index */
+  ArchiveEntry::ref index = 0;
+  for (const auto& entry : _entries)
+  {
+    box::index_t stream = entry.binary().stream;
+    box::index_t indexInStream = entry.binary().indexInStream;
+    
+    if (stream != box::INVALID_INDEX && indexInStream != box::INVALID_INDEX && stream < _streams.size())
+      _streams[stream].assignEntryAtIndex(indexInStream, index);
+    
+    ++index;
+  }
+  
+  /* verify integrity of the whole mapping */
+  checkEntriesMappingToStreams();
 }
 
 void Archive::finalizeHeader(W& w)
 {
-  
   w.seek(0, Seek::END);
   _header.fileLength = w.tell();
   

@@ -80,6 +80,8 @@ public:
     return total;
   }
   
+  void unserialize(memory_buffer& data);
+  
   void add(filter_builder* builder)
   {
     _builders.push_back(std::unique_ptr<filter_builder>(builder));
@@ -102,6 +104,8 @@ public:
     
     return cache;
   }
+  
+  bool empty() const { return _builders.empty(); }
 };
 
 class filter_repository
@@ -116,9 +120,12 @@ public:
   void registerGenerator(box::payload_uid identifier, generator_t generator)
   {
     repository.emplace(std::make_pair(identifier, generator));
-    
     repository[identifier] = generator;
   }
+  
+  filter_builder* generate(box::payload_uid identifier, const byte* data) const { return nullptr; }
+  
+  static const filter_repository* instance();
 };
 
 
@@ -137,6 +144,16 @@ namespace builders
     std::vector<byte> _key;
     
   public:
+    xor_builder(size_t bufferSize, const byte* payload) : symmetric_filter_builder(bufferSize)
+    {
+      payload += sizeof(box::Payload);
+      box::slength_t keyLength = *reinterpret_cast<const box::slength_t*>(payload);
+      payload += sizeof(box::slength_t);
+      
+      _key.resize(keyLength, 0);
+      std::copy(payload, payload + keyLength, _key.begin());
+    }
+    
     xor_builder(size_t bufferSize, const std::string key) : symmetric_filter_builder(bufferSize)
     {
       _key.resize(key.size(), 0);
@@ -154,8 +171,8 @@ namespace builders
     
     virtual memory_buffer payload() const override
     {
-      memory_buffer buffer(sizeof(size_t) + _key.size());
-      buffer.write(_key.size());
+      memory_buffer buffer(sizeof(box::slength_t) + _key.size());
+      buffer.write((box::slength_t)_key.size());
       buffer.write(_key.data(), 1, _key.size());
       return buffer;
     }

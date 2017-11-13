@@ -1229,7 +1229,7 @@ TEST_CASE("payload generation", "[box archive]")
     const auto builder = builders::xor_builder(16, key);
     const auto payload = builder.payload();
     
-    REQUIRE(payload.size() == sizeof(size_t) + key.length());
+    REQUIRE(payload.size() == sizeof(box::slength_t) + key.length());
   }
   
   SECTION("builder queue with single filter") {
@@ -1237,7 +1237,7 @@ TEST_CASE("payload generation", "[box archive]")
     queue.add(new builders::xor_builder(16, key));
     memory_buffer payload = queue.payload();
     
-    REQUIRE(payload.size() == sizeof(box::Payload) + sizeof(size_t) + key.length());
+    REQUIRE(payload.size() == sizeof(box::Payload) + sizeof(box::slength_t) + key.length());
   }
   
   SECTION("builder queue with double filter") {
@@ -1247,20 +1247,20 @@ TEST_CASE("payload generation", "[box archive]")
 
     memory_buffer payload = queue.payload();
     
-    size_t finalPayloadLength = sizeof(box::Payload)*2 + sizeof(size_t)*2 + key.length() + key2.length();
+    size_t finalPayloadLength = sizeof(box::Payload)*2 + sizeof(box::slength_t)*2 + key.length() + key2.length();
     
     REQUIRE(payload.size() == finalPayloadLength);
     
     const box::Payload* first = (const box::Payload*)payload.raw();
     
     REQUIRE(first->identifier == builders::identifier::XOR_FILTER);
-    REQUIRE(first->length == sizeof(box::Payload) + sizeof(size_t) + key.length());
+    REQUIRE(first->length == sizeof(box::Payload) + sizeof(box::slength_t) + key.length());
     REQUIRE(first->hasNext == true);
     
     const box::Payload* second = (const box::Payload*)(payload.raw() + first->length);
     
     REQUIRE(second->identifier == builders::identifier::XOR_FILTER);
-    REQUIRE(second->length == sizeof(box::Payload) + sizeof(size_t) + key2.length());
+    REQUIRE(second->length == sizeof(box::Payload) + sizeof(box::slength_t) + key2.length());
     REQUIRE(second->hasNext == false);
   }
 }

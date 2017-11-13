@@ -9,6 +9,7 @@ namespace box
   using offset_t = u64;
   using count_t = u32;
   using length_t = u64;
+  using slength_t = u32;
   using index_t = s32;
   using checksum_t = hash::crc32_t;
   using digester_t = hash::crc32_digester;

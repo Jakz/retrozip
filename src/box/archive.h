@@ -9,35 +9,44 @@
 
 #include <queue>
 
+class memory_buffer;
+using W = memory_buffer;
+using R = memory_buffer;
+
 class ArchiveEntry
 {
 public:
-  using ref = size_t;
+  using ref = box::index_t;
   
 private:
   mutable box::Entry _binary;
   
   /* TODO: manage data ownership */
-  seekable_data_source* _source;
+  data_source* _source;
   std::string _name;
   filter_builder_queue _filters;
   mutable memory_buffer _payload;
   
-public:
-  ArchiveEntry(const std::string& name, const box::Entry& binary) :
-    _name(name), _source(nullptr), _binary(binary) { }
+  void serializePayload() const { _payload = _filters.payload(); }
+  void unserializePayload() { _filters.unserialize(_payload); }
   
-  ArchiveEntry(const std::string& name, seekable_data_source* source) : _source(source), _name(name) { }
+public:
+  ArchiveEntry(const std::string& name, const box::Entry& binary, const std::vector<byte>& payload) :
+    _name(name), _source(nullptr), _binary(binary), _payload(payload.size())
+  {
+    std::copy(payload.begin(), payload.end(), _payload.raw());
+  }
+  
+  ArchiveEntry(const std::string& name, data_source* source) : _source(source), _name(name) { }
   
   void setName(const std::string& name) { this->_name = name; }
   const std::string& name() const { return _name; }
   
   const decltype(_source)& source() { return _source; }
-  
-  memory_buffer& payload() { return _payload; }
+
   const memory_buffer& payload() const
   {
-    _payload = _filters.payload();
+    serializePayload();
     return _payload;
   }
   
@@ -72,14 +81,14 @@ private:
 
 public:
   ArchiveStream() { }
+  ArchiveStream(const box::Stream& binary) : _binary(binary) { }
   
-  void assignEntry(ArchiveEntry::ref entry)
-  {
-    _entries.push_back(entry);
-  }
+  void assignEntry(ArchiveEntry::ref entry) { _entries.push_back(entry); }
+  void assignEntryAtIndex(size_t index, ArchiveEntry::ref entry) { _entries.resize(index+1, box::INVALID_INDEX); _entries[index] = entry; }
   
   const std::vector<ArchiveEntry::ref>& entries() const { return _entries; }
   
+                
   const memory_buffer& payload() const
   {
     _payload = _filters.payload();
@@ -117,10 +126,6 @@ struct Options
   Options() : bufferSize(16), digest({true, true, true}), checksum({true, MB1}) { }
 };
 
-class memory_buffer;
-using W = memory_buffer;
-using R = memory_buffer;
-
 class Archive
 {
 private:
@@ -150,7 +155,7 @@ public:
   
   void write(W& w);
   void read(R& r);
-
+  
   const box::Header& header() const { return _header; }
   Options& options() { return _options; }
   

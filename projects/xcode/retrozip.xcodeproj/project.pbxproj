@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		040937211FB94F2400FE70C7 /* filter_queue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 040937201FB94F2400FE70C7 /* filter_queue.cpp */; };
+		040937221FB94F2400FE70C7 /* filter_queue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 040937201FB94F2400FE70C7 /* filter_queue.cpp */; };
 		046B66D81FB2B76E007B58BD /* deflate_filter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 046B66D51FB2B76E007B58BD /* deflate_filter.cpp */; };
 		046B66D91FB2B76E007B58BD /* deflate_filter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 046B66D51FB2B76E007B58BD /* deflate_filter.cpp */; };
 		0478F16A1FAAE04A009183C7 /* xdelta3.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0478F1681FAAE04A009183C7 /* xdelta3.cpp */; };
@@ -63,6 +65,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		040937201FB94F2400FE70C7 /* filter_queue.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = filter_queue.cpp; sourceTree = "<group>"; };
 		04262F981FA76E3700B025B6 /* data_pipe.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = data_pipe.h; sourceTree = "<group>"; };
 		04262F991FA7725700B025B6 /* file_data_source.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = file_data_source.h; sourceTree = "<group>"; };
 		0451D6BE1FA3970900DFBA90 /* memory_buffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = memory_buffer.h; sourceTree = "<group>"; };
@@ -202,6 +205,7 @@
 				0497EC121FB384E400011D57 /* archive.h */,
 				0497EC111FB384E400011D57 /* archive.cpp */,
 				0497EC161FB40D9D00011D57 /* filter_queue.h */,
+				040937201FB94F2400FE70C7 /* filter_queue.cpp */,
 			);
 			path = box;
 			sourceTree = "<group>";
@@ -398,6 +402,7 @@
 				049CD8251FB1704C001E7DB8 /* aes.cpp in Sources */,
 				04D1182F1FA21A4900C59EC3 /* format.cc in Sources */,
 				04D1182E1FA21A4900C59EC3 /* path.cpp in Sources */,
+				040937211FB94F2400FE70C7 /* filter_queue.cpp in Sources */,
 				04D118541FA25B4000C59EC3 /* sha1.cpp in Sources */,
 				046B66D81FB2B76E007B58BD /* deflate_filter.cpp in Sources */,
 				04D1183A1FA21AF600C59EC3 /* crc32.cpp in Sources */,
@@ -420,6 +425,7 @@
 				049CD8261FB1704C001E7DB8 /* aes.cpp in Sources */,
 				04D118471FA21C5700C59EC3 /* path.cpp in Sources */,
 				04D118481FA21C5700C59EC3 /* crc32.cpp in Sources */,
+				040937221FB94F2400FE70C7 /* filter_queue.cpp in Sources */,
 				04D118551FA25B4000C59EC3 /* sha1.cpp in Sources */,
 				046B66D91FB2B76E007B58BD /* deflate_filter.cpp in Sources */,
 				04D118491FA21C5700C59EC3 /* tests.cpp in Sources */,

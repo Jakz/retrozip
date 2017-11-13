@@ -94,10 +94,17 @@ public:
   
   size_t size() const override { return _size; }
   size_t capacity() const { return _capacity; }
+  
+  size_t toRead() const { return _size - _position; }
   off_t position() const { return _position; }
+  bool eob() const { return _position == _size; }
+  
+  
   
   const byte* raw() const { return _data; }
   byte* raw() { return _data; }
+  
+  const byte* direct() const { return _data + _position; }
   
   const byte* data() const { return _data; }
   byte* data() { return _data; }
