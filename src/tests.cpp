@@ -1319,5 +1319,20 @@ TEST_CASE("single entry archive", "[box archive]") {
   
   REQUIRE(archive.entries().size() == verify.entries().size());
   REQUIRE(archive.streams().size() == verify.streams().size());
-
+  
+  const ArchiveEntry& archiveEntry = archive.entries()[0];
+  const auto& entry = archiveEntry.binary();
+  
+  REQUIRE(entry.compressedSize == LEN);
+  REQUIRE(entry.originalSize == LEN);
+  REQUIRE(entry.filteredSize == LEN);
+  REQUIRE(entry.indexInStream == 0);
+  REQUIRE(entry.stream == 0);
+  
+  const ArchiveStream& streamEntry = archive.streams()[0];
+  const auto& stream = streamEntry.binary();
+  
+  REQUIRE(stream.length == 256);
+  REQUIRE(streamEntry.entries().size() == 1);
+  REQUIRE(streamEntry.entries()[0] == 0);
 }

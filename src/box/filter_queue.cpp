@@ -8,18 +8,26 @@ const filter_repository* filter_repository::instance()
   if (!init)
   {
     repository.registerGenerator(builders::identifier::XOR_FILTER, [] (const byte* payload) {
-      return [payload] (const size_t bufferSize)
-      {
-        return new builders::xor_builder(bufferSize, payload);
-      };
+      size_t bufferSize = repository.bufferSizeFor(builders::identifier::XOR_FILTER, payload);
+      return new builders::xor_builder(bufferSize, payload);
     });
-    
     
     init = true;
   }
   
   return &repository;
 }
+
+filter_builder* filter_repository::generate(box::payload_uid identifier, const byte* data) const
+{
+  const auto it = repository.find(identifier);
+  
+  if (it == repository.end())
+    throw exceptions::unserialization_exception(fmt::sprintf("unknown filter identifier: %lu", identifier));
+  else
+    return it->second(data);
+}
+
 
 
 void filter_builder_queue::unserialize(memory_buffer& data)

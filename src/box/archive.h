@@ -26,7 +26,7 @@ private:
   std::string _name;
   filter_builder_queue _filters;
   mutable memory_buffer _payload;
-  
+    
   void serializePayload() const { _payload = _filters.payload(); }
   void unserializePayload() { _filters.unserialize(_payload); }
   
@@ -60,7 +60,7 @@ public:
     _binary.stream = streamIndex;
     _binary.indexInStream = indexInStream;
   }
-  
+
   void addFilter(filter_builder* builder) { _filters.add(builder); }
   const filter_builder_queue& filters() { return _filters; }
   

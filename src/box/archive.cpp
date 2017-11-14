@@ -230,6 +230,9 @@ void Archive::write(W& w)
         box::index_t streamIndex = 0, indexInStream = 0;
         for (ArchiveStream& stream : _streams)
         {
+          stream.binary().offset = w.tell();
+          stream.binary().length = 0;
+          
           for (ArchiveEntry::ref ref : stream.entries())
           {
             ArchiveEntry& entry = entryForRef(ref);
@@ -389,10 +392,10 @@ void Archive::writeEntry(W& w, ArchiveStream& stream, ArchiveEntry& entry)
 
   
   /* then we apply all filters from stream */
-  filter_cache streamCache = entry.filters().apply(&filteredInputCounter);
-  source = entryCache.get();
+  filter_cache streamCache = stream.filters().apply(&filteredInputCounter);
+  source = streamCache.get();
 
-  /* effectve written input */
+  /* effective written input */
   unbuffered_source_filter<filters::data_counter> outputCounter(source);
   
   source = &outputCounter;
@@ -402,8 +405,10 @@ void Archive::writeEntry(W& w, ArchiveStream& stream, ArchiveEntry& entry)
   pipe.process();
   
   entry.binary().originalSize = inputCounter.filter().count();
-  entry.binary().entrySize = filteredInputCounter.filter().count();
+  entry.binary().filteredSize = filteredInputCounter.filter().count();
   entry.binary().compressedSize = outputCounter.filter().count();
+  
+  stream.binary().length += entry.binary().compressedSize;
   
   if (_options.digest.crc32)
     entry.binary().digest.crc32 = digester.filter().crc32();

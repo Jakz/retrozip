@@ -242,7 +242,11 @@ public:
     {
       assert(_dataOwned);
       //TODO: this may fail and must be managed
-      _data = (byte*)realloc(_data, newCapacity);
+      byte* data = new byte[newCapacity];
+      std::copy(_data, _data + _size, data);
+      delete [] _data;
+      _data = data;
+      
       _capacity = newCapacity;
     }
   }

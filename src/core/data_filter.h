@@ -38,6 +38,8 @@ public:
   
   T& filter() { return _filter; }
   const T& filter() const { return _filter; }
+  
+  void setSource(data_source* source) { this->_source = source; }
 };
 
 template<typename T>
@@ -71,8 +73,14 @@ protected:
   bool _finished;
   bool _isEnded;
   
+private:
+  
 public:
   data_filter(size_t inBufferSize, size_t outBufferSize) : _in(inBufferSize), _out(outBufferSize), _started(false), _finished(false), _isEnded(false) { }
+
+  data_filter() : data_filter(KB16, KB16) { }
+  data_filter(size_t bufferSize) : data_filter(bufferSize, bufferSize) { }
+
   ~data_filter() { }
   
   memory_buffer& in() { return _in; }
@@ -81,6 +89,10 @@ public:
   virtual void init() = 0;
   virtual void process() = 0;
   virtual void finalize() = 0;
+  
+  void resizeIn(size_t capacity) { _in.resize(capacity); }
+  void resizeOut(size_t capacity) { _out.resize(capacity); }
+  void resize(size_t capacity) { resizeIn(capacity); resizeOut(capacity); }
   
   void start() { _started = true; }
   void markEnded() { _isEnded = true; }

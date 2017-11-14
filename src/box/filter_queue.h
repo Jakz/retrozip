@@ -12,6 +12,7 @@ struct filter_builder
 protected:
   size_t _bufferSize;
 
+protected:
   filter_builder(size_t bufferSize) : _bufferSize(bufferSize) { }
   
 public:
@@ -111,10 +112,12 @@ public:
 class filter_repository
 {
 public:
-  using generator_t = std::function<std::function<filter_builder*(size_t)>(const byte* payload)>;
+  using generator_t = std::function<filter_builder*(const byte* payload)>;
   
 private:
   std::unordered_map<box::payload_uid, generator_t> repository;
+  
+  size_t bufferSizeFor(box::payload_uid identifier, const byte* payload) { return KB16; }
   
 public:
   void registerGenerator(box::payload_uid identifier, generator_t generator)
@@ -123,7 +126,7 @@ public:
     repository[identifier] = generator;
   }
   
-  filter_builder* generate(box::payload_uid identifier, const byte* data) const { return nullptr; }
+  filter_builder* generate(box::payload_uid identifier, const byte* data) const;
   
   static const filter_repository* instance();
 };

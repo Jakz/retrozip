@@ -78,7 +78,7 @@ namespace box
     StorageSubmode submode;
     
     length_t originalSize;
-    length_t entrySize;
+    length_t filteredSize;
     length_t compressedSize;
     
     DigestInfo digest;
