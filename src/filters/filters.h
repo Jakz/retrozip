@@ -122,4 +122,93 @@ namespace filters
     
     std::string name() override { return "xor"; }
   };
+  
+  /* skip filter which skips specific amount of bytes before reading/writing */
+  /* TODO: this uses buffers but it's not necessary, but there is no data_filter interface without
+     buffers and unbuffered_data_filter interface doesn't allow doing this */
+  class skip_filter : public data_filter
+  {
+  private:
+    size_t _amountToSkip;
+    size_t _amountToPassThrough;
+    size_t _offset;
+    
+    size_t _position;
+    size_t _skipped;
+    size_t _passed;
+    
+    size_t passthrough(size_t amount)
+    {
+      size_t effective = std::min(std::min(_in.used(), _out.available()), amount);
+      if (effective > 0)
+      {
+        std::copy(_in.raw(), _in.raw() + effective, _out.raw());
+        _in.consume(effective);
+        _out.advance(effective);
+      }
+      return effective;
+    }
+    
+  public:
+    skip_filter(size_t bufferSize, size_t amountToSkip, size_t amountToPassThrough = 0, size_t offset = 0) : data_filter(bufferSize),
+      _amountToSkip(amountToSkip), _amountToPassThrough(amountToPassThrough), _offset(offset), _position(0), _skipped(0), _passed(0) { }
+    
+    void init() override { _skipped = 0; }
+    void finalize() override { }
+    void process() override
+    {
+      /* we still have to reach the position in which start skipping */
+      if (_position < _offset)
+      {
+        size_t amount = std::min(_in.used(), _offset - _position);
+        if (amount > 0)
+          _position += passthrough(amount);
+          
+        if (!_in.empty()) process();
+      }
+      /* we already skipped so we can passthrough */
+      else if (_skipped == _amountToSkip)
+      {
+        size_t effective = 0;
+        
+        if (_passed < _amountToPassThrough)
+        {
+          size_t amount = _amountToPassThrough - _passed;
+          effective = passthrough(amount);
+          _passed += effective;
+        }
+        else if (_amountToPassThrough != 0)
+        {
+          effective = _in.used();
+          _in.consume(_in.used());
+          
+          this->_finished = _out.empty() && ended();
+        }
+        else
+        {
+          effective = passthrough(std::numeric_limits<size_t>::max());
+        }
+        
+        _position += effective;
+        
+        if (!_in.empty()) process();
+      }
+      /* otherwise we must skip */
+      else
+      {
+        size_t stillToSkip = std::min(_amountToSkip - _skipped, _in.used());
+        
+        _skipped += stillToSkip;
+        _in.consume(stillToSkip);
+        
+        if (!_in.empty()) process();
+      }
+
+      this->_finished = _skipped == _amountToSkip && _passed >= _amountToPassThrough && _in.empty() && _out.empty() && ended();
+    }
+    
+    std::string name() override { return "skip"; }
+  };
+  
+  
 };

@@ -776,6 +776,35 @@ TEST_CASE("misc filters", "[filters]") {
     
     REQUIRE(std::equal(test, test + LEN, sink.raw()));
   }
+  
+  SECTION("skip filter") {
+    SECTION("source (buffer >= total, offset == 0, passthrough == 0)") {
+      constexpr size_t LEN = 256, SKIP = 100;
+      memory_buffer source, sink;
+      WRITE_RANDOM_DATA_AND_REWIND(source, test, LEN);
+
+      source_filter<filters::skip_filter> filter(&source, 256, SKIP);
+      passthrough_pipe pipe(&filter, &sink, 256);
+      pipe.process();
+      
+      REQUIRE(sink.size() == LEN - SKIP);
+      REQUIRE(std::equal(source.raw() + SKIP, source.raw() + LEN, sink.raw()));
+    }
+    
+    SECTION("source (buffer >= total, offset 0, passthrough != 0)") {
+      constexpr size_t LEN = 256, SKIP = 100, PASS = 60;
+      memory_buffer source, sink;
+      WRITE_RANDOM_DATA_AND_REWIND(source, test, LEN);
+      
+      source_filter<filters::skip_filter> filter(&source, 256, SKIP, PASS);
+      passthrough_pipe pipe(&filter, &sink, 256);
+      pipe.process();
+      
+      REQUIRE(sink.size() == PASS);
+      REQUIRE(std::equal(source.raw() + SKIP, source.raw() + PASS, sink.raw()));
+    }
+    
+  }
 }
 
 TEST_CASE("deflate", "[filters]") {
