@@ -142,7 +142,7 @@ namespace filters
       size_t effective = std::min(std::min(_in.used(), _out.available()), amount);
       if (effective > 0)
       {
-        std::copy(_in.raw(), _in.raw() + effective, _out.raw());
+        std::copy(_in.head(), _in.head() + effective, _out.tail());
         _in.consume(effective);
         _out.advance(effective);
       }
@@ -164,6 +164,7 @@ namespace filters
         if (amount > 0)
           _position += passthrough(amount);
           
+        TRACE_IF(amount > 0, "%p: skip_filter::process() passing %lu bytes through before skipping", this, amount);
         if (!_in.empty()) process();
       }
       /* we already skipped so we can passthrough */
@@ -175,6 +176,7 @@ namespace filters
         {
           size_t amount = _amountToPassThrough - _passed;
           effective = passthrough(amount);
+          TRACE_IF(effective > 0, "%p: skip_filter::process() passing %lu limiting bytes through after skipping", this, effective);
           _passed += effective;
         }
         else if (_amountToPassThrough != 0)
@@ -182,11 +184,13 @@ namespace filters
           effective = _in.used();
           _in.consume(_in.used());
           
+          TRACE_IF(effective > 0, "%p: skip_filter::process() BLA BLA skipping %lu bytes", this, effective);
           this->_finished = _out.empty() && ended();
         }
         else
         {
           effective = passthrough(std::numeric_limits<size_t>::max());
+          TRACE_IF(effective > 0, "%p: skip_filter::process() passing %lu bytes through after skipping", this, effective);
         }
         
         _position += effective;
@@ -201,6 +205,8 @@ namespace filters
         _skipped += stillToSkip;
         _in.consume(stillToSkip);
         
+        TRACE_IF(stillToSkip > 0, "%p: skip_filter::process() skipping %lu bytes", this, stillToSkip);
+
         if (!_in.empty()) process();
       }
 

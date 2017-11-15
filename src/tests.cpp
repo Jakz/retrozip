@@ -1,4 +1,7 @@
 #define CATCH_CONFIG_MAIN
+
+#define CATCH_CONFIG_FAST_COMPILE
+
 #include "libs/catch.h"
 
 #include "core/memory_buffer.h"
@@ -777,33 +780,45 @@ TEST_CASE("misc filters", "[filters]") {
     REQUIRE(std::equal(test, test + LEN, sink.raw()));
   }
   
-  SECTION("skip filter") {
-    SECTION("source (buffer >= total, offset == 0, passthrough == 0)") {
-      constexpr size_t LEN = 256, SKIP = 100;
-      memory_buffer source, sink;
-      WRITE_RANDOM_DATA_AND_REWIND(source, test, LEN);
-
-      source_filter<filters::skip_filter> filter(&source, 256, SKIP);
-      passthrough_pipe pipe(&filter, &sink, 256);
-      pipe.process();
-      
-      REQUIRE(sink.size() == LEN - SKIP);
-      REQUIRE(std::equal(source.raw() + SKIP, source.raw() + LEN, sink.raw()));
+  SECTION("skip filter on source") {
+    constexpr size_t LEN = 256;
+    size_t SKIP_AMOUNT = 0;
+    size_t START_OFFSET = 0;
+    size_t PASS = 0;
+    size_t BUFFER_SIZE = 256;
+    
+    SECTION("buffer >= total, offset == 0, passthrough == 0") {
+      SKIP_AMOUNT = 100;
     }
     
-    SECTION("source (buffer >= total, offset 0, passthrough != 0)") {
-      constexpr size_t LEN = 256, SKIP = 100, PASS = 60;
-      memory_buffer source, sink;
-      WRITE_RANDOM_DATA_AND_REWIND(source, test, LEN);
-      
-      source_filter<filters::skip_filter> filter(&source, 256, SKIP, PASS);
-      passthrough_pipe pipe(&filter, &sink, 256);
-      pipe.process();
-      
-      REQUIRE(sink.size() == PASS);
-      REQUIRE(std::equal(source.raw() + SKIP, source.raw() + PASS, sink.raw()));
+    SECTION("buffer >= total, offset != 0, passthrough == 0") {
+      SKIP_AMOUNT = 100;
+      START_OFFSET = 20;
     }
     
+    SECTION("buffer >= total, offset 0, passthrough != 0") {
+      SKIP_AMOUNT = 100;
+      PASS = 60;
+    }
+    
+    SECTION("buffer >= total, offset != 0, passthrough != 0") {
+      START_OFFSET = 10;
+      SKIP_AMOUNT = 41;
+      PASS = 20;
+    }
+    
+    memory_buffer source, sink;
+    WRITE_RANDOM_DATA_AND_REWIND(source, test, LEN);
+    
+    source_filter<filters::skip_filter> filter(&source, BUFFER_SIZE, SKIP_AMOUNT, PASS, START_OFFSET);
+    passthrough_pipe pipe(&filter, &sink, BUFFER_SIZE);
+    pipe.process();
+    
+    size_t keptAfterSkip = PASS != 0 ? PASS : (LEN - SKIP_AMOUNT - START_OFFSET);
+    
+    REQUIRE(sink.size() == START_OFFSET + keptAfterSkip);
+    REQUIRE(std::equal(source.raw(), source.raw() + START_OFFSET, sink.raw()));
+    REQUIRE(std::equal(source.raw() + START_OFFSET + SKIP_AMOUNT, source.raw() + START_OFFSET + SKIP_AMOUNT + keptAfterSkip, sink.raw() + START_OFFSET));
   }
 }
 

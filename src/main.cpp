@@ -253,27 +253,18 @@ int mainzzz(int argc, const char * argv[])
 
 int main(int argc, const char * argv[])
 {
-  constexpr size_t LEN = 256;
-  memory_buffer source, destination;
+  constexpr size_t LEN = 256, OFFSET = 20, SKIP = 100;
+  memory_buffer source, sink;
+  WRITE_RANDOM_DATA_AND_REWIND(source, test, LEN);
   
-  WRITE_RANDOM_DATA_AND_REWIND(source, temp, LEN);
+  source_filter<filters::skip_filter> filter(&source, 256, SKIP, 0, OFFSET);
+  passthrough_pipe pipe(&filter, &sink, 256);
+  pipe.process();
   
-  Archive archive = Archive::ofSingleEntry("foobar.bin", &source, {});
-  archive.write(destination);
-  
-  size_t destinationSize =
-    sizeof(box::Header) /* header */
-  + sizeof(box::Entry)*1 + sizeof(box::Stream)*1 /* stream and entry tables */
-  + strlen("foobar.bin") + 1 /* entry file name */
-  + LEN /* stream */
-  ;
-  
-  destination.rewind();
+  REQUIRE(sink.size() == LEN - SKIP);
+  REQUIRE(std::equal(source.raw(), source.raw() + OFFSET, sink.raw()));
+  REQUIRE(std::equal(source.raw() + OFFSET + SKIP, source.raw() + source.size() , sink.raw() + OFFSET));
 
-  REQUIRE(destination.size() == destinationSize);
-
-  Archive verify;
-  verify.read(destination);
   
   return 0;
 }

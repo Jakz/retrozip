@@ -71,7 +71,7 @@ public:
       if (effective == END_OF_STREAM && _state == state::NOTIFIED_SINK)
       {
         _state = state::CLOSED;
-        TRACE("%p: pipe::stepOutput() state: NOTIFIED_SINK -> CLOSED", this);
+        TRACE_P("%p: pipe::stepOutput() state: NOTIFIED_SINK -> CLOSED", this);
       }
     }
     else if (_buffer.empty() && (_state == state::END_OF_INPUT || _state == state::NOTIFIED_SINK))
@@ -80,12 +80,12 @@ public:
       
       if (effective != END_OF_STREAM && _state == state::END_OF_INPUT)
       {
-        TRACE("%p: pipe::stepOutput() state: END_OF_INPUT -> NOTIFIED_SINK", this);
+        TRACE_P("%p: pipe::stepOutput() state: END_OF_INPUT -> NOTIFIED_SINK", this);
         _state = state::NOTIFIED_SINK;
       }
       else if (effective == END_OF_STREAM && (_state == state::NOTIFIED_SINK || _state == state::END_OF_INPUT))
       {
-        TRACE("%p: pipe::stepOutput() state: NOTIFIED_SINK -> CLOSED", this);
+        TRACE_P("%p: pipe::stepOutput() state: NOTIFIED_SINK -> CLOSED", this);
         _state = state::CLOSED;
       }
     }
@@ -101,7 +101,7 @@ public:
       stepOutput();
     }
     
-    TRACE("%p: pipe::process() pipe closed", this);
+    TRACE_P("%p: pipe::process() pipe closed", this);
   }
 };
 
