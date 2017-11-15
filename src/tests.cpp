@@ -172,7 +172,7 @@ TEST_CASE("bit hacks", "[base]")
   }
 }
 
-#define WRITE_RANDOM_DATA_AND_REWIND(dest, name, length) byte name[(length)]; randomize(name, (length)); dest.write(name, 1, (length)); dest.rewind();
+#define WRITE_RANDOM_DATA_AND_REWIND(dest, name, length) byte name[(length)]; randomize(name, (length)); (dest).write(name, 1, (length)); (dest).rewind();
 #define WRITE_RANDOM_DATA(dest, name, length) byte name[(length)]; randomize(name, (length)); dest.write(name, 1, (length));
 void randomize(byte* data, size_t len) { for (size_t i = 0; i < len; ++i) { data[i] = support::random(256); } }
 #define READ_DATA(dest, name, length, res) byte name[(length)]; size_t res = dest.read(name, 1, (length));
@@ -1334,6 +1334,20 @@ TEST_CASE("empty archive", "[box archive]") {
   REQUIRE(result.isValidGlobalChecksum(buffer));
 }
 
+TEST_CASE("simple archive (one entry per stream)", "[box archive]") {
+  constexpr size_t MIN_LEN = 128, MAX_LEN = 256, LEN = 256;
+  std::vector<std::tuple<std::string, seekable_data_source*>> entries;
+  
+  SECTION("single entry") {
+    const size_t length = utils::random64(MIN_LEN, MAX_LEN);
+    memory_buffer* source = new memory_buffer(length);
+    WRITE_RANDOM_DATA_AND_REWIND(*source, temp, length);
+    entries.push_back({ "foobar.bin", source });
+  }
+  
+  Archive::ofOneEntryPerStream(entries, { });
+}
+
 TEST_CASE("single entry archive", "[box archive]") {
   constexpr size_t LEN = 256;
   memory_buffer source, destination;
@@ -1366,6 +1380,8 @@ TEST_CASE("single entry archive", "[box archive]") {
   
   const ArchiveEntry& archiveEntry = archive.entries()[0];
   const auto& entry = archiveEntry.binary();
+  
+  REQUIRE(archiveEntry.filters().size() == 0);
   
   REQUIRE(entry.compressedSize == LEN);
   REQUIRE(entry.originalSize == LEN);

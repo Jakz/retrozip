@@ -103,19 +103,41 @@ bool Archive::checkEntriesMappingToStreams() const
   return true;
 }
 
-Archive Archive::ofSingleEntry(const std::string& name, seekable_data_source* source, std::initializer_list<filter_builder*> builders)
+Archive Archive::ofSingleEntry(const std::string& name, seekable_data_source* source, const std::initializer_list<filter_builder*>& builders)
 {
+  return Archive::ofOneEntryPerStream({ { name, source } }, builders);
+  
   Archive archive;
   
   archive._entries.emplace_back(name, source);
-  archive._streams.push_back(ArchiveStream());
+  archive._streams.emplace_back(0UL);
   
   for (auto* builder : builders) archive._entries.front().addFilter(builder);
   
-  archive._streams.front().assignEntry(0UL);
-  
   archive._entries.front().binary().stream = 0;
   archive._entries.front().binary().indexInStream = 0;
+  
+  return archive;
+}
+
+Archive Archive::ofOneEntryPerStream(const std::vector<std::tuple<std::string, seekable_data_source*>>& entries, std::initializer_list<filter_builder*> builders)
+{
+  Archive archive;
+  
+  box::index_t index = 0UL;
+  for (const auto& entry : entries)
+  {
+    archive._entries.emplace_back(std::get<0>(entry), std::get<1>(entry));
+    archive._streams.emplace_back(index);
+    
+    for (auto* builder : builders) archive._entries.back().addFilter(builder);
+
+    auto& binary = archive._entries.back().binary();
+    binary.indexInStream = 0;
+    binary.stream = index;
+    
+    ++index;
+  }
   
   return archive;
 }

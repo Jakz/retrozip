@@ -106,6 +106,7 @@ public:
     return cache;
   }
   
+  size_t size() const { return _builders.size(); }
   bool empty() const { return _builders.empty(); }
 };
 

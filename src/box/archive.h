@@ -35,6 +35,7 @@ public:
     _name(name), _source(nullptr), _binary(binary), _payload(payload.size())
   {
     std::copy(payload.begin(), payload.end(), _payload.raw());
+    unserializePayload();
   }
   
   ArchiveEntry(const std::string& name, data_source* source) : _source(source), _name(name) { }
@@ -62,7 +63,7 @@ public:
   }
 
   void addFilter(filter_builder* builder) { _filters.add(builder); }
-  const filter_builder_queue& filters() { return _filters; }
+  const filter_builder_queue& filters() const { return _filters; }
   
   box::Entry& binary() const { return _binary; }
 };
@@ -80,6 +81,7 @@ private:
   mutable memory_buffer _payload;
 
 public:
+  ArchiveStream(ArchiveEntry::ref entry) { assignEntry(entry); }
   ArchiveStream() { }
   ArchiveStream(const box::Stream& binary) : _binary(binary) { }
   
@@ -166,6 +168,8 @@ public:
   const decltype(_entries)& entries() { return _entries; }
   const decltype(_streams)& streams() { return _streams; }
   
-  static Archive ofSingleEntry(const std::string& name, seekable_data_source* source, std::initializer_list<filter_builder*> builders);
+  static Archive ofSingleEntry(const std::string& name, seekable_data_source* source, const std::initializer_list<filter_builder*>& builders);
+  static Archive ofOneEntryPerStream(const std::vector<std::tuple<std::string, seekable_data_source*>>& entries, std::initializer_list<filter_builder*> builders);
+
 };
 
