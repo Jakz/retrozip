@@ -191,9 +191,10 @@ void Archive::write(W& w)
          */
         for (const ArchiveEntry& entry : _entries)
         {
+          box::count_t payloadLength = entry.payloadLength();
           box::Entry& tentry = entry.binary();
-          tentry.payload = base + length;
-          tentry.payloadLength = entry.payloadLength();
+          tentry.payload = payloadLength > 0 ? (base + length) : 0;
+          tentry.payloadLength = payloadLength;
           
           length += tentry.payloadLength;
         }
@@ -213,9 +214,10 @@ void Archive::write(W& w)
          */
         for (const ArchiveStream& stream : _streams)
         {
+          box::count_t payloadLength = stream.payloadLength();
           box::Stream& sentry = stream.binary();
-          sentry.payload = base + length;
-          sentry.payloadLength = stream.payload().size();
+          sentry.payload = payloadLength > 0 ? (base + length) : 0;
+          sentry.payloadLength = payloadLength;
           
           length += sentry.payloadLength;
         }
@@ -252,6 +254,8 @@ void Archive::write(W& w)
         box::index_t streamIndex = 0, indexInStream = 0;
         for (ArchiveStream& stream : _streams)
         {
+          indexInStream = 0;
+          
           stream.binary().offset = w.tell();
           stream.binary().length = 0;
           
@@ -301,9 +305,10 @@ void Archive::read(R& r)
   //TODO: check validity checksum etc
   
   /* read entries */
-  r.seek(_header.entryTableOffset);
   for (size_t i = 0; i < _header.entryCount; ++i)
   {
+    r.seek(_header.entryTableOffset + i*sizeof(box::Entry));
+
     /* read entry */
     box::Entry entry;
     r.read(entry);
@@ -331,9 +336,10 @@ void Archive::read(R& r)
   }
   
   /* read stream headers */
-  r.seek(_header.streamTableOffset);
   for (size_t i = 0; i < _header.streamCount; ++i)
   {
+    r.seek(_header.streamTableOffset + i*sizeof(box::Stream));
+
     /* read stream header */
     box::Stream stream;
     r.read(stream);

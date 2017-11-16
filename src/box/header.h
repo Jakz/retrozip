@@ -74,24 +74,23 @@ namespace box
   
   struct Entry
   {
-    StorageMode mode;
-    StorageSubmode submode;
-    
     length_t originalSize;
     length_t filteredSize;
     length_t compressedSize;
     
     DigestInfo digest;
     
-    index_t stream = INVALID_INDEX;
-    index_t indexInStream = INVALID_INDEX;
+    index_t stream;
+    index_t indexInStream;
     
     offset_t payload;
     count_t payloadLength;
     
     offset_t entryNameOffset;
     
-    Entry() : stream(INVALID_INDEX), indexInStream(INVALID_INDEX) { }
+    Entry() :
+      originalSize(0), filteredSize(0), compressedSize(0), digest(),
+      stream(INVALID_INDEX), indexInStream(INVALID_INDEX) { }
   } __attribute__((packed));
   
   enum class StreamType : u32;

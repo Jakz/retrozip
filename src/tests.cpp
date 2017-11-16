@@ -1345,7 +1345,81 @@ TEST_CASE("simple archive (one entry per stream)", "[box archive]") {
     entries.push_back({ "foobar.bin", source });
   }
   
-  Archive::ofOneEntryPerStream(entries, { });
+  SECTION("two entries") {
+    for (size_t i = 0; i < 2; ++i)
+    {
+      const size_t length = utils::random64(MIN_LEN, MAX_LEN);
+      memory_buffer* source = new memory_buffer(length);
+      WRITE_RANDOM_DATA_AND_REWIND(*source, temp, length);
+      entries.push_back({ fmt::sprintf("entry%lu.bin", i), source });
+    }
+  }
+  
+  SECTION("ten entries") {
+    for (size_t i = 0; i < 10; ++i)
+    {
+      const size_t length = utils::random64(MIN_LEN, MAX_LEN);
+      memory_buffer* source = new memory_buffer(length);
+      WRITE_RANDOM_DATA_AND_REWIND(*source, temp, length);
+      entries.push_back({ fmt::sprintf("entry%lu.bin", i), source });
+    }
+  }
+  
+  memory_buffer destination;
+  
+  Archive archive = Archive::ofOneEntryPerStream(entries, { });
+  archive.write(destination);
+  
+  REQUIRE(archive.entries().size() == entries.size());
+  REQUIRE(archive.streams().size() == entries.size());
+  
+  /* expected size */
+  const size_t archiveSize =
+    sizeof(box::Header)
+  + sizeof(box::Entry) * entries.size()
+  + sizeof(box::Stream) * entries.size()
+  + std::accumulate(entries.begin(), entries.end(), 0UL, [] (size_t count, const decltype(entries)::value_type& tuple) { return std::get<0>(tuple).size() + 1 + count; })
+  + std::accumulate(entries.begin(), entries.end(), 0UL, [] (size_t count, const decltype(entries)::value_type& tuple) { return std::get<1>(tuple)->size() + count; })
+  ;
+  
+  REQUIRE(destination.size() == archiveSize);
+  
+  Archive verify;
+  verify.read(destination);
+
+  REQUIRE(verify.entries().size() == entries.size());
+  REQUIRE(verify.streams().size() == entries.size());
+  
+  for (size_t i = 0; i < verify.entries().size(); ++i)
+  {
+    const ArchiveEntry& archiveEntry = archive.entries()[i];
+    const auto& entry = archiveEntry.binary();
+    
+    REQUIRE(archiveEntry.filters().size() == 0);
+    
+    size_t length = std::get<1>(entries[i])->size();
+    REQUIRE(entry.compressedSize == length);
+    REQUIRE(entry.originalSize == length);
+    REQUIRE(entry.filteredSize == length);
+    REQUIRE(entry.indexInStream == 0);
+    REQUIRE(entry.stream == i);
+    
+    REQUIRE(archiveEntry.name() == std::get<0>(entries[i])); // name match
+  }
+  
+  for (size_t i = 0; i < verify.streams().size(); ++i)
+  {
+    const ArchiveStream& streamEntry = archive.streams()[i];
+    const auto& stream = streamEntry.binary();
+    
+    size_t length = std::get<1>(entries[i])->size();
+    REQUIRE(stream.length == length);
+    REQUIRE(streamEntry.entries().size() == 1);
+    REQUIRE(streamEntry.entries()[0] == i);
+  }
+  
+  
+  std::for_each(entries.begin(), entries.end(), [](const decltype(entries)::value_type& tuple) { delete std::get<1>(tuple); });
 }
 
 TEST_CASE("single entry archive", "[box archive]") {
