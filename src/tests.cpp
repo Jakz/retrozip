@@ -1405,6 +1405,14 @@ TEST_CASE("simple archive (one entry per stream)", "[box archive]") {
     REQUIRE(entry.stream == i);
     
     REQUIRE(archiveEntry.name() == std::get<0>(entries[i])); // name match
+    
+    memory_buffer sverify;
+    ArchiveReadHandle handle(destination, verify, archiveEntry);
+    
+    passthrough_pipe pipe(handle.source(true), &sverify, entry.originalSize);
+    pipe.process();
+        
+    REQUIRE(sverify == *(memory_buffer*)std::get<1>(entries[i]));
   }
   
   for (size_t i = 0; i < verify.streams().size(); ++i)
@@ -1417,7 +1425,6 @@ TEST_CASE("simple archive (one entry per stream)", "[box archive]") {
     REQUIRE(streamEntry.entries().size() == 1);
     REQUIRE(streamEntry.entries()[0] == i);
   }
-  
   
   std::for_each(entries.begin(), entries.end(), [](const decltype(entries)::value_type& tuple) { delete std::get<1>(tuple); });
 }

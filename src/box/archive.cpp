@@ -154,6 +154,7 @@ void Archive::write(W& w)
   _header.entryCount = static_cast<box::count_t>(_entries.size());
   _header.streamCount = static_cast<box::count_t>(_streams.size());
   
+  TRACE_A("%p: archive::write() writing %lu entries in %lu streams", this, _header.entryCount, _header.streamCount);
 
   while (!_ordering.empty())
   {
@@ -169,6 +170,7 @@ void Archive::write(W& w)
         /* save offset to the entry table and store it into header */
         refs.entryTable = w.reserveArray<box::Entry>(_header.entryCount);
         _header.entryTableOffset = refs.entryTable;
+        TRACE_A("%p: archive::write() reserved entry table for %lu entries (%lu bytes) at %Xh (%lu)", this, _header.entryCount, _header.entryCount*sizeof(box::Entry), _header.entryTableOffset,  _header.entryTableOffset);
         break;
       }
         
@@ -177,6 +179,7 @@ void Archive::write(W& w)
         /* save offset to the stream table and store it into header */
         refs.streamTable = w.reserveArray<box::Stream>(_header.streamCount);
         _header.streamTableOffset = refs.streamTable;
+        TRACE_A("%p: archive::write() reserved stream table for %lu streams (%lu bytes) at %Xh (%lu)", this, _header.streamCount, _header.streamCount*sizeof(box::Stream), _header.streamTableOffset,  _header.streamTableOffset);
         break;
       }
         
@@ -198,6 +201,8 @@ void Archive::write(W& w)
           
           length += tentry.payloadLength;
         }
+        
+        TRACE_A("%p: archive::write() reserved entries payload of %lu bytes at %Xh (%lu)", this, length, w.tell(), w.tell());
         
         w.reserve(length);
         break;
@@ -222,6 +227,8 @@ void Archive::write(W& w)
           length += sentry.payloadLength;
         }
         
+        TRACE_A("%p: archive::write() reserved stream payload of %lu bytes at %Xh (%lu)", this, length, w.tell(), w.tell());
+        
         w.reserve(length);
         break;
       }
@@ -236,6 +243,8 @@ void Archive::write(W& w)
         /* write NUL terminated name */
         for (const ArchiveEntry& entry : _entries)
         {
+          TRACE_A2("%p: archive::write() writing entry name '%s' at %Xh (%lu)", this, entry.name().c_str(), offset, offset);
+          
           entry.binary().entryNameOffset = offset;
           w.write(entry.name().c_str(), 1, entry.name().length());
           w.write((char)'\0');
@@ -244,13 +253,14 @@ void Archive::write(W& w)
         }
         
         _header.nameTableLength = static_cast<box::count_t>(offset - base);
+        
+        TRACE_A("%p: archive::write() written name table of %lu bytes at %Xh (%lu)", this, _header.nameTableLength, _header.nameTableOffset, _header.nameTableOffset);
         break;
       }
         
       case box::Section::STREAM_DATA:
       {
         /* main stream writing */
-
         box::index_t streamIndex = 0, indexInStream = 0;
         for (ArchiveStream& stream : _streams)
         {
@@ -259,8 +269,11 @@ void Archive::write(W& w)
           stream.binary().offset = w.tell();
           stream.binary().length = 0;
           
+          
           for (ArchiveEntry::ref ref : stream.entries())
           {
+            TRACE_A("%p: archive::write() writing entry %lu (stream %lu:%lu) at %Xh (%lu)", this, ref, streamIndex, indexInStream, stream.binary().offset, stream.binary().offset);
+            
             ArchiveEntry& entry = entryForRef(ref);
             entry.mapToStream(streamIndex, indexInStream);
             writeEntry(w, stream, entryForRef(ref));
@@ -446,6 +459,8 @@ void Archive::writeEntry(W& w, ArchiveStream& stream, ArchiveEntry& entry)
 
   if (_options.digest.sha1)
     entry.binary().digest.sha1 = digester.filter().sha1();
+  
+  TRACE_A("%p: archive::write() written %lu bytes, filtered into %lu and compressed into %lu bytes", this, entry.binary().originalSize, entry.binary().filteredSize, entry.binary().compressedSize);
   
   //entry.binary().indexInStream
   //entry.binary().stream

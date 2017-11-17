@@ -58,9 +58,10 @@ extern void debugnnprintf(const char* str, ...);
 
 #define TRACE_MEMORY_BUFFERS 0
 #define TRACE_PIPES 0
-#define TRACE_ENABLED 1
+#define TRACE_ARCHIVE 1
+#define TRACE_ENABLED 0
 
-#define TRACE_FORCE_DISABLE 1
+#define TRACE_FORCE_DISABLE 0
 
 
 #if defined(TRACE_FORCE_DISABLE) && TRACE_FORCE_DISABLE == 1
@@ -79,6 +80,19 @@ extern void debugnnprintf(const char* str, ...);
 #define TRACE_P TRACEL
 #else
 #define TRACE_P(...) do { } while (false)
+#endif
+
+#if defined(TRACE_ARCHIVE) && TRACE_ARCHIVE >= 1
+#define TRACE_A TRACEL
+#if TRACE_ARCHIVE >= 2
+#define TRACE_A2 TRACEL
+#endif
+#else
+#define TRACE_A(...) do { } while (false)
+#endif
+
+#if !defined(TRACE_A2)
+#define TRACE_A2(...) do { } while (false)
 #endif
 
 #if defined(TRACE_ENABLED) && TRACE_ENABLED == 1
