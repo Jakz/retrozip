@@ -475,7 +475,66 @@ void Archive::writeStreamPayloads(W& w)
   }
 }
 
-void Archive::writeStream(W& w, ArchiveStream& stream)
+data_source* ArchiveReadHandle::source(bool total)
 {
+  _cache.clear();
   
+  /* first we need to know if stream is seekable, if it is we can seek to correct entry
+     offset before reading from it, otherwise we need to skip */
+  const ArchiveStream& stream = _archive.streams()[_entry.binary().stream];
+  
+  bool isSeekable = stream.binary().flags && box::StreamFlag::SEEKABLE;
+  
+  seekable_data_source* base = &r;
+  
+  data_source* source = base;
+  size_t offset = stream.binary().offset;
+  
+  if (isSeekable)
+  {
+    /* if stream is seekable we can find the offset to start reading from by adding all previous
+       entries in the stream */
+    for (box::index_t i = 0; i < _entry.binary().indexInStream; ++i)
+      offset += _archive.entries()[stream.entries()[i]].binary().compressedSize;
+    
+    source_filter<filters::skip_filter>* skipper = new source_filter<filters::skip_filter>(source, _archive.options().bufferSize, 0, _entry.binary().compressedSize, 0);
+    _cache.cache(skipper);
+    source = skipper;
+  }
+  
+  /* move to the start of the stream */
+  base->seek(offset);
+  
+  /* this doesn't unapply entry filters, just stream filters */
+  _cache.setSource(source);
+  stream.filters().unapply(_cache);
+  
+  if (total)
+    _entry.filters().unapply(_cache);
+
+  source = _cache.get();
+  
+  /* if stream is not seekable then we need to skip up to uncompressed size of all previous entries */
+  if (!isSeekable)
+  {
+    size_t skipAmount = 0;
+    size_t amount = total ? _entry.binary().originalSize : _entry.binary().filteredSize;
+    
+    for (box::index_t i = 0; i < _entry.binary().indexInStream; ++i)
+    {
+      const auto& b = _archive.entries()[stream.entries()[i]].binary();
+      /* the amount to skip depends if we're extracting from stream filters or from both stream and entry */
+      skipAmount += total ? b.originalSize : b.filteredSize;
+    }
+
+    source_filter<filters::skip_filter>* skipper = new source_filter<filters::skip_filter>(source, _archive.options().bufferSize, skipAmount, amount, 0);
+    _cache.cache(skipper);
+    source = skipper;
+  }
+
+  return source;
 }
+
+
+
+

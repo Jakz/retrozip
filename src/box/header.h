@@ -35,6 +35,11 @@ namespace box
     INTEGRITY_CHECKSUM_ENABLED = 0x01LLU
   };
   
+  enum class StreamFlag : u64
+  {
+    SEEKABLE
+  };
+  
   struct Header
   {
     std::array<u8, 4> magic; // must be "box!"
@@ -93,11 +98,9 @@ namespace box
       stream(INVALID_INDEX), indexInStream(INVALID_INDEX) { }
   } __attribute__((packed));
   
-  enum class StreamType : u32;
-  
   struct Stream
   {
-    StreamType type;
+    bit_mask<StreamFlag> flags;
     
     offset_t offset;
     length_t length;

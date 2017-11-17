@@ -103,7 +103,7 @@ public:
   }
   
   void addFilter(filter_builder* builder) { _filters.add(builder); }
-  const filter_builder_queue& filters() { return _filters; }
+  const filter_builder_queue& filters() const { return _filters; }
   
   box::Stream& binary() const { return _binary; }
 };
@@ -128,6 +128,21 @@ struct Options
   Options() : bufferSize(16), digest({true, true, true}), checksum({true, MB1}) { }
 };
 
+class Archive;
+
+class ArchiveReadHandle
+{
+private:
+  R& r;
+  const Archive& _archive;
+  const ArchiveEntry& _entry;
+  filter_cache _cache;
+  
+public:
+  ArchiveReadHandle(R& r, const Archive& archive, const ArchiveEntry& entry) : r(r), _archive(archive), _entry(entry) { }
+  data_source* source(bool total);
+};
+
 class Archive
 {
 private:
@@ -142,9 +157,7 @@ private:
   
   void finalizeHeader(W& w);
   box::checksum_t calculateGlobalChecksum(W& w, size_t bufferSize) const;
-  
-  void writeStream(W& w, ArchiveStream& stream);
-  
+    
   void writeEntry(W& w, ArchiveStream& stream, ArchiveEntry& entry);
   void writeEntryPayloads(W& w);
   void writeStreamPayloads(W& w);
@@ -159,14 +172,17 @@ public:
   void read(R& r);
   
   const box::Header& header() const { return _header; }
+
   Options& options() { return _options; }
+  const Options& options() const { return _options; }
+
   
   bool isValidMagicNumber() const;
   bool isValidGlobalChecksum(W& w) const;
   bool checkEntriesMappingToStreams() const;
   
-  const decltype(_entries)& entries() { return _entries; }
-  const decltype(_streams)& streams() { return _streams; }
+  const decltype(_entries)& entries() const { return _entries; }
+  const decltype(_streams)& streams() const { return _streams; }
   
   static Archive ofSingleEntry(const std::string& name, seekable_data_source* source, const std::initializer_list<filter_builder*>& builders);
   static Archive ofOneEntryPerStream(const std::vector<std::tuple<std::string, seekable_data_source*>>& entries, std::initializer_list<filter_builder*> builders);

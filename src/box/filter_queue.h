@@ -38,7 +38,10 @@ private:
   std::vector<std::unique_ptr<data_source>> _filters;
   
 public:
+  filter_cache() : _source(nullptr), _tail(nullptr) { }
   filter_cache(data_source* source) : _source(source), _tail(source) { }
+  
+  void setSource(data_source* source) { _source = source; _tail = source; }
   
   void apply(const filter_builder& builder)
   {
@@ -50,6 +53,16 @@ public:
   {
     _tail = builder.unapply(_tail);
     _filters.push_back(std::unique_ptr<data_source>(_tail));
+  }
+  
+  void cache(data_source* source)
+  {
+    _filters.push_back(std::unique_ptr<data_source>(source));
+  }
+  
+  void clear()
+  {
+    _filters.clear();
   }
   
   data_source* get() { return _tail; }
@@ -88,21 +101,29 @@ public:
     _builders.push_back(std::unique_ptr<filter_builder>(builder));
   }
   
+  void apply(filter_cache& cache) const
+  {
+    for (const auto& builder : _builders)
+      cache.apply(*builder.get());
+  }
+  
+  void unapply(filter_cache& cache) const
+  {
+    for (const auto& builder : _builders)
+      cache.unapply(*builder.get());
+  }
+  
   filter_cache apply(data_source* source) const
   {
     filter_cache cache = filter_cache(source);
-    for (const auto& builder : _builders)
-      cache.apply(*builder.get());
-    
+    apply(cache);
     return cache;
   }
   
   filter_cache unapply(data_source* source) const
   {
     filter_cache cache = filter_cache(source);
-    for (const auto& builder : _builders)
-      cache.unapply(*builder.get());
-    
+    unapply(cache);
     return cache;
   }
   
