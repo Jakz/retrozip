@@ -110,7 +110,7 @@ typedef BasicStringWriter<wchar_t> WStringWriter;
 
   **Example**::
 
-    #include "fmt/string.h"
+    #include "fmt/fmt_string.h"
 
     std::string answer = fmt::to_string(42);
   \endrst

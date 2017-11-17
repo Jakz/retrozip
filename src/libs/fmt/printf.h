@@ -13,7 +13,7 @@
 #include <algorithm>  // std::fill_n
 #include <limits>     // std::numeric_limits
 
-#include "ostream.h"
+#include "fmt_ostream.h"
 
 namespace fmt {
 namespace internal {

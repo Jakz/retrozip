@@ -1258,7 +1258,7 @@ template <typename Formatter, typename Char, typename T>
 void format_arg(Formatter &, const Char *, const T &) {
   FMT_STATIC_ASSERT(FalseType<T>::value,
                     "Cannot format argument. To enable the use of ostream "
-                    "operator<< include fmt/ostream.h. Otherwise provide "
+                    "operator<< include fmt/fmt_ostream.h. Otherwise provide "
                     "an overload of format_arg.");
 }
 

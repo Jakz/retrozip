@@ -27,7 +27,7 @@
 
 #include "format.h"
 
-#include <string.h>
+#include "fmt_string.h"
 
 #include <cctype>
 #include <cerrno>

@@ -94,17 +94,17 @@
 		04D1181D1FA21A4900C59EC3 /* path.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = path.h; sourceTree = "<group>"; };
 		04D1181F1FA21A4900C59EC3 /* args.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = args.h; sourceTree = "<group>"; };
 		04D118201FA21A4900C59EC3 /* catch.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = catch.h; sourceTree = "<group>"; };
-		04D118221FA21A4900C59EC3 /* container.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = container.h; sourceTree = "<group>"; };
+		04D118221FA21A4900C59EC3 /* fmt_container.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fmt_container.h; sourceTree = "<group>"; };
 		04D118231FA21A4900C59EC3 /* format.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = format.cc; sourceTree = "<group>"; };
 		04D118241FA21A4900C59EC3 /* format.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = format.h; sourceTree = "<group>"; };
 		04D118251FA21A4900C59EC3 /* ostream.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ostream.cc; sourceTree = "<group>"; };
-		04D118261FA21A4900C59EC3 /* ostream.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ostream.h; sourceTree = "<group>"; };
+		04D118261FA21A4900C59EC3 /* fmt_ostream.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fmt_ostream.h; sourceTree = "<group>"; };
 		04D118271FA21A4900C59EC3 /* posix.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = posix.cc; sourceTree = "<group>"; };
 		04D118281FA21A4900C59EC3 /* posix.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = posix.h; sourceTree = "<group>"; };
 		04D118291FA21A4900C59EC3 /* printf.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = printf.cc; sourceTree = "<group>"; };
 		04D1182A1FA21A4900C59EC3 /* printf.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = printf.h; sourceTree = "<group>"; };
-		04D1182B1FA21A4900C59EC3 /* string.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = string.h; sourceTree = "<group>"; };
-		04D1182C1FA21A4900C59EC3 /* time.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = time.h; sourceTree = "<group>"; };
+		04D1182B1FA21A4900C59EC3 /* fmt_string.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fmt_string.h; sourceTree = "<group>"; };
+		04D1182C1FA21A4900C59EC3 /* fmt_time.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fmt_time.h; sourceTree = "<group>"; };
 		04D118341FA21AA500C59EC3 /* libz.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.tbd; path = usr/lib/libz.tbd; sourceTree = SDKROOT; };
 		04D118371FA21AF600C59EC3 /* crc32.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = crc32.cpp; sourceTree = "<group>"; };
 		04D118381FA21AF600C59EC3 /* hash.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = hash.h; sourceTree = "<group>"; };
@@ -281,17 +281,17 @@
 		04D118211FA21A4900C59EC3 /* fmt */ = {
 			isa = PBXGroup;
 			children = (
-				04D118221FA21A4900C59EC3 /* container.h */,
+				04D118221FA21A4900C59EC3 /* fmt_container.h */,
 				04D118231FA21A4900C59EC3 /* format.cc */,
 				04D118241FA21A4900C59EC3 /* format.h */,
 				04D118251FA21A4900C59EC3 /* ostream.cc */,
-				04D118261FA21A4900C59EC3 /* ostream.h */,
+				04D118261FA21A4900C59EC3 /* fmt_ostream.h */,
 				04D118271FA21A4900C59EC3 /* posix.cc */,
 				04D118281FA21A4900C59EC3 /* posix.h */,
 				04D118291FA21A4900C59EC3 /* printf.cc */,
 				04D1182A1FA21A4900C59EC3 /* printf.h */,
-				04D1182B1FA21A4900C59EC3 /* string.h */,
-				04D1182C1FA21A4900C59EC3 /* time.h */,
+				04D1182B1FA21A4900C59EC3 /* fmt_string.h */,
+				04D1182C1FA21A4900C59EC3 /* fmt_time.h */,
 			);
 			path = fmt;
 			sourceTree = "<group>";
