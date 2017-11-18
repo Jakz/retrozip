@@ -142,6 +142,38 @@ Archive Archive::ofOneEntryPerStream(const std::vector<std::tuple<std::string, s
   return archive;
 }
 
+Archive Archive::ofData(const ArchiveFactory::Data& data)
+{
+  Archive archive;
+  
+  //TODO: check validity
+  
+  archive._entries.reserve(data.entries.size());
+  
+  for (const auto& entry : data.entries)
+    archive._entries.emplace_back(entry.name, entry.source, entry.filters);
+  
+  for (const auto& stream : data.streams)
+    archive._streams.emplace_back(stream.entries, stream.filters);
+  
+  box::index_t streamIndex = 0, indexInStream = 0;
+  for (const auto& stream : archive._streams)
+  {
+    indexInStream = 0;
+    
+    for (const auto index : stream.entries())
+    {
+      archive._entries[index].binary().stream = streamIndex;
+      archive._entries[index].binary().indexInStream = indexInStream;
+      ++indexInStream;
+    }
+    
+    ++streamIndex;
+  }
+  
+  return archive;
+}
+
 void Archive::write(W& w)
 {
   assert(_ordering.front() == box::Section::HEADER);
@@ -202,7 +234,8 @@ void Archive::write(W& w)
           length += tentry.payloadLength;
         }
         
-        TRACE_A("%p: archive::write() reserved entries payload of %lu bytes at %Xh (%lu)", this, length, w.tell(), w.tell());
+        if (length > 0)
+          TRACE_A("%p: archive::write() reserved entries payload of %lu bytes at %Xh (%lu)", this, length, w.tell(), w.tell());
         
         w.reserve(length);
         break;
@@ -341,6 +374,7 @@ void Archive::read(R& r)
     std::vector<byte> payload;
     if (entry.payloadLength > 0)
     {
+      payload.resize(entry.payloadLength);
       r.seek(entry.payload);
       r.read(payload.data(), 1, entry.payloadLength);
     }
@@ -494,6 +528,8 @@ data_source* ArchiveReadHandle::source(bool total)
 {
   _cache.clear();
   
+  TRACE_A("%p: archive::read() reading entry from stream %lu:%lu (size: %lu %lu %lu)", this, _entry.binary().stream, _entry.binary().indexInStream, _entry.binary().originalSize, _entry.binary().filteredSize, _entry.binary().compressedSize);
+
   /* first we need to know if stream is seekable, if it is we can seek to correct entry
      offset before reading from it, otherwise we need to skip */
   const ArchiveStream& stream = _archive.streams()[_entry.binary().stream];
@@ -541,6 +577,9 @@ data_source* ArchiveReadHandle::source(bool total)
       /* the amount to skip depends if we're extracting from stream filters or from both stream and entry */
       skipAmount += total ? b.originalSize : b.filteredSize;
     }
+    
+    TRACE_A("%p: archive::read() stream not seekable, preparing to seek to %lu+%lu and read %lu bytes", this, offset, skipAmount, amount);
+
 
     source_filter<filters::skip_filter>* skipper = new source_filter<filters::skip_filter>(source, _archive.options().bufferSize, skipAmount, amount, 0);
     _cache.cache(skipper);

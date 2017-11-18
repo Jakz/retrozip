@@ -1334,6 +1334,13 @@ TEST_CASE("empty archive", "[box archive]") {
   REQUIRE(result.isValidGlobalChecksum(buffer));
 }
 
+struct ArchiveTestEntry
+{
+  std::string name;
+  seekable_data_source* source;
+  std::vector<filter_builder*> builders;
+};
+
 TEST_CASE("simple archive (one entry per stream)", "[box archive]") {
   constexpr size_t MIN_LEN = 128, MAX_LEN = 256, LEN = 256;
   std::vector<std::tuple<std::string, seekable_data_source*>> entries;
@@ -1430,12 +1437,32 @@ TEST_CASE("simple archive (one entry per stream)", "[box archive]") {
 }
 
 TEST_CASE("single entry archive", "[box archive]") {
-  constexpr size_t LEN = 256;
+  size_t LEN = 0;
   memory_buffer source, destination;
+  std::initializer_list<filter_builder*> filters;
+
+  SECTION("no filters") {
+    LEN = 256;
+    filters = {};
+    WRITE_RANDOM_DATA_AND_REWIND(source, temp, LEN);
+  }
   
-  WRITE_RANDOM_DATA_AND_REWIND(source, temp, LEN);
+  SECTION("xor filter") {
+    LEN = 1024;
+    filters = { new builders::xor_builder(LEN, "foobar") };
+    WRITE_RANDOM_DATA_AND_REWIND(source, temp, LEN);
+  }
   
-  Archive archive = Archive::ofSingleEntry("foobar.bin", &source, {});
+  SECTION("zlib deflate filter") {
+    LEN = KB16;
+    filters = { new builders::deflate_builder(LEN) };
+    source.reserve(KB16);
+    for (size_t i = 0; i < LEN; ++i)
+      source.raw()[i] = i / (KB16 / 256);
+    source.rewind();
+  }
+  
+  Archive archive = Archive::ofSingleEntry("foobar.bin", &source, filters);
   archive.write(destination);
   
   REQUIRE(archive.entries().size() == 1);
@@ -1445,13 +1472,32 @@ TEST_CASE("single entry archive", "[box archive]") {
   size_t destinationSize =
   sizeof(box::Header) /* header */
   + sizeof(box::Entry)*1 + sizeof(box::Stream)*1 /* stream and entry tables */
-  + strlen("foobar.bin") + 1 + /* entry file name */
-  LEN /* stream */
+  + strlen("foobar.bin") + 1 /* entry file name */
+  + archive.entries()[0].binary().compressedSize /* stream */
+  + archive.entries()[0].binary().payloadLength
   ;
   
   destination.rewind();
   
   REQUIRE(destination.size() == destinationSize);
+
+  const ArchiveEntry& archiveEntry = archive.entries()[0];
+  const auto& entry = archiveEntry.binary();
+
+  REQUIRE(archiveEntry.filters().size() == filters.size());
+  
+  //REQUIRE(entry.compressedSize == LEN);
+  REQUIRE(entry.originalSize == LEN);
+  //REQUIRE(entry.filteredSize == LEN);
+  REQUIRE(entry.indexInStream == 0);
+  REQUIRE(entry.stream == 0);
+  
+  const ArchiveStream& streamEntry = archive.streams()[0];
+  const auto& stream = streamEntry.binary();
+  
+  REQUIRE(stream.length == entry.compressedSize);
+  REQUIRE(streamEntry.entries().size() == 1);
+  REQUIRE(streamEntry.entries()[0] == 0);
   
   Archive verify;
   verify.read(destination);
@@ -1459,21 +1505,12 @@ TEST_CASE("single entry archive", "[box archive]") {
   REQUIRE(archive.entries().size() == verify.entries().size());
   REQUIRE(archive.streams().size() == verify.streams().size());
   
-  const ArchiveEntry& archiveEntry = archive.entries()[0];
-  const auto& entry = archiveEntry.binary();
+  memory_buffer sverify;
+  ArchiveReadHandle handle(destination, verify, archiveEntry);
   
-  REQUIRE(archiveEntry.filters().size() == 0);
+  passthrough_pipe pipe(handle.source(true), &sverify, entry.originalSize);
+  pipe.process();
   
-  REQUIRE(entry.compressedSize == LEN);
-  REQUIRE(entry.originalSize == LEN);
-  REQUIRE(entry.filteredSize == LEN);
-  REQUIRE(entry.indexInStream == 0);
-  REQUIRE(entry.stream == 0);
-  
-  const ArchiveStream& streamEntry = archive.streams()[0];
-  const auto& stream = streamEntry.binary();
-  
-  REQUIRE(stream.length == 256);
-  REQUIRE(streamEntry.entries().size() == 1);
-  REQUIRE(streamEntry.entries()[0] == 0);
+  REQUIRE(sverify == source);
+
 }

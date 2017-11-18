@@ -38,6 +38,7 @@ public:
     unserializePayload();
   }
   
+  ArchiveEntry(const std::string& name, data_source* source, const std::vector<filter_builder*>& filters) : _source(source), _name(name), _filters(filters) { }
   ArchiveEntry(const std::string& name, data_source* source) : _source(source), _name(name) { }
   
   void setName(const std::string& name) { this->_name = name; }
@@ -81,6 +82,7 @@ private:
   mutable memory_buffer _payload;
 
 public:
+  ArchiveStream(const std::vector<ArchiveEntry::ref>& indices, const std::vector<filter_builder*>& filters) : _entries(indices), _filters(filters) { }
   ArchiveStream(ArchiveEntry::ref entry) { assignEntry(entry); }
   ArchiveStream() { }
   ArchiveStream(const box::Stream& binary) : _binary(binary) { }
@@ -143,6 +145,28 @@ public:
   data_source* source(bool total);
 };
 
+struct ArchiveFactory
+{
+  struct Entry
+  {
+    std::string name;
+    data_source* source;
+    std::vector<filter_builder*> filters;
+  };
+  
+  struct Stream
+  {
+    std::vector<ArchiveEntry::ref> entries;
+    std::vector<filter_builder*> filters;
+  };
+  
+  struct Data
+  {
+    std::vector<Stream> streams;
+    std::vector<Entry> entries;
+  };
+};
+
 class Archive
 {
 private:
@@ -186,6 +210,7 @@ public:
   
   static Archive ofSingleEntry(const std::string& name, seekable_data_source* source, const std::initializer_list<filter_builder*>& builders);
   static Archive ofOneEntryPerStream(const std::vector<std::tuple<std::string, seekable_data_source*>>& entries, std::initializer_list<filter_builder*> builders);
+  static Archive ofData(const ArchiveFactory::Data& data);
 
 };
 

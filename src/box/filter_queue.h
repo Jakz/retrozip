@@ -74,6 +74,13 @@ private:
   std::vector<std::unique_ptr<filter_builder>> _builders;
   
 public:
+  filter_builder_queue() { }
+  filter_builder_queue(const std::vector<filter_builder*> builders)
+  {
+    for (filter_builder* builder : builders)
+      _builders.emplace_back(builder);
+  }
+  
   /* construct whole payload for all the filters of the queue */
   memory_buffer payload() const
   {
@@ -156,11 +163,17 @@ public:
 
 
 #include <vector>
+
+
+#include "filters/deflate_filter.h"
+
 namespace builders
 {
   enum identifier : box::payload_uid
   {
-    XOR_FILTER = 1ULL
+    XOR_FILTER = 1ULL,
+    
+    DEFLATE_FILTER = 1000ULL,
   };
   
   class xor_builder : public symmetric_filter_builder
@@ -194,7 +207,7 @@ namespace builders
     
     box::payload_uid identifier() const override { return identifier::XOR_FILTER; }
     
-    virtual memory_buffer payload() const override
+    memory_buffer payload() const override
     {
       memory_buffer buffer(sizeof(box::slength_t) + _key.size());
       buffer.write((box::slength_t)_key.size());
@@ -202,4 +215,25 @@ namespace builders
       return buffer;
     }
   };
+    
+    class deflate_builder : public filter_builder
+    {
+    private:
+      
+    public:
+      deflate_builder(size_t bufferSize) : filter_builder(bufferSize) { }
+      
+      box::payload_uid identifier() const override { return identifier::DEFLATE_FILTER; }
+      memory_buffer payload() const override { return memory_buffer(0); }
+      
+      data_source* apply(data_source* source) const override
+      {
+        return new source_filter<compression::deflater_filter>(source, _bufferSize);
+      }
+      
+      data_source* unapply(data_source* source) const override
+      {
+        return new source_filter<compression::inflater_filter>(source, _bufferSize);
+      }
+    };
 }
