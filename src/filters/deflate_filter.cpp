@@ -33,7 +33,7 @@ void zlib_filter<computer, finalizer, OPTIONS>::init()
   assert(_result == Z_OK);
   
   _failed = false;
-  _started = true;
+  start();
 }
 
 template<zlib_compute_function computer, zlib_end_function finalizer, typename OPTIONS>
@@ -51,7 +51,7 @@ void zlib_filter<computer, finalizer, OPTIONS>::process()
   _stream.avail_out = static_cast<uInt>(_out.available());
   _stream.next_out = _out.tail();
   
-  _result = computer(&_stream, this->_isEnded ? Z_FINISH : Z_NO_FLUSH);
+  _result = computer(&_stream, ended() ? Z_FINISH : Z_NO_FLUSH);
   
   size_t consumed = _in.used() - _stream.avail_in;
   size_t produced = _out.available() - _stream.avail_out;
@@ -97,16 +97,20 @@ void zlib_filter<computer, finalizer, OPTIONS>::process()
       printf("Failed status: %s\n", zlib_result_mnemonic(_result));
       assert(false);
       _failed = true;
-      _finished = true;
+      markFinished();
     }
       
     default:
       break;
   }
   
-  _finished = _result == Z_STREAM_END;
+  markFinished(_result == Z_STREAM_END);
   
-  if (_finished)
+  /* discard eventual data still on input buffer */
+  if (_result == Z_STREAM_END)
+    _in.consume(_in.size());
+  
+  if (finished())
     finalizer(&_stream);
 }
 

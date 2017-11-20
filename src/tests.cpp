@@ -1462,6 +1462,24 @@ TEST_CASE("single entry archive", "[box archive]") {
     source.rewind();
   }
   
+  SECTION("double filter (deflate + xor)") {
+    LEN = KB16;
+    filters = { new builders::deflate_builder(LEN), new builders::xor_builder(LEN, "foobar") };
+    source.reserve(KB16);
+    for (size_t i = 0; i < LEN; ++i)
+      source.raw()[i] = i / (KB16 / 256);
+    source.rewind();
+  }
+  
+  SECTION("double filter (xor + deflate)") {
+    LEN = KB16;
+    filters = { new builders::xor_builder(LEN, "foobar"), new builders::deflate_builder(LEN) };
+    source.reserve(KB16);
+    for (size_t i = 0; i < LEN; ++i)
+      source.raw()[i] = i / (KB16 / 256);
+    source.rewind();
+  }
+  
   Archive archive = Archive::ofSingleEntry("foobar.bin", &source, filters);
   archive.write(destination);
   

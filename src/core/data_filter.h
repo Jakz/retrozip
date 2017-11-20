@@ -68,7 +68,8 @@ class data_filter
 protected:
   memory_buffer _in;
   memory_buffer _out;
-  
+
+private:
   bool _started;
   bool _finished;
   bool _isEnded;
@@ -96,6 +97,7 @@ public:
   
   void start() { _started = true; }
   void markEnded() { _isEnded = true; }
+  void markFinished(bool value = true) { _finished = value; }
   
   bool started() const { return _started; }
   bool finished() const { return _finished; }
@@ -170,7 +172,7 @@ public:
     
     fetchInput();
     
-    if (!_filter.finished() && (!_filter.in().empty() || !_filter.out().full()))
+    if ((/*!_filter.ended() || */!_filter.finished()) && (!_filter.in().empty() || !_filter.out().full()))
       _filter.process();
       
       size_t effective = dumpOutput(dest, amount);

@@ -116,8 +116,8 @@ public:
   
   void unapply(filter_cache& cache) const
   {
-    for (const auto& builder : _builders)
-      cache.unapply(*builder.get());
+    for (auto it = _builders.rbegin(); it != _builders.rend(); ++it)
+      cache.unapply(*(*it).get());
   }
   
   filter_cache apply(data_source* source) const

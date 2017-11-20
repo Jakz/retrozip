@@ -71,7 +71,7 @@ void xdelta3_filter<FUNCTION>::init()
 template<xd3_function FUNCTION>
 void xdelta3_filter<FUNCTION>::process()
 {
-  if (_isEnded && _in.empty() && (_stream.avail_in || _stream.buf_avail || _stream.buf_leftavail) && !(_stream.flags & XD3_FLUSH))
+  if (ended() && _in.empty() && (_stream.avail_in || _stream.buf_avail || _stream.buf_leftavail) && !(_stream.flags & XD3_FLUSH))
   {
     TRACE("%p: xdelta3_%s::process() flush request (setting XD3_FLUSH flag)", this, name().c_str());
     xd3_set_flags(&_stream, _stream.flags | XD3_FLUSH);
@@ -112,10 +112,10 @@ void xdelta3_filter<FUNCTION>::process()
     
     _in.consume(effective);
     
-    if (_isEnded && _in.empty() && _stream.buf_avail == 0 && _stream.buf_leftover == 0)
+    if (ended() && _in.empty() && _stream.buf_avail == 0 && _stream.buf_leftover == 0)
     {
       TRACE("%p: xdelta3_%s::process() input was finished so encoding is finished", this, name().c_str());
-      _finished = true;
+      markFinished();
     }
   }
   

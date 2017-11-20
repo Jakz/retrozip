@@ -117,7 +117,7 @@ namespace filters
       _out.advance(effective);
       
       if (ended() && _in.empty() && _out.empty())
-        _finished = true;
+        markFinished();
     }
     
     std::string name() override { return "xor"; }
@@ -153,8 +153,13 @@ namespace filters
     skip_filter(size_t bufferSize, size_t amountToSkip, size_t amountToPassThrough = 0, size_t offset = 0) : data_filter(bufferSize),
       _amountToSkip(amountToSkip), _amountToPassThrough(amountToPassThrough), _offset(offset), _position(0), _skipped(0), _passed(0) { }
     
-    void init() override { _skipped = 0; }
+    void init() override
+    {
+      TRACE("%p: skip_filter::init() will pass %lu bytes, skip %lu bytes and then pass %lu bytes", this, _offset, _amountToSkip, _amountToPassThrough);
+      _skipped = 0;
+    }
     void finalize() override { }
+    
     void process() override
     {
       /* we still have to reach the position in which start skipping */
@@ -176,7 +181,7 @@ namespace filters
         {
           size_t amount = _amountToPassThrough - _passed;
           effective = passthrough(amount);
-          TRACE_IF(effective > 0, "%p: skip_filter::process() passing %lu limiting bytes through after skipping", this, effective);
+          TRACE_IF(effective > 0, "%p: skip_filter::process() passing %lu(%lu) limiting bytes through after skipping", this, effective, _passed+effective);
           _passed += effective;
         }
         else if (_amountToPassThrough != 0)
@@ -185,7 +190,7 @@ namespace filters
           _in.consume(_in.used());
           
           TRACE_IF(effective > 0, "%p: skip_filter::process() BLA BLA skipping %lu bytes", this, effective);
-          this->_finished = _out.empty() && ended();
+          markFinished(_out.empty() && ended());
         }
         else
         {
@@ -210,7 +215,7 @@ namespace filters
         if (!_in.empty()) process();
       }
 
-      this->_finished = _skipped == _amountToSkip && _passed >= _amountToPassThrough && _in.empty() && _out.empty() && ended();
+      markFinished(_skipped == _amountToSkip && _passed >= _amountToPassThrough && _in.empty() && _out.empty() && ended());
     }
     
     std::string name() override { return "skip"; }
