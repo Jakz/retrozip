@@ -12,6 +12,11 @@ const filter_repository* filter_repository::instance()
       return new builders::xor_builder(bufferSize, payload);
     });
     
+    repository.registerGenerator(builders::identifier::DEFLATE_FILTER, [] (const byte* payload) {
+      size_t bufferSize = repository.bufferSizeFor(builders::identifier::DEFLATE_FILTER, payload);
+      return new builders::deflate_builder(bufferSize);
+    });
+    
     init = true;
   }
   
@@ -46,15 +51,14 @@ void filter_builder_queue::unserialize(memory_buffer& data)
     {
       const box::Payload* header = reinterpret_cast<const box::Payload*>(data.direct());
 
-      if (header->length < data.toRead() + sizeof(box::Payload))
+      if (header->length > data.toRead() + sizeof(box::Payload))
         throw exceptions::unserialization_exception("error in payload, data is not long enough"); //TODO improve
 
       hasNext = header->hasNext;
       
       box::payload_uid identifier = header->identifier;
-      const byte* rawData = data.direct() + sizeof(box::Payload);
-      
-      add(filter_repository::instance()->generate(identifier, rawData));
+      add(filter_repository::instance()->generate(identifier, data.direct()));
+      data.seek(header->length, Seek::CUR);
     }
   }
 }

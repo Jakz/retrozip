@@ -16,6 +16,8 @@ protected:
   filter_builder(size_t bufferSize) : _bufferSize(bufferSize) { }
   
 public:
+  virtual ~filter_builder() { }
+  
   virtual data_source* apply(data_source* source) const = 0;
   virtual data_source* unapply(data_source* source) const = 0;
   virtual box::payload_uid identifier() const = 0;
@@ -75,7 +77,7 @@ private:
   
 public:
   filter_builder_queue() { }
-  filter_builder_queue(const std::vector<filter_builder*> builders)
+  filter_builder_queue(const std::vector<filter_builder*>& builders)
   {
     for (filter_builder* builder : builders)
       _builders.emplace_back(builder);
@@ -134,6 +136,7 @@ public:
     return cache;
   }
   
+  const decltype(_builders)::value_type& operator[](size_t index) const { return _builders[index]; }
   size_t size() const { return _builders.size(); }
   bool empty() const { return _builders.empty(); }
 };

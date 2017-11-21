@@ -34,7 +34,7 @@ public:
   ArchiveEntry(const std::string& name, const box::Entry& binary, const std::vector<byte>& payload) :
     _name(name), _source(nullptr), _binary(binary), _payload(payload.size())
   {
-    std::copy(payload.begin(), payload.end(), _payload.raw());
+    _payload.write(payload.data(), payload.size());
     unserializePayload();
   }
   

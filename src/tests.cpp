@@ -27,6 +27,16 @@ namespace support {
     static std::default_random_engine engine(device());
     return engine() % modulo;
   }
+  
+  memory_buffer* randomDataSource(size_t size)
+  {
+    memory_buffer* buffer = new memory_buffer(size);
+    for (size_t i = 0; i < size; ++i)
+      buffer->raw()[i] = rand()%256;
+    buffer->advance(size);
+    
+    return buffer;
+  }
 }
 
 
@@ -1477,99 +1487,204 @@ TEST_CASE("simple archive (one entry per stream)", "[box archive]") {
   std::for_each(entries.begin(), entries.end(), [](const decltype(entries)::value_type& tuple) { delete std::get<1>(tuple); });
 }
 
-TEST_CASE("single entry archive", "[box archive]") {
-  size_t LEN = 0;
-  memory_buffer source, destination;
-  std::initializer_list<filter_builder*> filters;
+struct ArchiveTester
+{
+  static void release(const ArchiveFactory::Data& data)
+  {
+    for (const auto& entry : data.entries)
+    {
+      //for (const filter_builder* filter : entry.filters)
+      //  delete filter;
+      delete entry.source;
+    }
+    
+    //for (const auto& stream : data.streams)
+    //  for (const filter_builder* filter : stream.filters)
+    //    delete filter;
+  }
+  
+  static void verifyFilters(const std::vector<filter_builder*>& original, const filter_builder_queue& match)
+  {
+    for (size_t j = 0; j < original.size(); ++j)
+    {
+      const auto& dfilter = original[j];
+      const auto& filter = match[j];
+      
+      REQUIRE(dfilter->identifier() == filter->identifier());
+      REQUIRE(dfilter->payload() == filter->payload());
+    }
+  }
+  
+  static void verify(const ArchiveFactory::Data& data, const Archive& verify, memory_buffer& buffer)
+  {
+    /* amount of entries / streams */
+    REQUIRE(data.entries.size() == verify.entries().size());
+    REQUIRE(data.streams.size() == verify.streams().size());
+    
+    /* basic entry data */
+    for (size_t i = 0; i < data.entries.size(); ++i)
+    {
+      const auto& dentry = data.entries[i];
+      const auto& entry = verify.entries()[i];
+      
+      REQUIRE(dentry.name == entry.name()); /* name match */
+      REQUIRE(((memory_buffer*)dentry.source)->size() == entry.binary().originalSize); /* uncompressed size match */
+      
+      REQUIRE(dentry.filters.size() == entry.filters().size()); /* filter count match */
+      
+      /* each filter must match */
+      verifyFilters(dentry.filters, entry.filters());
+    }
+    
+    for (size_t i = 0; i < data.streams.size(); ++i)
+    {
+      const auto& dstream = data.streams[i];
+      const auto& stream = verify.streams()[i];
+      
+      REQUIRE(dstream.filters.size() == stream.filters().size()); /* filter count match */
+      
+      /* entries match */
+      REQUIRE(dstream.entries.size() == stream.entries().size());
+      REQUIRE(dstream.entries == stream.entries());
+      
+      /* correct mapping of entries */
+      for (size_t j = 0; j < dstream.entries.size(); ++j)
+      {
+        const auto& entry = verify.entries()[dstream.entries[j]];
+        
+        REQUIRE(entry.binary().stream == i);
+        REQUIRE(entry.binary().indexInStream == j);
+      }
+      
+      /* size of stream == sum of compressed size of entries */
+      REQUIRE(stream.binary().length == std::accumulate(stream.entries().begin(), stream.entries().end(), 0UL, [&verify] (size_t length, ArchiveEntry::ref index) {
+        const auto& entry = verify.entries()[index];
+        return length + entry.binary().compressedSize;
+      }));
+      
+      /* each filter must match */
+      verifyFilters(dstream.filters, stream.filters());
+    }
+    
+    const size_t payloadSizeForEntries = std::accumulate(verify.entries().begin(), verify.entries().end(), 0UL, [] (size_t count, const ArchiveEntry& entry) {
+      return count + entry.binary().payloadLength;
+    });
+    
+    const size_t payloadSizeForStream = std::accumulate(verify.streams().begin(), verify.streams().end(), 0UL, [] (size_t count, const ArchiveStream& stream) {
+      return count + stream.binary().payloadLength;
+    });
 
-  SECTION("no filters") {
-    LEN = 256;
-    filters = {};
-    WRITE_RANDOM_DATA_AND_REWIND(source, temp, LEN);
+    /* size of archive must match, header + entry*entries + stream*streams + entry names */
+    size_t archiveSize = sizeof(box::Header)
+    + sizeof(box::Entry) * data.entries.size()
+    + sizeof(box::Stream) * data.streams.size()
+    + std::accumulate(verify.entries().begin(), verify.entries().end(), 0UL, [] (size_t count, const ArchiveEntry& entry) { return entry.binary().compressedSize + count; })
+    + std::accumulate(data.entries.begin(), data.entries.end(), 0UL, [] (size_t count, const ArchiveFactory::Entry& entry) { return entry.name.length() + 1 + count; })
+    + payloadSizeForEntries + payloadSizeForStream;
+    
+    REQUIRE(buffer.size() == archiveSize);
+    
+    /* now we need to verify stream data */
+    for (size_t i = 0; i < data.entries.size(); ++i)
+    {
+      const auto& entry = verify.entries()[i];
+      ArchiveReadHandle handle(buffer, verify, entry);
+      
+      data_source* source = handle.source(true);
+      
+      memory_buffer sink;
+      passthrough_pipe pipe(source, &sink, entry.binary().originalSize);
+      pipe.process();
+      
+      REQUIRE(*((memory_buffer*)data.entries[i].source) == sink);
+      
+      hash::crc32_digester crc32;
+      hash::md5_digester md5;
+      hash::sha1_digester sha1;
+      
+      crc32.update(sink.raw(), sink.size());
+      md5.update(sink.raw(), sink.size());
+      sha1.update(sink.raw(), sink.size());
+
+      REQUIRE(entry.binary().digest.crc32 == crc32.get());
+      REQUIRE(entry.binary().digest.md5 == md5.get());
+      REQUIRE(entry.binary().digest.sha1 == sha1.get());
+    }
+  }
+};
+
+
+TEST_CASE("multiple entry per stream", "[box archive]") {
+  ArchiveFactory::Data data;
+  
+  SECTION("two entries no filters") {
+    data.entries.push_back({ "foobar1.bin", support::randomDataSource(256) });
+    data.entries.push_back({ "foobar2.bin", support::randomDataSource(512) });
+
+    data.streams.push_back({ { 0, 1 }, { } });
+  }
+  
+  Archive archive = Archive::ofData(data);
+  memory_buffer output;
+  archive.write(output);
+  output.rewind();
+  
+  Archive verify;
+  verify.read(output);
+  
+  ArchiveTester::verify(data, verify, output);
+  
+  
+  ArchiveTester::release(data);
+}
+
+TEST_CASE("single entry archive with entry filters", "[box archive]") {
+  ArchiveFactory::Data data;
+  
+  /*SECTION("no filters") {
+    data.entries.push_back({ "foobar1.bin", support::randomDataSource(256) });
   }
   
   SECTION("xor filter") {
-    LEN = 1024;
-    filters = { new builders::xor_builder(LEN, "foobar") };
-    WRITE_RANDOM_DATA_AND_REWIND(source, temp, LEN);
+    data.entries.push_back({ "foobar1.bin", support::randomDataSource(256), { new builders::xor_builder(256, "foobar") } });
   }
   
   SECTION("zlib deflate filter") {
-    LEN = KB16;
-    filters = { new builders::deflate_builder(LEN) };
-    source.reserve(KB16);
-    for (size_t i = 0; i < LEN; ++i)
-      source.raw()[i] = i / (KB16 / 256);
-    source.rewind();
-  }
+    memory_buffer* source = new memory_buffer(KB16);
+    source->reserve(KB16);
+    for (size_t i = 0; i < KB16; ++i)
+      source->raw()[i] = i / (KB16 / 256);
+    source->rewind();
+    data.entries.push_back({ "foobar1.bin", source, { new builders::deflate_builder(KB16) } });
+  }*/
   
   SECTION("double filter (deflate + xor)") {
-    LEN = KB16;
-    filters = { new builders::deflate_builder(LEN), new builders::xor_builder(LEN, "foobar") };
-    source.reserve(KB16);
-    for (size_t i = 0; i < LEN; ++i)
-      source.raw()[i] = i / (KB16 / 256);
-    source.rewind();
+    memory_buffer* source = new memory_buffer(KB16);
+    source->reserve(KB16);
+    for (size_t i = 0; i < KB16; ++i)
+      source->raw()[i] = i / (KB16 / 256);
+    source->rewind();
+    data.entries.push_back({ "foobar1.bin", source, { new builders::deflate_builder(KB16), new builders::xor_builder(KB16, "foobar") } });
   }
   
   SECTION("double filter (xor + deflate)") {
-    LEN = KB16;
-    filters = { new builders::xor_builder(LEN, "foobar"), new builders::deflate_builder(LEN) };
-    source.reserve(KB16);
-    for (size_t i = 0; i < LEN; ++i)
-      source.raw()[i] = i / (KB16 / 256);
-    source.rewind();
+    memory_buffer* source = new memory_buffer(KB16);
+    source->reserve(KB16);
+    for (size_t i = 0; i < KB16; ++i)
+      source->raw()[i] = i / (KB16 / 256);
+    source->rewind();
+    data.entries.push_back({ "foobar1.bin", source, { new builders::xor_builder(KB16, "foobar"), new builders::deflate_builder(KB16) } });
   }
   
-  Archive archive = Archive::ofSingleEntry("foobar.bin", &source, filters);
-  archive.write(destination);
-  
-  REQUIRE(archive.entries().size() == 1);
-  REQUIRE(archive.streams().size() == 1);
-  
-  /* expected size */
-  size_t destinationSize =
-  sizeof(box::Header) /* header */
-  + sizeof(box::Entry)*1 + sizeof(box::Stream)*1 /* stream and entry tables */
-  + strlen("foobar.bin") + 1 /* entry file name */
-  + archive.entries()[0].binary().compressedSize /* stream */
-  + archive.entries()[0].binary().payloadLength
-  ;
-  
-  destination.rewind();
-  
-  REQUIRE(destination.size() == destinationSize);
+  data.streams.push_back({ { 0 }, { } });
 
-  const ArchiveEntry& archiveEntry = archive.entries()[0];
-  const auto& entry = archiveEntry.binary();
-
-  REQUIRE(archiveEntry.filters().size() == filters.size());
-  
-  //REQUIRE(entry.compressedSize == LEN);
-  REQUIRE(entry.originalSize == LEN);
-  //REQUIRE(entry.filteredSize == LEN);
-  REQUIRE(entry.indexInStream == 0);
-  REQUIRE(entry.stream == 0);
-  
-  const ArchiveStream& streamEntry = archive.streams()[0];
-  const auto& stream = streamEntry.binary();
-  
-  REQUIRE(stream.length == entry.compressedSize);
-  REQUIRE(streamEntry.entries().size() == 1);
-  REQUIRE(streamEntry.entries()[0] == 0);
+  Archive archive = Archive::ofData(data);
+  memory_buffer output;
+  archive.write(output);
+  output.rewind();
   
   Archive verify;
-  verify.read(destination);
+  verify.read(output);
   
-  REQUIRE(archive.entries().size() == verify.entries().size());
-  REQUIRE(archive.streams().size() == verify.streams().size());
-  
-  memory_buffer sverify;
-  ArchiveReadHandle handle(destination, verify, archiveEntry);
-  
-  passthrough_pipe pipe(handle.source(true), &sverify, entry.originalSize);
-  pipe.process();
-  
-  REQUIRE(sverify == source);
-
+  ArchiveTester::verify(data, verify, output);
 }
