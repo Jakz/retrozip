@@ -41,6 +41,8 @@
 		04D1184B1FA21C5700C59EC3 /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 04D118341FA21AA500C59EC3 /* libz.tbd */; };
 		04D118541FA25B4000C59EC3 /* sha1.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 04D118531FA25B4000C59EC3 /* sha1.cpp */; };
 		04D118551FA25B4000C59EC3 /* sha1.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 04D118531FA25B4000C59EC3 /* sha1.cpp */; };
+		04D35E1F1FC4AEED00B9D8D5 /* liblzma.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 04D35E1B1FC4AEED00B9D8D5 /* liblzma.a */; };
+		04D35E201FC4AEED00B9D8D5 /* liblzma.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 04D35E1B1FC4AEED00B9D8D5 /* liblzma.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -113,6 +115,25 @@
 		04D118501FA21C5700C59EC3 /* test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = test; sourceTree = BUILT_PRODUCTS_DIR; };
 		04D118511FA23DD300C59EC3 /* libcorecrypto.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libcorecrypto.tbd; path = usr/lib/system/libcorecrypto.tbd; sourceTree = SDKROOT; };
 		04D118531FA25B4000C59EC3 /* sha1.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = sha1.cpp; sourceTree = "<group>"; };
+		04D35E181FC4AE9D00B9D8D5 /* lzma_filter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = lzma_filter.h; sourceTree = "<group>"; };
+		04D35E1A1FC4AEED00B9D8D5 /* liblzma.5.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = liblzma.5.dylib; sourceTree = "<group>"; };
+		04D35E1B1FC4AEED00B9D8D5 /* liblzma.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = liblzma.a; sourceTree = "<group>"; };
+		04D35E1C1FC4AEED00B9D8D5 /* liblzma.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = liblzma.dylib; sourceTree = "<group>"; };
+		04D35E251FC4AF7700B9D8D5 /* base.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = base.h; sourceTree = "<group>"; };
+		04D35E261FC4AF7700B9D8D5 /* bcj.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = bcj.h; sourceTree = "<group>"; };
+		04D35E271FC4AF7700B9D8D5 /* block.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = block.h; sourceTree = "<group>"; };
+		04D35E281FC4AF7700B9D8D5 /* check.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = check.h; sourceTree = "<group>"; };
+		04D35E291FC4AF7700B9D8D5 /* container.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = container.h; sourceTree = "<group>"; };
+		04D35E2A1FC4AF7700B9D8D5 /* delta.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = delta.h; sourceTree = "<group>"; };
+		04D35E2B1FC4AF7700B9D8D5 /* filter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = filter.h; sourceTree = "<group>"; };
+		04D35E2C1FC4AF7700B9D8D5 /* hardware.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = hardware.h; sourceTree = "<group>"; };
+		04D35E2D1FC4AF7700B9D8D5 /* index.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = index.h; sourceTree = "<group>"; };
+		04D35E2E1FC4AF7700B9D8D5 /* index_hash.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = index_hash.h; sourceTree = "<group>"; };
+		04D35E2F1FC4AF7700B9D8D5 /* lzma12.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = lzma12.h; sourceTree = "<group>"; };
+		04D35E301FC4AF7700B9D8D5 /* stream_flags.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = stream_flags.h; sourceTree = "<group>"; };
+		04D35E311FC4AF7700B9D8D5 /* version.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = version.h; sourceTree = "<group>"; };
+		04D35E321FC4AF7700B9D8D5 /* vli.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = vli.h; sourceTree = "<group>"; };
+		04D35E331FC4AF7700B9D8D5 /* lzma.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = lzma.h; sourceTree = "<group>"; };
 		04DD14541FAD799700660DAC /* xdelta3-cfgs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "xdelta3-cfgs.h"; sourceTree = "<group>"; };
 		04FBBB0A1FABBE12001B8F5A /* xdelta3-blkcache.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "xdelta3-blkcache.h"; sourceTree = "<group>"; };
 		04FBBB0C1FABBE12001B8F5A /* xdelta3-decode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "xdelta3-decode.h"; sourceTree = "<group>"; };
@@ -132,6 +153,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				04D118351FA21AA500C59EC3 /* libz.tbd in Frameworks */,
+				04D35E1F1FC4AEED00B9D8D5 /* liblzma.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -140,6 +162,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				04D1184B1FA21C5700C59EC3 /* libz.tbd in Frameworks */,
+				04D35E201FC4AEED00B9D8D5 /* liblzma.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -164,6 +187,7 @@
 				046B66D71FB2B76E007B58BD /* filters.h */,
 				046B66D61FB2B76E007B58BD /* deflate_filter.h */,
 				046B66D51FB2B76E007B58BD /* deflate_filter.cpp */,
+				04D35E181FC4AE9D00B9D8D5 /* lzma_filter.h */,
 				0497EC0D1FB3499900011D57 /* xdelta3_filter.h */,
 				0497EC0C1FB3499900011D57 /* xdelta3_filter.cpp */,
 			);
@@ -222,7 +246,9 @@
 		04B2D9A91FA21987007F61BE = {
 			isa = PBXGroup;
 			children = (
+				04D35E231FC4AF7700B9D8D5 /* include */,
 				04D118141FA219BB00C59EC3 /* src */,
+				04D35E191FC4AEED00B9D8D5 /* lib */,
 				04B2D9B31FA21987007F61BE /* Products */,
 				04D118331FA21AA500C59EC3 /* Frameworks */,
 			);
@@ -314,6 +340,48 @@
 				04D118391FA21AF600C59EC3 /* md5.cpp */,
 			);
 			path = hash;
+			sourceTree = "<group>";
+		};
+		04D35E191FC4AEED00B9D8D5 /* lib */ = {
+			isa = PBXGroup;
+			children = (
+				04D35E1A1FC4AEED00B9D8D5 /* liblzma.5.dylib */,
+				04D35E1B1FC4AEED00B9D8D5 /* liblzma.a */,
+				04D35E1C1FC4AEED00B9D8D5 /* liblzma.dylib */,
+			);
+			name = lib;
+			path = ../../libs/lzma/lib;
+			sourceTree = "<group>";
+		};
+		04D35E231FC4AF7700B9D8D5 /* include */ = {
+			isa = PBXGroup;
+			children = (
+				04D35E241FC4AF7700B9D8D5 /* lzma */,
+				04D35E331FC4AF7700B9D8D5 /* lzma.h */,
+			);
+			name = include;
+			path = ../../libs/lzma/include;
+			sourceTree = "<group>";
+		};
+		04D35E241FC4AF7700B9D8D5 /* lzma */ = {
+			isa = PBXGroup;
+			children = (
+				04D35E251FC4AF7700B9D8D5 /* base.h */,
+				04D35E261FC4AF7700B9D8D5 /* bcj.h */,
+				04D35E271FC4AF7700B9D8D5 /* block.h */,
+				04D35E281FC4AF7700B9D8D5 /* check.h */,
+				04D35E291FC4AF7700B9D8D5 /* container.h */,
+				04D35E2A1FC4AF7700B9D8D5 /* delta.h */,
+				04D35E2B1FC4AF7700B9D8D5 /* filter.h */,
+				04D35E2C1FC4AF7700B9D8D5 /* hardware.h */,
+				04D35E2D1FC4AF7700B9D8D5 /* index.h */,
+				04D35E2E1FC4AF7700B9D8D5 /* index_hash.h */,
+				04D35E2F1FC4AF7700B9D8D5 /* lzma12.h */,
+				04D35E301FC4AF7700B9D8D5 /* stream_flags.h */,
+				04D35E311FC4AF7700B9D8D5 /* version.h */,
+				04D35E321FC4AF7700B9D8D5 /* vli.h */,
+			);
+			path = lzma;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -477,7 +545,10 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				HEADER_SEARCH_PATHS = "${SRCROOT}/../../src";
+				HEADER_SEARCH_PATHS = (
+					"${SRCROOT}/../../src",
+					"${SRCROOT}/../../libs/lzma/include",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.11;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -520,7 +591,10 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				HEADER_SEARCH_PATHS = "${SRCROOT}/../../src";
+				HEADER_SEARCH_PATHS = (
+					"${SRCROOT}/../../src",
+					"${SRCROOT}/../../libs/lzma/include",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.11;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = macosx;

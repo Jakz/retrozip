@@ -13,6 +13,7 @@
 #include "core/data_source.h"
 #include "core/file_data_source.h"
 #include "filters/deflate_filter.h"
+#include "filters/lzma_filter.h"
 #include "filters/xdelta3_filter.h"
 
 #define REQUIRE assert
