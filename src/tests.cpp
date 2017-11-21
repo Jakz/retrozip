@@ -1385,108 +1385,6 @@ TEST_CASE("empty archive", "[box archive]") {
   REQUIRE(result.isValidGlobalChecksum(buffer));
 }
 
-struct ArchiveTestEntry
-{
-  std::string name;
-  seekable_data_source* source;
-  std::vector<filter_builder*> builders;
-};
-
-TEST_CASE("simple archive (one entry per stream)", "[box archive]") {
-  constexpr size_t MIN_LEN = 128, MAX_LEN = 256, LEN = 256;
-  std::vector<std::tuple<std::string, seekable_data_source*>> entries;
-  
-  SECTION("single entry") {
-    const size_t length = utils::random64(MIN_LEN, MAX_LEN);
-    memory_buffer* source = new memory_buffer(length);
-    WRITE_RANDOM_DATA_AND_REWIND(*source, temp, length);
-    entries.push_back({ "foobar.bin", source });
-  }
-  
-  SECTION("two entries") {
-    for (size_t i = 0; i < 2; ++i)
-    {
-      const size_t length = utils::random64(MIN_LEN, MAX_LEN);
-      memory_buffer* source = new memory_buffer(length);
-      WRITE_RANDOM_DATA_AND_REWIND(*source, temp, length);
-      entries.push_back({ fmt::sprintf("entry%lu.bin", i), source });
-    }
-  }
-  
-  SECTION("ten entries") {
-    for (size_t i = 0; i < 10; ++i)
-    {
-      const size_t length = utils::random64(MIN_LEN, MAX_LEN);
-      memory_buffer* source = new memory_buffer(length);
-      WRITE_RANDOM_DATA_AND_REWIND(*source, temp, length);
-      entries.push_back({ fmt::sprintf("entry%lu.bin", i), source });
-    }
-  }
-  
-  memory_buffer destination;
-  
-  Archive archive = Archive::ofOneEntryPerStream(entries, { });
-  archive.write(destination);
-  
-  REQUIRE(archive.entries().size() == entries.size());
-  REQUIRE(archive.streams().size() == entries.size());
-  
-  /* expected size */
-  const size_t archiveSize =
-    sizeof(box::Header)
-  + sizeof(box::Entry) * entries.size()
-  + sizeof(box::Stream) * entries.size()
-  + std::accumulate(entries.begin(), entries.end(), 0UL, [] (size_t count, const decltype(entries)::value_type& tuple) { return std::get<0>(tuple).size() + 1 + count; })
-  + std::accumulate(entries.begin(), entries.end(), 0UL, [] (size_t count, const decltype(entries)::value_type& tuple) { return std::get<1>(tuple)->size() + count; })
-  ;
-  
-  REQUIRE(destination.size() == archiveSize);
-  
-  Archive verify;
-  verify.read(destination);
-
-  REQUIRE(verify.entries().size() == entries.size());
-  REQUIRE(verify.streams().size() == entries.size());
-  
-  for (size_t i = 0; i < verify.entries().size(); ++i)
-  {
-    const ArchiveEntry& archiveEntry = archive.entries()[i];
-    const auto& entry = archiveEntry.binary();
-    
-    REQUIRE(archiveEntry.filters().size() == 0);
-    
-    size_t length = std::get<1>(entries[i])->size();
-    REQUIRE(entry.compressedSize == length);
-    REQUIRE(entry.originalSize == length);
-    REQUIRE(entry.filteredSize == length);
-    REQUIRE(entry.indexInStream == 0);
-    REQUIRE(entry.stream == i);
-    
-    REQUIRE(archiveEntry.name() == std::get<0>(entries[i])); // name match
-    
-    memory_buffer sverify;
-    ArchiveReadHandle handle(destination, verify, archiveEntry);
-    
-    passthrough_pipe pipe(handle.source(true), &sverify, entry.originalSize);
-    pipe.process();
-        
-    REQUIRE(sverify == *(memory_buffer*)std::get<1>(entries[i]));
-  }
-  
-  for (size_t i = 0; i < verify.streams().size(); ++i)
-  {
-    const ArchiveStream& streamEntry = archive.streams()[i];
-    const auto& stream = streamEntry.binary();
-    
-    size_t length = std::get<1>(entries[i])->size();
-    REQUIRE(stream.length == length);
-    REQUIRE(streamEntry.entries().size() == 1);
-    REQUIRE(streamEntry.entries()[0] == i);
-  }
-  
-  std::for_each(entries.begin(), entries.end(), [](const decltype(entries)::value_type& tuple) { delete std::get<1>(tuple); });
-}
-
 struct ArchiveTester
 {
   static void release(const ArchiveFactory::Data& data)
@@ -1613,8 +1511,46 @@ struct ArchiveTester
   }
 };
 
+TEST_CASE("archive (one entry per stream) (no filters)", "[box archive]") {
+  ArchiveFactory::Data data;
+  
+  SECTION("single entry") {
+    data.entries.push_back({ "entry.bin", support::randomDataSource(support::random(512) + 512) });
+    data.streams.push_back({ { 0 }, { } });
+  }
+  
+  SECTION("two entries") {
+    for (size_t i = 0; i < 2; ++i)
+    {
+      data.entries.push_back({ fmt::sprintf("entry%lu.bin", i), support::randomDataSource(support::random(512) + 512) });
+      data.streams.push_back({ { static_cast<int>(i) }, { } });
+    }
+  }
+  
+  SECTION("ten entries") {
+    for (size_t i = 0; i < 10; ++i)
+    {
+      data.entries.push_back({ fmt::sprintf("entry%lu.bin", i), support::randomDataSource(support::random(512) + 512) });
+      data.streams.push_back({ { static_cast<int>(i) }, { } });
+    }
+  }
+  
+  Archive archive = Archive::ofData(data);
+  memory_buffer output;
+  archive.write(output);
+  output.rewind();
+  
+  Archive verify;
+  verify.read(output);
+  
+  ArchiveTester::verify(data, verify, output);
+  
+  
+  ArchiveTester::release(data);
+}
 
-TEST_CASE("multiple entry per stream", "[box archive]") {
+
+TEST_CASE("archive (multiple entry per stream)", "[box archive]") {
   ArchiveFactory::Data data;
   
   SECTION("two entries no filters") {
@@ -1638,10 +1574,10 @@ TEST_CASE("multiple entry per stream", "[box archive]") {
   ArchiveTester::release(data);
 }
 
-TEST_CASE("single entry archive with entry filters", "[box archive]") {
+TEST_CASE("archive (single entry archive with entry filters)", "[box archive]") {
   ArchiveFactory::Data data;
   
-  /*SECTION("no filters") {
+  SECTION("no filters") {
     data.entries.push_back({ "foobar1.bin", support::randomDataSource(256) });
   }
   
@@ -1656,7 +1592,7 @@ TEST_CASE("single entry archive with entry filters", "[box archive]") {
       source->raw()[i] = i / (KB16 / 256);
     source->rewind();
     data.entries.push_back({ "foobar1.bin", source, { new builders::deflate_builder(KB16) } });
-  }*/
+  }
   
   SECTION("double filter (deflate + xor)") {
     memory_buffer* source = new memory_buffer(KB16);
