@@ -681,6 +681,47 @@ TEST_CASE("file sources/sinks", "[stream]") {
       REQUIRE(source == sink);
     }
   }
+  
+  SECTION("paged file source")
+  {
+    constexpr size_t LEN = MB1;
+    constexpr size_t pageSize = 256;
+    constexpr size_t maxPages = 16;
+    
+    memory_buffer source(LEN);
+    for (size_t i = 0; i < LEN; ++i)
+      source.raw()[i] = rand() % 256;
+    source.advance(MB1);
+    
+    {
+      file_data_sink sink("test.bin");
+      passthrough_pipe pipe(&source, &sink, KB128);
+      pipe.process();
+    }
+    
+    paged_file_data_source bsource("test.bin", pageSize, maxPages);
+    
+    REQUIRE(source.size() == bsource.size());
+    
+    SECTION("read up to one page")
+    {
+      byte* data = new byte[pageSize];
+      bsource.read(data, pageSize);
+      
+      REQUIRE(bsource.sizeInMemory() == pageSize);
+      REQUIRE(std::equal(source.raw(), source.raw() + pageSize, data));
+      delete [] data;
+    }
+    
+    SECTION("seek to end and try to read")
+    {
+      bsource.seek(LEN);
+      byte temp[10];
+      size_t effective = bsource.read(temp, 10);
+      REQUIRE(effective == END_OF_STREAM);
+      REQUIRE(bsource.sizeInMemory() == 0);
+    }
+  }
 }
 
 TEST_CASE("hash filters", "[filters]") {

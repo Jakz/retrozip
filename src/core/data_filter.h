@@ -15,7 +15,7 @@ public:
   lambda_unbuffered_data_filter(lambda_t lambda) : _lambda(lambda) { }
 private:
   lambda_t _lambda;
-protected:
+public:
   void process(const byte* data, size_t amount, size_t effective) override final { _lambda(data, amount, effective); }
 };
 

@@ -11,6 +11,7 @@
 #include "box/archive.h"
 #include "filters/filters.h"
 #include "core/data_source.h"
+#include "core/file_data_source.h"
 #include "filters/deflate_filter.h"
 #include "filters/xdelta3_filter.h"
 
@@ -21,6 +22,42 @@ void randomize(byte* data, size_t len) { for (size_t i = 0; i < len; ++i) { data
 #define READ_DATA(dest, name, length, res) byte name[(length)]; size_t res = dest.read(name, 1, (length));
 
 #include <sstream>
+
+void test_xdelta3_huge()
+{
+  path sourcePath = path("/Volumes/RAMDisk/pes_it.iso");
+  path inputPath = path("/Volumes/RAMDisk/pes_fr.iso");
+  
+  file_data_source source(sourcePath);
+  file_data_source input(inputPath);
+  
+  
+  unbuffered_source_filter<lambda_unbuffered_data_filter> inputCounter(&input, [] (const byte*, size_t amount, size_t effective) {
+    const static size_t modulo = MB1;
+    static size_t current = 0;
+    static size_t steps = 0;
+    
+    current += effective;
+    
+    while (current > modulo)
+    {
+      ++steps;
+      current -= modulo;
+    }
+    
+    printf("Processed %s bytes\n", strings::humanReadableSize(steps*modulo, true).c_str());
+  });
+  
+  source_filter<xdelta3_encoder> encoder(&inputCounter, &source, MB128, MB16, GB2);
+  
+  
+  memory_buffer sink;
+  
+  passthrough_pipe pipe(&encoder, &sink, MB16);
+  pipe.process();
+  
+  sink.serialize(file_handle("/Volumes/RAMDisk/patch-rzip.xdelta3", file_mode::WRITING));
+}
 
 static std::stringstream ss;
 static std::stringstream sc;

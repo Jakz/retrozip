@@ -25,7 +25,10 @@ private:
   bool _dataOwned;
   
 public:
-  memory_buffer(size_t capacity) : _data(new byte[capacity]), _capacity(capacity), _size(0), _position(0), _dataOwned(true) { }
+  memory_buffer(size_t capacity) : _data(new byte[capacity]), _capacity(capacity), _size(0), _position(0), _dataOwned(true)
+  {
+    TRACE_MB("%p: memory_buffer::new(%lu)", this, capacity);
+  }
 
   memory_buffer() : memory_buffer(0)
   {
@@ -37,7 +40,9 @@ public:
   {
     _data = new byte[length];
     std::copy(data, data + length, _data);
+    TRACE_MB("%p: memory_buffer::new(ptr, %lu)", this, length);
   }
+  
 
   
   memory_buffer(byte* data, size_t length, bool copy) : _data(data), _capacity(length), _size(length), _position(0), _dataOwned(copy)
@@ -76,7 +81,7 @@ public:
     
     other._data = nullptr;
     other._dataOwned = false;
-    
+
     return *this;
   }
   

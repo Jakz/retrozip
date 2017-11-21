@@ -48,7 +48,7 @@ constexpr bool IS_LITTLE_ENDIAN_ = true;
 #error "Unknown endianness!"
 #endif
 
-#ifdef DEBUG
+#if defined(DEBUG) || true
 extern void debugprintf(const char* str, ...);
 extern void debugnnprintf(const char* str, ...);
 #define LOG(...) debugprintf(__VA_ARGS__)
@@ -306,6 +306,12 @@ constexpr size_t MB32 = MB8 << 2;
 constexpr size_t MB64 = MB8 << 3;
 constexpr size_t MB128 = MB8 << 4;
 constexpr size_t MB256 = MB8 << 5;
+constexpr size_t MB512 = MB8 << 6;
+constexpr size_t GB1 = MB8 << 7;
+constexpr size_t GB2 = GB1 << 1;
+constexpr size_t GB4 = GB1 << 2;
+constexpr size_t GB8 = GB1 << 3;
+
 
 enum class ZlibResult : int;
 
