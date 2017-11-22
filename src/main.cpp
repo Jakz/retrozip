@@ -290,7 +290,15 @@ int mainzzz(int argc, const char * argv[])
 
 int main(int argc, const char * argv[])
 {
-  memory_buffer source(MB1);
+  file_data_source source("/Volumes/RAMDisk/base.bin");
+  
+  ArchiveFactory::Data data;
+  
+  data.entries.push_back({ "base.bin", &source, { new builders::lzma_builder(source.size()) } });
+  
+  
+  
+  /*memory_buffer source(MB1);
   for (size_t i = 0; i < MB1; ++i)
     source.raw()[i] = (i / 50) % 256;
   source.advance(MB1);
@@ -304,6 +312,6 @@ int main(int argc, const char * argv[])
   pipe.process();
   
   REQUIRE(sink == source);
-  
+  */
   return 0;
 }

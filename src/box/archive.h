@@ -72,7 +72,7 @@ public:
 class ArchiveStream
 {
 public:
-  using ref = size_t;
+  using ref = box::index_t;
   
 private:
   mutable box::Stream _binary;

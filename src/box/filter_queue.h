@@ -169,14 +169,21 @@ public:
 
 
 #include "filters/deflate_filter.h"
+#include "filters/lzma_filter.h"
 
 namespace builders
 {
   enum identifier : box::payload_uid
   {
-    XOR_FILTER = 1ULL,
+    MIS_FILTERS_BASE = 1ULL,
+    XOR_FILTER,
     
-    DEFLATE_FILTER = 1000ULL,
+    COMPRESSION_FILTERS_BASE = 1024ULL,
+    DEFLATE_FILTER,
+    LZMA_FILTER,
+    
+    DIFF_FILTERS_BASE = 2048ULL,
+    XDELTA3_FILTER
   };
   
   class xor_builder : public symmetric_filter_builder
@@ -219,24 +226,66 @@ namespace builders
     }
   };
     
-    class deflate_builder : public filter_builder
+  class deflate_builder : public filter_builder
+  {
+  private:
+    
+  public:
+    deflate_builder(size_t bufferSize) : filter_builder(bufferSize) { }
+    
+    box::payload_uid identifier() const override { return identifier::DEFLATE_FILTER; }
+    memory_buffer payload() const override { return memory_buffer(0); }
+    
+    data_source* apply(data_source* source) const override
     {
-    private:
-      
-    public:
-      deflate_builder(size_t bufferSize) : filter_builder(bufferSize) { }
-      
-      box::payload_uid identifier() const override { return identifier::DEFLATE_FILTER; }
-      memory_buffer payload() const override { return memory_buffer(0); }
-      
-      data_source* apply(data_source* source) const override
-      {
-        return new source_filter<compression::deflater_filter>(source, _bufferSize);
-      }
-      
-      data_source* unapply(data_source* source) const override
-      {
-        return new source_filter<compression::inflater_filter>(source, _bufferSize);
-      }
-    };
+      return new source_filter<compression::deflater_filter>(source, _bufferSize);
+    }
+    
+    data_source* unapply(data_source* source) const override
+    {
+      return new source_filter<compression::inflater_filter>(source, _bufferSize);
+    }
+  };
+    
+  class lzma_builder : public filter_builder
+  {
+  private:
+    
+  public:
+    lzma_builder(size_t bufferSize) : filter_builder(bufferSize) { }
+    
+    box::payload_uid identifier() const override { return identifier::LZMA_FILTER; }
+    memory_buffer payload() const override { return memory_buffer(0); }
+    
+    data_source* apply(data_source* source) const override
+    {
+      return new source_filter<compression::lzma_encoder>(source, _bufferSize);
+    }
+    
+    data_source* unapply(data_source* source) const override
+    {
+      return new source_filter<compression::lzma_decoder>(source, _bufferSize);
+    }
+  };
+    
+  class xdelta3_builder : public filter_builder
+  {
+  private:
+    
+  public:
+    xdelta3_builder(size_t bufferSize, box::index_t sourceIndex, size_t xdeltaWindowSize, size_t sourceBlockSize) : filter_builder(bufferSize) { }
+    
+    box::payload_uid identifier() const override { return identifier::XDELTA3_FILTER; }
+    memory_buffer payload() const override { return memory_buffer(0); }
+    
+    data_source* apply(data_source* source) const override
+    {
+      return new source_filter<compression::lzma_encoder>(source, _bufferSize);
+    }
+    
+    data_source* unapply(data_source* source) const override
+    {
+      return new source_filter<compression::lzma_decoder>(source, _bufferSize);
+    }
+  };
 }

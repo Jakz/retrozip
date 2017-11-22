@@ -17,6 +17,11 @@ const filter_repository* filter_repository::instance()
       return new builders::deflate_builder(bufferSize);
     });
     
+    repository.registerGenerator(builders::identifier::LZMA_FILTER, [] (const byte* payload) {
+      size_t bufferSize = repository.bufferSizeFor(builders::identifier::LZMA_FILTER, payload);
+      return new builders::lzma_builder(bufferSize);
+    });
+    
     init = true;
   }
   
