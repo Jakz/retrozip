@@ -33,7 +33,7 @@ void test_xdelta3_huge()
   file_data_source input(inputPath);
   
   
-  unbuffered_source_filter<lambda_unbuffered_data_filter> inputCounter(&input, [] (const byte*, size_t amount, size_t effective) {
+  unbuffered_source_filter<lambda_unbuffered_data_filter> inputCounter(&input, "processer", [] (const byte*, size_t amount, size_t effective) {
     const static size_t modulo = MB1;
     static size_t current = 0;
     static size_t steps = 0;
@@ -290,12 +290,42 @@ int mainzzz(int argc, const char * argv[])
 
 int main(int argc, const char * argv[])
 {
+  {
+    Archive archive;
+    file_data_source source = file_data_source("/Volumes/RAMDisk/boxed.box");
+    archive.read(source);
+    printf("%s\n", archive.entries()[0].name().c_str());
+  }
+  
+  
+  return 0;
+  
+  
   file_data_source source("/Volumes/RAMDisk/base.bin");
+  file_data_source derived1("/Volumes/RAMDisk/derived1.bin");
+  file_data_source derived2("/Volumes/RAMDisk/derived2.bin");
+  file_data_source derived3("/Volumes/RAMDisk/derived3.bin");
+
   
   ArchiveFactory::Data data;
   
-  data.entries.push_back({ "base.bin", &source, { new builders::lzma_builder(source.size()) } });
+  data.entries.push_back({ "base.bin", &source, { new builders::lzma_builder(MB128) } });
+  data.entries.push_back({ "derived1.bin", &derived1, { new builders::xdelta3_builder(MB128, &source, MB16, source.size())/*, new builders::lzma_builder(derived1.size() >> 2)*/ } });
+  data.entries.push_back({ "derived2.bin", &derived2, { new builders::xdelta3_builder(MB128, &source, MB16, source.size())/*, new builders::lzma_builder(derived2.size() >> 2)*/ } });
+  data.entries.push_back({ "derived3.bin", &derived3, { new builders::xdelta3_builder(MB128, &source, MB16, source.size())/*, new builders::lzma_builder(derived3.size() >> 2)*/ } });
+
   
+  data.streams.push_back({ { 0 } });
+  data.streams.push_back({ { 1 } });
+  data.streams.push_back({ { 2 } });
+  data.streams.push_back({ { 3 } });
+
+  
+  memory_buffer sink;
+  Archive archive = Archive::ofData(data);
+  archive.options().bufferSize = MB128;
+  archive.write(sink);
+  sink.serialize(file_handle("/Volumes/RAMDisk/boxed.box", file_mode::WRITING));
   
   
   /*memory_buffer source(MB1);

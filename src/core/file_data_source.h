@@ -25,12 +25,16 @@ public:
     if (_handle.tell() == _length)
       return END_OF_STREAM;
     
-    return _handle.read(dest, 1, amount);
+    size_t effective = _handle.read(dest, 1, amount);
+    TRACE_F("%p: file_data_source::read(%lu/%lu)", this, _handle.tell(), _length);
+    return effective;
   }
   
   void seek(off_t position) override
   {
     assert(_handle);
+    TRACE_F("%p: file_data_source::seek(%lu)", this, position);
+
     _handle.seek(position, SEEK_SET);
   }
   
@@ -65,7 +69,10 @@ public:
   size_t write(const byte* src, size_t amount) override
   {
     if (amount != END_OF_STREAM)
+    {
+      TRACE_F("%p: file_data_sink::write(%lu/%lu)", this, amount, _handle.tell()+amount);
       return _handle.write(src, 1, amount);
+    }
     else
       return END_OF_STREAM;
   }

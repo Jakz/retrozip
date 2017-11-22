@@ -11,7 +11,7 @@
 
 class memory_buffer;
 using W = memory_buffer;
-using R = memory_buffer;
+using R = seekable_data_source;
 
 class ArchiveEntry
 {
@@ -132,17 +132,20 @@ struct Options
 
 class Archive;
 
-class ArchiveReadHandle
+class ArchiveReadHandle : public data_source
 {
 private:
   R& r;
   const Archive& _archive;
   const ArchiveEntry& _entry;
   filter_cache _cache;
+  data_source* _source;
   
 public:
-  ArchiveReadHandle(R& r, const Archive& archive, const ArchiveEntry& entry) : r(r), _archive(archive), _entry(entry) { }
+  ArchiveReadHandle(R& r, const Archive& archive, const ArchiveEntry& entry) : r(r), _archive(archive), _entry(entry), _source(nullptr) { }
   data_source* source(bool total);
+  
+  size_t read(byte* dest, size_t amount) { return _source->read(dest, amount); }
 };
 
 struct ArchiveFactory
@@ -181,7 +184,8 @@ private:
   
   void finalizeHeader(W& w);
   box::checksum_t calculateGlobalChecksum(W& w, size_t bufferSize) const;
-    
+  
+  void writeStream(W& w, ArchiveStream& stream);
   void writeEntry(W& w, ArchiveStream& stream, ArchiveEntry& entry);
   void writeEntryPayloads(W& w);
   void writeStreamPayloads(W& w);
@@ -211,6 +215,5 @@ public:
   static Archive ofSingleEntry(const std::string& name, seekable_data_source* source, const std::initializer_list<filter_builder*>& builders);
   static Archive ofOneEntryPerStream(const std::vector<std::tuple<std::string, seekable_data_source*>>& entries, std::initializer_list<filter_builder*> builders);
   static Archive ofData(const ArchiveFactory::Data& data);
-
 };
 

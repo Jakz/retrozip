@@ -38,7 +38,7 @@ void xdelta3_filter<FUNCTION>::init()
   _config.sprevsz = utils::nextPowerOfTwo(_windowSize >> 2);
   _config.getblk = getBlockCallback;
   
-  _config.flags = XD3_SEC_DJW | XD3_COMPLEVEL_9;
+  _config.flags = XD3_SEC_LZMA/*XD3_SEC_DJW*/ | XD3_COMPLEVEL_9;
   
   int r = xd3_config_stream(&_stream, &_config);
   assert(r == 0);

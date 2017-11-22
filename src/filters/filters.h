@@ -22,6 +22,8 @@ namespace filters
     }
 
     typename D::computed_type get() const { return _digester.get(); }
+    
+    std::string name() const override { return "digest"; }
   };
 
   
@@ -59,6 +61,9 @@ namespace filters
     hash::crc32_t crc32() { assert(_crc32enabled); return _crc32.get(); }
     hash::md5_t md5() { assert(_md5enabled); return _md5.get(); }
     hash::sha1_t sha1() { assert(_sha1enabled); return _sha1.get(); }
+    
+    std::string name() const override { return "multiple_digest"; }
+
   };
   
   class data_counter : public unbuffered_data_filter
@@ -78,6 +83,7 @@ namespace filters
         _count += effective;
     }
     
+    std::string name() const override { return "counter"; }
   };
   
   

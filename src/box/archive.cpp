@@ -364,10 +364,10 @@ void Archive::read(R& r)
     //TODO: ugly
     std::string name;
     char c;
-    r.read(&c, sizeof(char), 1);
+    r.read(c);
     while (c) {
       name += c;
-      r.read(&c, sizeof(char), 1);
+      r.read(c);
     }
     
     /* load payload */
@@ -376,7 +376,7 @@ void Archive::read(R& r)
     {
       payload.resize(entry.payloadLength);
       r.seek(entry.payload);
-      r.read(payload.data(), 1, entry.payloadLength);
+      r.read(payload.data(), entry.payloadLength);
     }
     
     _entries.emplace_back(name, entry, payload);
@@ -447,6 +447,11 @@ box::checksum_t Archive::calculateGlobalChecksum(W& w, size_t bufferSize) const
   delete [] buffer;
   
   return digester.get();
+}
+
+void Archive::writeStream(W& w, ArchiveStream& stream)
+{
+  
 }
 
 void Archive::writeEntry(W& w, ArchiveStream& stream, ArchiveEntry& entry)

@@ -56,12 +56,13 @@ extern void debugnnprintf(const char* str, ...);
 #define LOG(...) do { } while (false)
 #endif
 
-#define TRACE_MEMORY_BUFFERS 0
-#define TRACE_PIPES 0
-#define TRACE_ARCHIVE 0
+#define TRACE_MEMORY_BUFFERS 1
+#define TRACE_PIPES 1
+#define TRACE_ARCHIVE 1
 #define TRACE_ENABLED 1
+#define TRACE_FILES 1
 
-#define TRACE_FORCE_DISABLE 0
+#define TRACE_FORCE_DISABLE 1
 
 
 #if defined(TRACE_FORCE_DISABLE) && TRACE_FORCE_DISABLE == 1
@@ -80,6 +81,12 @@ extern void debugnnprintf(const char* str, ...);
 #define TRACE_P TRACEL
 #else
 #define TRACE_P(...) do { } while (false)
+#endif
+
+#if defined(TRACE_FILES) && TRACE_FILES == 1
+#define TRACE_F TRACEL
+#else
+#define TRACE_F(...) do { } while (false)
 #endif
 
 #if defined(TRACE_ARCHIVE) && TRACE_ARCHIVE >= 1

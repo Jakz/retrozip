@@ -8,6 +8,9 @@ struct data_source
 {
   virtual ~data_source() { }
   virtual size_t read(byte* dest, size_t amount) = 0;
+  template<typename T> void read(T& dest) { assert(read((byte*)&dest, sizeof(T)) == sizeof(T)); }
+  
+  virtual bool isSeekable() const { return false; }
 };
 
 struct data_sink
@@ -24,6 +27,7 @@ struct seekable
   virtual void seek(off_t position) = 0;
   virtual off_t tell() const = 0;
   virtual size_t size() const = 0;
+  virtual bool isSeekable() const { return true; }
 };
 
 struct seekable_data_source : public data_source, public seekable { };

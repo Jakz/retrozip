@@ -284,6 +284,8 @@
 #define SECONDARY_DJW 1  /* standardization, off by default until such time. */
 #endif
 
+#define HAVE_LZMA_H
+
 #ifndef SECONDARY_LZMA
 #ifdef HAVE_LZMA_H
 #define SECONDARY_LZMA 1

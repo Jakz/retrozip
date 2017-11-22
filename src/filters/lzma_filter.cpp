@@ -81,6 +81,7 @@ void compression::lzma_filter<IS_ENCODER>::process()
           printableErrorCode(r)
     );
   
+  assert(r == LZMA_OK || r == LZMA_STREAM_END);
   markFinished(r == LZMA_STREAM_END);
 }
 

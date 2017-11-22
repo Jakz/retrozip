@@ -6,17 +6,21 @@ class unbuffered_data_filter
 {
 protected:
   virtual void process(const byte* data, size_t amount, size_t effective) = 0;
+  
+  virtual std::string name() const = 0;
 };
 
 class lambda_unbuffered_data_filter : unbuffered_data_filter
 {
 public:
   using lambda_t = std::function<void(const byte*, size_t, size_t)>;
-  lambda_unbuffered_data_filter(lambda_t lambda) : _lambda(lambda) { }
+  lambda_unbuffered_data_filter(std::string name, lambda_t lambda) : _lambda(lambda) { }
 private:
+  std::string _name;
   lambda_t _lambda;
 public:
   void process(const byte* data, size_t amount, size_t effective) override final { _lambda(data, amount, effective); }
+  std::string name() const override { return _name; }
 };
 
 template<typename T>
@@ -32,6 +36,8 @@ public:
   size_t read(byte* dest, size_t amount) override
   {
     size_t read = _source->read(dest, amount);
+    TRACE_P("%p: %s_unbuffered_source_filter::read(%lu/%lu)", this, _filter.name().c_str(), read, amount);
+
     _filter.process(dest, amount, read);
     return read;
   }
@@ -56,6 +62,8 @@ public:
   {
     size_t written = _sink->write(src, amount);
     _filter.process(src, amount, written);
+    TRACE_P("%p: %s_unbuffered_sink_filter::read(%lu/%lu)", this, _filter.name().c_str(), written, amount);
+
     return written;
   }
   

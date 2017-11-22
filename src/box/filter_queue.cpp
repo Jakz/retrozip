@@ -22,6 +22,12 @@ const filter_repository* filter_repository::instance()
       return new builders::lzma_builder(bufferSize);
     });
     
+    repository.registerGenerator(builders::identifier::XDELTA3_FILTER, [] (const byte* payload) {
+      size_t bufferSize = repository.bufferSizeFor(builders::identifier::XDELTA3_FILTER, payload);
+      return new builders::lzma_builder(bufferSize);
+    });
+    
+    
     init = true;
   }
   
@@ -67,3 +73,18 @@ void filter_builder_queue::unserialize(memory_buffer& data)
     }
   }
 }
+
+
+
+#include "filters/xdelta3_filter.h"
+
+data_source* builders::xdelta3_builder::apply(data_source* source) const
+{
+  return new source_filter<xdelta3_encoder>(source, _source, _bufferSize, _xdeltaWindowSize, _sourceBlockSize);
+}
+
+data_source* builders::xdelta3_builder::unapply(data_source* source) const
+{
+  return new source_filter<xdelta3_decoder>(source, _source, _bufferSize, _xdeltaWindowSize, _sourceBlockSize);
+}
+

@@ -7,6 +7,15 @@
 #include <vector>
 #include <unordered_map>
 
+
+class Archive;
+class filter_repository;
+struct archive_environment
+{
+  Archive* archive;
+  filter_repository* repository;
+};
+
 struct filter_builder
 {
 protected:
@@ -16,7 +25,7 @@ protected:
   filter_builder(size_t bufferSize) : _bufferSize(bufferSize) { }
   
 public:
-  virtual ~filter_builder() { }
+  virtual ~filter_builder() { }
   
   virtual data_source* apply(data_source* source) const = 0;
   virtual data_source* unapply(data_source* source) const = 0;
@@ -163,8 +172,6 @@ public:
   static const filter_repository* instance();
 };
 
-
-
 #include <vector>
 
 
@@ -271,21 +278,20 @@ namespace builders
   class xdelta3_builder : public filter_builder
   {
   private:
+    box::index_t _sourceIndex;
+    seekable_data_source* _source;
+    
+    size_t _xdeltaWindowSize;
+    size_t _sourceBlockSize;
     
   public:
-    xdelta3_builder(size_t bufferSize, box::index_t sourceIndex, size_t xdeltaWindowSize, size_t sourceBlockSize) : filter_builder(bufferSize) { }
+    xdelta3_builder(size_t bufferSize, seekable_data_source* source, size_t xdeltaWindowSize, size_t sourceBlockSize) : filter_builder(bufferSize), _source(source), _xdeltaWindowSize(xdeltaWindowSize), _sourceBlockSize(sourceBlockSize) { }
+    xdelta3_builder(size_t bufferSize, box::index_t sourceIndex, size_t xdeltaWindowSize, size_t sourceBlockSize) : filter_builder(bufferSize), _source(nullptr), _xdeltaWindowSize(xdeltaWindowSize), _sourceBlockSize(sourceBlockSize) { }
     
     box::payload_uid identifier() const override { return identifier::XDELTA3_FILTER; }
     memory_buffer payload() const override { return memory_buffer(0); }
     
-    data_source* apply(data_source* source) const override
-    {
-      return new source_filter<compression::lzma_encoder>(source, _bufferSize);
-    }
-    
-    data_source* unapply(data_source* source) const override
-    {
-      return new source_filter<compression::lzma_decoder>(source, _bufferSize);
-    }
+    data_source* apply(data_source* source) const override;
+    data_source* unapply(data_source* source) const override;
   };
 }
