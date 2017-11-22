@@ -8,18 +8,25 @@
 
 namespace compression
 {
+  template<bool IS_ENCODER>
   class lzma_filter : public data_filter
   {
   private:
     lzma_stream _stream;
     
-  public:
-    lzma_filter() : _stream(LZMA_STREAM_INIT) { }
+    static const char* printableErrorCode(lzma_ret value);
     
-    virtual void finalize()
-    {
-      lzma_end(&_stream);
-    }
+  public:
+    lzma_filter(size_t bufferSize) : data_filter(bufferSize), _stream(LZMA_STREAM_INIT) { }
+    
+    void init() override;
+    void process() override;
+    void finalize() override;
+    
+    std::string name() override { return "lzma_encoder"; }
   };
+  
+  using lzma_encoder = lzma_filter<true>;
+  using lzma_decoder = lzma_filter<false>;
 
 }

@@ -47,7 +47,7 @@ public:
       {
         assert(_state == state::OPENED);
         _state = state::END_OF_INPUT;
-        TRACE("%p: pipe::stepInput() state: OPEN -> END_OF_INPUT", this);
+        TRACE_P("%p: pipe::stepInput() state: OPEN -> END_OF_INPUT", this);
 
       }
       else if (effective) //TODO: not necessary, used to skip tracing, just forward 0 in case

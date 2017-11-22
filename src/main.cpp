@@ -290,67 +290,20 @@ int mainzzz(int argc, const char * argv[])
 
 int main(int argc, const char * argv[])
 {
-  size_t LEN = 0;
-  memory_buffer source, destination;
-  std::initializer_list<filter_builder*> filters;
-
-  LEN = KB16;
-  filters = { new builders::deflate_builder(LEN) };
-  source.reserve(KB16);
-  for (size_t i = 0; i < LEN; ++i)
-    source.raw()[i] = i / (KB16 / 256);
-  source.rewind();
-
-  Archive archive = Archive::ofSingleEntry("foobar.bin", &source, filters);
-  archive.write(destination);
+  memory_buffer source(MB1);
+  for (size_t i = 0; i < MB1; ++i)
+    source.raw()[i] = (i / 50) % 256;
+  source.advance(MB1);
+    
+  memory_buffer sink;
   
-  REQUIRE(archive.entries().size() == 1);
-  REQUIRE(archive.streams().size() == 1);
+  source_filter<compression::lzma_encoder> filter(&source, 1024);
+  source_filter<compression::lzma_decoder> filter2(&filter, 256);
   
-  /* expected size */
-  size_t destinationSize =
-  sizeof(box::Header) /* header */
-  + sizeof(box::Entry)*1 + sizeof(box::Stream)*1 /* stream and entry tables */
-  + strlen("foobar.bin") + 1 /* entry file name */
-  + archive.entries()[0].binary().compressedSize /* stream */
-  + archive.entries()[0].binary().payloadLength
-  ;
-  
-  destination.rewind();
-  
-  REQUIRE(destination.size() == destinationSize);
-  
-  const ArchiveEntry& archiveEntry = archive.entries()[0];
-  const auto& entry = archiveEntry.binary();
-  
-  REQUIRE(archiveEntry.filters().size() == filters.size());
-  
-  //REQUIRE(entry.compressedSize == LEN);
-  REQUIRE(entry.originalSize == LEN);
-  //REQUIRE(entry.filteredSize == LEN);
-  REQUIRE(entry.indexInStream == 0);
-  REQUIRE(entry.stream == 0);
-  
-  const ArchiveStream& streamEntry = archive.streams()[0];
-  const auto& stream = streamEntry.binary();
-  
-  REQUIRE(stream.length == entry.compressedSize);
-  REQUIRE(streamEntry.entries().size() == 1);
-  REQUIRE(streamEntry.entries()[0] == 0);
-  
-  Archive verify;
-  verify.read(destination);
-  
-  REQUIRE(archive.entries().size() == verify.entries().size());
-  REQUIRE(archive.streams().size() == verify.streams().size());
-  
-  memory_buffer sverify;
-  ArchiveReadHandle handle(destination, verify, archiveEntry);
-  
-  passthrough_pipe pipe(handle.source(true), &sverify, entry.originalSize);
+  passthrough_pipe pipe(&filter2, &sink, 1024);
   pipe.process();
   
-  REQUIRE(sverify == source);
+  REQUIRE(sink == source);
   
   return 0;
 }
