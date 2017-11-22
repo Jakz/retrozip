@@ -82,6 +82,31 @@ public:
   }
 };
 
+#pragma seekable slice
+
+class seekable_source_slice : public seekable_data_source
+{
+private:
+  seekable_data_source* const _source;
+  off_t _position;
+  
+public:
+  seekable_source_slice(seekable_data_source* source) : _source(source) { }
+  
+  virtual void seek(off_t position) { _position = position; }
+  virtual off_t tell() const { return _position; }
+  virtual size_t size() const { return _source->size(); }
+  virtual size_t read(byte* dest, size_t amount)
+  {
+    off_t mark = _source->tell();
+    _source->seek(_position);
+    size_t effective = _source->read(dest, amount);
+    _source->seek(mark);
+    _position += effective;
+    return effective;
+  }
+};
+
 #pragma multiple source
 
 class multiple_data_source : public data_source

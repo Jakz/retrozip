@@ -28,6 +28,16 @@ namespace support {
     return engine() % modulo;
   }
   
+  memory_buffer randomStackDataSource(size_t size)
+  {
+    memory_buffer buffer(size);
+    for (size_t i = 0; i < size; ++i)
+      buffer.raw()[i] = rand()%256;
+    buffer.advance(size);
+    
+    return buffer;
+  }
+  
   memory_buffer* randomDataSource(size_t size)
   {
     memory_buffer* buffer = new memory_buffer(size);
@@ -589,6 +599,44 @@ TEST_CASE("basic", "[stream]") {
     REQUIRE(memcmp(source.raw() + L1, sink2->raw(), L2) == 0);
     REQUIRE(memcmp(source.raw() + L1 + L2, sink3->raw(), L3) == 0);
   }
+  
+  SECTION("seekable slices") {
+    constexpr size_t LEN = 1024;
+    constexpr size_t SLICE_SIZE = 128;
+    constexpr size_t SLICE_COUNT = LEN / SLICE_SIZE;
+    constexpr size_t BUF_SIZE = 8;
+    constexpr size_t PASS_COUNT = SLICE_SIZE / BUF_SIZE;
+    
+    memory_buffer source = support::randomStackDataSource(LEN);
+    std::vector<seekable_source_slice> slices;
+    std::array<memory_buffer, SLICE_COUNT> sinks = { memory_buffer(SLICE_SIZE) };
+    
+    for (size_t i = 0; i < SLICE_COUNT; ++i)
+    {
+      seekable_source_slice slice(&source);
+      slice.seek(SLICE_SIZE*i);
+      slices.push_back(slice);
+    }
+    
+    /* interleave read to check slices are working as expected */
+    byte buffer[BUF_SIZE];
+    for (size_t i = 0; i < PASS_COUNT; ++i)
+    {
+      for (size_t j = 0; j < SLICE_COUNT; ++j)
+      {
+        slices[j].read(buffer, BUF_SIZE);
+        sinks[j].write(buffer, BUF_SIZE);
+      }
+    }
+    
+    /* check that all sinks are correcly a slice of original data */
+    for (size_t i = 0; i < SLICE_COUNT; ++i)
+    {
+      REQUIRE(sinks[i].size() == SLICE_SIZE);
+      REQUIRE(std::equal(sinks[i].raw(), sinks[i].raw() + SLICE_SIZE, source.raw() + SLICE_SIZE * i));
+    }
+  }
+  
 }
 
 TEST_CASE("counter", "[filters]") {
