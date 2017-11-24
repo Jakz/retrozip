@@ -34,7 +34,6 @@ namespace support {
     for (size_t i = 0; i < size; ++i)
       buffer.raw()[i] = rand()%256;
     buffer.advance(size);
-    
     return buffer;
   }
   
@@ -44,7 +43,15 @@ namespace support {
     for (size_t i = 0; i < size; ++i)
       buffer->raw()[i] = rand()%256;
     buffer->advance(size);
-    
+    return buffer;
+  }
+  
+  memory_buffer* randomCompressibleDataSource(size_t size)
+  {
+    memory_buffer* buffer = new memory_buffer(size);
+    for (size_t i = 0; i < size; ++i)
+      buffer->raw()[i] = i / (size/256);
+    buffer->advance(size);
     return buffer;
   }
 }
@@ -560,25 +567,52 @@ TEST_CASE("basic", "[stream]") {
   }
   
   SECTION("multiple sources") {
-    constexpr size_t LEN1 = 1024, LEN2 = 512;
-    memory_buffer source1, source2;
-    memory_buffer sink;
-    multiple_data_source multiple_source({&source1, &source2});
+    constexpr size_t MIN_LEN = 256, MAX_LEN = 1024;
+    constexpr size_t COUNT = 2;
     
-    WRITE_RANDOM_DATA_AND_REWIND(source1, test1, LEN1);
-    WRITE_RANDOM_DATA_AND_REWIND(source2, test2, LEN2);
+    memory_buffer sources[COUNT];
+    size_t lengths[COUNT];
+    memory_buffer sink;
+    
+    std::vector<data_source*> vsources;
+    std::transform(std::begin(sources), std::end(sources), std::back_inserter(vsources), [](memory_buffer& buffer) { return &buffer; });
+    multiple_data_source multiple_source(vsources);
+    
+    /* used to verify callbacks are correctly called */
+    std::vector<std::pair<data_source*,bool>> callbacks;
+    
+    multiple_source.setOnBegin([&callbacks] (data_source* source) { callbacks.emplace_back(std::make_pair(source, true)); });
+    multiple_source.setOnEnd([&callbacks] (data_source* source) { callbacks.emplace_back(std::make_pair(source, false)); });
+    
+    for (size_t i = 0; i < COUNT; ++i)
+    {
+      lengths[i] = support::random(MAX_LEN-MIN_LEN) + MIN_LEN;
+      sources[i] = support::randomStackDataSource(lengths[i]);
+    }
 
     passthrough_pipe pipe(&multiple_source, &sink, 30);
     pipe.process();
     
-    REQUIRE(sink.size() == LEN1 + LEN2);
-    REQUIRE(std::equal(sink.raw(), sink.raw() + LEN1, source1.raw()));
-    REQUIRE(std::equal(sink.raw() + LEN1, sink.raw() + LEN1 + LEN2, source2.raw()));
+    REQUIRE(sink.size() == std::accumulate(std::begin(lengths), std::end(lengths), 0));
+    REQUIRE(callbacks.size() == multiple_source.count() * 2);
+    
+    size_t offset = 0;
+    for (size_t i = 0; i < multiple_source.count(); ++i)
+    {
+      REQUIRE(std::equal(sources[i].raw(), sources[i].raw() + lengths[i], sink.raw() + offset));
+      
+      REQUIRE(callbacks[2*i].first == &sources[i]);
+      REQUIRE(callbacks[2*i].second);
+      REQUIRE(callbacks[2*i + 1].first == &sources[i]);
+      REQUIRE(!callbacks[2*i + 1].second);
+
+      offset += lengths[i];
+    }
   }
   
   SECTION("multiple fixed sinks") {
     constexpr size_t LEN = 1024;
-    constexpr size_t L1 = 256LL, L2 = 256LL, L3 = 512LL;
+    constexpr size_t L1 = 256, L2 = 256, L3 = 512;
     
     memory_buffer source;
     WRITE_RANDOM_DATA_AND_REWIND(source, test, LEN);
@@ -1502,11 +1536,15 @@ struct ArchiveTester
         REQUIRE(entry.binary().indexInStream == j);
       }
       
+      //TODO: this is only true for seekable streams, for now this simplified check is done
       /* size of stream == sum of compressed size of entries */
-      REQUIRE(stream.binary().length == std::accumulate(stream.entries().begin(), stream.entries().end(), 0UL, [&verify] (size_t length, ArchiveEntry::ref index) {
-        const auto& entry = verify.entries()[index];
-        return length + entry.binary().compressedSize;
-      }));
+      //if (stream.entries().size() == 1)
+      //  REQUIRE(stream.binary().length == verify.entries()[0].binary().compressedSize);
+      
+      /*REQUIRE(stream.binary().length == std::accumulate(stream.entries().begin(), stream.entries().end(), 0UL, [&verify] (size_t length, ArchiveEntry::ref index) {
+       const auto& entry = verify.entries()[index];
+       return length + entry.binary().compressedSize;
+       }));*/
       
       /* each filter must match */
       verifyFilters(dstream.filters, stream.filters());
@@ -1519,12 +1557,12 @@ struct ArchiveTester
     const size_t payloadSizeForStream = std::accumulate(verify.streams().begin(), verify.streams().end(), 0UL, [] (size_t count, const ArchiveStream& stream) {
       return count + stream.binary().payloadLength;
     });
-
+    
     /* size of archive must match, header + entry*entries + stream*streams + entry names */
     size_t archiveSize = sizeof(box::Header)
     + sizeof(box::Entry) * data.entries.size()
     + sizeof(box::Stream) * data.streams.size()
-    + std::accumulate(verify.entries().begin(), verify.entries().end(), 0UL, [] (size_t count, const ArchiveEntry& entry) { return entry.binary().compressedSize + count; })
+    + std::accumulate(verify.streams().begin(), verify.streams().end(), 0UL, [] (size_t count, const ArchiveStream& entry) { return entry.binary().length + count; })
     + std::accumulate(data.entries.begin(), data.entries.end(), 0UL, [] (size_t count, const ArchiveFactory::Entry& entry) { return entry.name.length() + 1 + count; })
     + payloadSizeForEntries + payloadSizeForStream;
     
@@ -1551,7 +1589,7 @@ struct ArchiveTester
       crc32.update(sink.raw(), sink.size());
       md5.update(sink.raw(), sink.size());
       sha1.update(sink.raw(), sink.size());
-
+      
       REQUIRE(entry.binary().digest.crc32 == crc32.get());
       REQUIRE(entry.binary().digest.md5 == md5.get());
       REQUIRE(entry.binary().digest.sha1 == sha1.get());
@@ -1590,7 +1628,7 @@ TEST_CASE("archive (one entry per stream) (no filters)", "[box archive]") {
   
   Archive verify;
   verify.read(output);
-  
+  verify.options().bufferSize = KB16;
   ArchiveTester::verify(data, verify, output);
   
   
@@ -1608,6 +1646,13 @@ TEST_CASE("archive (multiple entry per stream)", "[box archive]") {
     data.streams.push_back({ { 0, 1 }, { } });
   }
   
+  SECTION("two entries through a single stream filter") {
+    data.entries.push_back({ "foobar1.bin", support::randomDataSource(256) });
+    data.entries.push_back({ "foobar2.bin", support::randomDataSource(512) });
+    
+    data.streams.push_back({ { 0, 1 }, { new builders::deflate_builder(256) } });
+  }
+  
   Archive archive = Archive::ofData(data);
   memory_buffer output;
   archive.write(output);
@@ -1615,60 +1660,77 @@ TEST_CASE("archive (multiple entry per stream)", "[box archive]") {
   
   Archive verify;
   verify.read(output);
-  
+  verify.options().bufferSize = KB16;
+
   ArchiveTester::verify(data, verify, output);
   
   
   ArchiveTester::release(data);
 }
 
-TEST_CASE("archive (single entry archive with entry filters)", "[box archive]") {
+TEST_CASE("archive (single entry archive with filters)", "[box archive]") {
   ArchiveFactory::Data data;
   
   SECTION("no filters") {
     data.entries.push_back({ "foobar1.bin", support::randomDataSource(256) });
-  }
-  
-  SECTION("xor filter") {
-    data.entries.push_back({ "foobar1.bin", support::randomDataSource(256), { new builders::xor_builder(256, "foobar") } });
-  }
-  
-  SECTION("zlib deflate filter") {
-    memory_buffer* source = new memory_buffer(KB16);
-    source->reserve(KB16);
-    for (size_t i = 0; i < KB16; ++i)
-      source->raw()[i] = i / (KB16 / 256);
-    source->rewind();
-    data.entries.push_back({ "foobar1.bin", source, { new builders::deflate_builder(KB16) } });
-  }
-  
-  SECTION("double filter (deflate + xor)") {
-    memory_buffer* source = new memory_buffer(KB16);
-    source->reserve(KB16);
-    for (size_t i = 0; i < KB16; ++i)
-      source->raw()[i] = i / (KB16 / 256);
-    source->rewind();
-    data.entries.push_back({ "foobar1.bin", source, { new builders::deflate_builder(KB16), new builders::xor_builder(KB16, "foobar") } });
-  }
-  
-  SECTION("double filter (xor + deflate)") {
-    memory_buffer* source = new memory_buffer(KB16);
-    source->reserve(KB16);
-    for (size_t i = 0; i < KB16; ++i)
-      source->raw()[i] = i / (KB16 / 256);
-    source->rewind();
-    data.entries.push_back({ "foobar1.bin", source, { new builders::xor_builder(KB16, "foobar"), new builders::deflate_builder(KB16) } });
-  }
-  
-  data.streams.push_back({ { 0 }, { } });
+    data.streams.push_back({ { 0 }, { } });
 
+  }
+  
+  SECTION("xor filter on entry") {
+    data.entries.push_back({ "foobar1.bin", support::randomDataSource(256), { new builders::xor_builder(256, "foobar") } });
+    data.streams.push_back({ { 0 }, { } });
+  }
+  
+  SECTION("xor filter on stream") {
+    data.entries.push_back({ "foobar1.bin", support::randomDataSource(256), { } });
+    data.streams.push_back({ { 0 }, { new builders::xor_builder(256, "foobar") } });
+  }
+  
+  SECTION("zlib deflate filter on entry") {
+    data.entries.push_back({ "foobar1.bin", support::randomCompressibleDataSource(KB16), { new builders::deflate_builder(KB16) } });
+    data.streams.push_back({ { 0 }, { } });
+  }
+  
+  SECTION("double filter on entry (deflate + xor)") {
+    data.entries.push_back({ "foobar1.bin", support::randomCompressibleDataSource(KB16), { new builders::deflate_builder(KB16), new builders::xor_builder(KB16, "foobar") } });
+    data.streams.push_back({ { 0 }, { } });
+  }
+  
+  SECTION("double filter on entry (xor + deflate)") {
+    data.entries.push_back({ "foobar1.bin", support::randomCompressibleDataSource(KB16), { new builders::xor_builder(KB16, "foobar"), new builders::deflate_builder(KB16) } });
+    data.streams.push_back({ { 0 }, { } });
+  }
+  
+  SECTION("double xor on entry and then on stream") {
+    data.entries.push_back({ "entry.bin", support::randomDataSource(256), { new builders::xor_builder(32, "foobar") } });
+    data.streams.push_back({ { 0 }, { new builders::xor_builder(32, "lorem") } });
+  }
+  
+  SECTION("xor on entry and lzma on stream") {
+    data.entries.push_back({ "entry.bin", support::randomCompressibleDataSource(KB16), { new builders::xor_builder(32, "foobar") } });
+    data.streams.push_back({ { 0 }, { new builders::lzma_builder(32) } });
+  }
+  
+  SECTION("lzma on entry and xor on stream") {
+    data.entries.push_back({ "entry.bin", support::randomCompressibleDataSource(KB16), { new builders::lzma_builder(32) } });
+    data.streams.push_back({ { 0 }, { new builders::xor_builder(32, "foobar") } });
+  }
+  
+  SECTION("lzma on entry and deflate on stream") {
+    data.entries.push_back({ "entry.bin", support::randomCompressibleDataSource(KB16), { new builders::lzma_builder(32) } });
+    data.streams.push_back({ { 0 }, { new builders::deflate_builder(32) } });
+  }
+  
   Archive archive = Archive::ofData(data);
+
   memory_buffer output;
   archive.write(output);
   output.rewind();
   
   Archive verify;
   verify.read(output);
+  verify.options().bufferSize = KB16;
   
   ArchiveTester::verify(data, verify, output);
 }

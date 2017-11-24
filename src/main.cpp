@@ -288,11 +288,11 @@ int mainzzz(int argc, const char * argv[])
 
 #include <numeric>
 
-int main(int argc, const char * argv[])
+int mainzz(int argc, const char * argv[])
 {
   {
     Archive archive;
-    file_data_source source = file_data_source("/Volumes/RAMDisk/boxed.box");
+    file_data_source source = file_data_source("/Volumes/RAMDisk/test/Pokemon - Crystal Version.box");
     archive.read(source);
     printf("%s\n", archive.entries()[0].name().c_str());
   }
@@ -300,48 +300,218 @@ int main(int argc, const char * argv[])
   
   return 0;
   
+  std::vector<std::string> fileNames = {
+    "/Volumes/RAMDisk/test/Pocket Monsters - Crystal Version (Japan).gbc",
+    "/Volumes/RAMDisk/test/Pokemon - Crystal Version (USA, Europe) (Rev A).gbc",
+    "/Volumes/RAMDisk/test/Pokemon - Crystal Version (USA, Europe).gbc",
+    "/Volumes/RAMDisk/test/Pokemon - Edicion Cristal (Spain).gbc",
+    "/Volumes/RAMDisk/test/Pokemon - Kristall-Edition (Germany).gbc",
+    "/Volumes/RAMDisk/test/Pokemon - Version Cristal (France).gbc",
+    "/Volumes/RAMDisk/test/Pokemon - Versione Cristallo (Italy).gbc",
+  };
   
-  file_data_source source("/Volumes/RAMDisk/base.bin");
-  file_data_source derived1("/Volumes/RAMDisk/derived1.bin");
-  file_data_source derived2("/Volumes/RAMDisk/derived2.bin");
-  file_data_source derived3("/Volumes/RAMDisk/derived3.bin");
-
+  size_t baseIndex = 2;
+  
+  std::vector<file_data_source> sources;
+  std::transform(fileNames.begin(), fileNames.end(), std::back_inserter(sources), [](const std::string& fileName) {
+    return file_data_source(path(fileName));
+  });
   
   ArchiveFactory::Data data;
   
-  data.entries.push_back({ "base.bin", &source, { new builders::lzma_builder(MB128) } });
-  data.entries.push_back({ "derived1.bin", &derived1, { new builders::xdelta3_builder(MB128, &source, MB16, source.size())/*, new builders::lzma_builder(derived1.size() >> 2)*/ } });
-  data.entries.push_back({ "derived2.bin", &derived2, { new builders::xdelta3_builder(MB128, &source, MB16, source.size())/*, new builders::lzma_builder(derived2.size() >> 2)*/ } });
-  data.entries.push_back({ "derived3.bin", &derived3, { new builders::xdelta3_builder(MB128, &source, MB16, source.size())/*, new builders::lzma_builder(derived3.size() >> 2)*/ } });
+  for (box::index_t i = 0; i < fileNames.size(); ++i)
+  {
+    if (i == baseIndex)
+    {
+      data.entries.push_back({ strings::fileNameFromPath(fileNames[i]), &sources[i], { new builders::lzma_builder(MB128) } });
+    }
+    else
+      data.entries.push_back({ strings::fileNameFromPath(fileNames[i]), &sources[i], { new builders::xdelta3_builder(MB128, &sources[baseIndex], MB16, sources[baseIndex].size())/*, new builders::lzma_builder(derived1.size() >> 2)*/ } });
 
-  
-  data.streams.push_back({ { 0 } });
-  data.streams.push_back({ { 1 } });
-  data.streams.push_back({ { 2 } });
-  data.streams.push_back({ { 3 } });
-
+    data.streams.push_back({ { i } });
+  }
   
   memory_buffer sink;
   Archive archive = Archive::ofData(data);
   archive.options().bufferSize = MB128;
   archive.write(sink);
-  sink.serialize(file_handle("/Volumes/RAMDisk/boxed.box", file_mode::WRITING));
+  sink.serialize(file_handle("/Volumes/RAMDisk/test/Pokemon - Crystal Version.box", file_mode::WRITING));
   
-  
-  /*memory_buffer source(MB1);
-  for (size_t i = 0; i < MB1; ++i)
-    source.raw()[i] = (i / 50) % 256;
-  source.advance(MB1);
+  /*{
+    std::vector<data_source*> solidSources;
+    std::transform(sources.begin(), sources.end(), std::back_inserter(solidSources), [](file_data_source& source) {
+      source.rewind();
+      return &source;
+    });
+    multiple_data_source source(solidSources);
     
-  memory_buffer sink;
+    file_data_sink sink("/Volumes/RAMDisk/test/solid.lzma");
+    source_filter<compression::lzma_encoder> encoder(&source, MB128);
+    
+    passthrough_pipe pipe(&encoder, &sink, MB128);
+    pipe.process();
+  }*/
   
-  source_filter<compression::lzma_encoder> filter(&source, 1024);
-  source_filter<compression::lzma_decoder> filter2(&filter, 256);
-  
-  passthrough_pipe pipe(&filter2, &sink, 1024);
-  pipe.process();
-  
-  REQUIRE(sink == source);
-  */
   return 0;
+}
+
+
+struct ArchiveTester
+{
+  static void release(const ArchiveFactory::Data& data)
+  {
+    for (const auto& entry : data.entries)
+    {
+      //for (const filter_builder* filter : entry.filters)
+      //  delete filter;
+      delete entry.source;
+    }
+    
+    //for (const auto& stream : data.streams)
+    //  for (const filter_builder* filter : stream.filters)
+    //    delete filter;
+  }
+  
+  static void verifyFilters(const std::vector<filter_builder*>& original, const filter_builder_queue& match)
+  {
+    for (size_t j = 0; j < original.size(); ++j)
+    {
+      const auto& dfilter = original[j];
+      const auto& filter = match[j];
+      
+      REQUIRE(dfilter->identifier() == filter->identifier());
+      REQUIRE(dfilter->payload() == filter->payload());
+    }
+  }
+  
+  static void verify(const ArchiveFactory::Data& data, const Archive& verify, memory_buffer& buffer)
+  {
+    /* amount of entries / streams */
+    REQUIRE(data.entries.size() == verify.entries().size());
+    REQUIRE(data.streams.size() == verify.streams().size());
+    
+    /* basic entry data */
+    for (size_t i = 0; i < data.entries.size(); ++i)
+    {
+      const auto& dentry = data.entries[i];
+      const auto& entry = verify.entries()[i];
+      
+      REQUIRE(dentry.name == entry.name()); /* name match */
+      REQUIRE(((memory_buffer*)dentry.source)->size() == entry.binary().originalSize); /* uncompressed size match */
+      
+      REQUIRE(dentry.filters.size() == entry.filters().size()); /* filter count match */
+      
+      /* each filter must match */
+      verifyFilters(dentry.filters, entry.filters());
+    }
+    
+    for (size_t i = 0; i < data.streams.size(); ++i)
+    {
+      const auto& dstream = data.streams[i];
+      const auto& stream = verify.streams()[i];
+      
+      REQUIRE(dstream.filters.size() == stream.filters().size()); /* filter count match */
+      
+      /* entries match */
+      REQUIRE(dstream.entries.size() == stream.entries().size());
+      REQUIRE(dstream.entries == stream.entries());
+      
+      /* correct mapping of entries */
+      for (size_t j = 0; j < dstream.entries.size(); ++j)
+      {
+        const auto& entry = verify.entries()[dstream.entries[j]];
+        
+        REQUIRE(entry.binary().stream == i);
+        REQUIRE(entry.binary().indexInStream == j);
+      }
+      
+      //TODO: this is only true for seekable streams, for now this simplified check is done
+      /* size of stream == sum of compressed size of entries */
+      //if (stream.entries().size() == 1)
+      //  REQUIRE(stream.binary().length == verify.entries()[0].binary().compressedSize);
+      
+      /*REQUIRE(stream.binary().length == std::accumulate(stream.entries().begin(), stream.entries().end(), 0UL, [&verify] (size_t length, ArchiveEntry::ref index) {
+        const auto& entry = verify.entries()[index];
+        return length + entry.binary().compressedSize;
+      }));*/
+      
+      /* each filter must match */
+      verifyFilters(dstream.filters, stream.filters());
+    }
+    
+    const size_t payloadSizeForEntries = std::accumulate(verify.entries().begin(), verify.entries().end(), 0UL, [] (size_t count, const ArchiveEntry& entry) {
+      return count + entry.binary().payloadLength;
+    });
+    
+    const size_t payloadSizeForStream = std::accumulate(verify.streams().begin(), verify.streams().end(), 0UL, [] (size_t count, const ArchiveStream& stream) {
+      return count + stream.binary().payloadLength;
+    });
+    
+    /* size of archive must match, header + entry*entries + stream*streams + entry names */
+    size_t archiveSize = sizeof(box::Header)
+    + sizeof(box::Entry) * data.entries.size()
+    + sizeof(box::Stream) * data.streams.size()
+    + std::accumulate(verify.streams().begin(), verify.streams().end(), 0UL, [] (size_t count, const ArchiveStream& entry) { return entry.binary().length + count; })
+    + std::accumulate(data.entries.begin(), data.entries.end(), 0UL, [] (size_t count, const ArchiveFactory::Entry& entry) { return entry.name.length() + 1 + count; })
+    + payloadSizeForEntries + payloadSizeForStream;
+    
+    REQUIRE(buffer.size() == archiveSize);
+    
+    /* now we need to verify stream data */
+    for (size_t i = 0; i < data.entries.size(); ++i)
+    {
+      const auto& entry = verify.entries()[i];
+      ArchiveReadHandle handle(buffer, verify, entry);
+      
+      data_source* source = handle.source(true);
+      
+      memory_buffer sink;
+      passthrough_pipe pipe(source, &sink, entry.binary().originalSize);
+      pipe.process();
+      
+      REQUIRE(*((memory_buffer*)data.entries[i].source) == sink);
+      
+      hash::crc32_digester crc32;
+      hash::md5_digester md5;
+      hash::sha1_digester sha1;
+      
+      crc32.update(sink.raw(), sink.size());
+      md5.update(sink.raw(), sink.size());
+      sha1.update(sink.raw(), sink.size());
+      
+      REQUIRE(entry.binary().digest.crc32 == crc32.get());
+      REQUIRE(entry.binary().digest.md5 == md5.get());
+      REQUIRE(entry.binary().digest.sha1 == sha1.get());
+    }
+  }
+};
+
+int main(int argc, const char* argv[])
+{
+  ArchiveFactory::Data data;
+  
+  memory_buffer e1 = memory_buffer(256);
+  for (size_t i = 0; i < 256; ++i)
+    e1.raw()[i] = rand()%256;
+  e1.advance(256);
+  
+  memory_buffer e2 = memory_buffer(512);
+  for (size_t i = 0; i < 512; ++i)
+    e2.raw()[i] = rand()%256;
+  e2.advance(512);
+  
+  data.entries.push_back({ "foobar1.bin", &e1 });
+  data.entries.push_back({ "foobar2.bin", &e2 });
+  
+  data.streams.push_back({ { 0, 1 }, { new builders::deflate_builder(256) } });
+  
+  Archive archive = Archive::ofData(data);
+  memory_buffer output;
+  archive.write(output);
+  output.rewind();
+  
+  Archive verify;
+  verify.read(output);
+  
+  ArchiveTester::verify(data, verify, output);
 }
