@@ -288,18 +288,8 @@ int mainzzz(int argc, const char * argv[])
 
 #include <numeric>
 
-int mainzz(int argc, const char * argv[])
+int main(int argc, const char * argv[])
 {
-  {
-    Archive archive;
-    file_data_source source = file_data_source("/Volumes/RAMDisk/test/Pokemon - Crystal Version.box");
-    archive.read(source);
-    printf("%s\n", archive.entries()[0].name().c_str());
-  }
-  
-  
-  return 0;
-  
   std::vector<std::string> fileNames = {
     "/Volumes/RAMDisk/test/Pocket Monsters - Crystal Version (Japan).gbc",
     "/Volumes/RAMDisk/test/Pokemon - Crystal Version (USA, Europe) (Rev A).gbc",
@@ -317,25 +307,50 @@ int mainzz(int argc, const char * argv[])
     return file_data_source(path(fileName));
   });
   
-  ArchiveFactory::Data data;
-  
-  for (box::index_t i = 0; i < fileNames.size(); ++i)
   {
-    if (i == baseIndex)
+    ArchiveFactory::Data data;
+    
+    for (box::index_t i = 0; i < fileNames.size(); ++i)
     {
-      data.entries.push_back({ strings::fileNameFromPath(fileNames[i]), &sources[i], { new builders::lzma_builder(MB128) } });
-    }
-    else
-      data.entries.push_back({ strings::fileNameFromPath(fileNames[i]), &sources[i], { new builders::xdelta3_builder(MB128, &sources[baseIndex], MB16, sources[baseIndex].size())/*, new builders::lzma_builder(derived1.size() >> 2)*/ } });
+      sources[i].rewind();
+      
+      if (i == baseIndex)
+      {
+        data.entries.push_back({ strings::fileNameFromPath(fileNames[i]), &sources[i], { new builders::lzma_builder(MB128) } });
+      }
+      else
+        data.entries.push_back({ strings::fileNameFromPath(fileNames[i]), &sources[i], { new builders::xdelta3_builder(MB128, &sources[baseIndex], MB16, sources[baseIndex].size())/*, new builders::lzma_builder(derived1.size() >> 2)*/ } });
 
-    data.streams.push_back({ { i } });
+      data.streams.push_back({ { i } });
+    }
+    
+    memory_buffer sink;
+    Archive archive = Archive::ofData(data);
+    archive.options().bufferSize = MB128;
+    archive.write(sink);
+    sink.serialize(file_handle("/Volumes/RAMDisk/test/test-lzma+delta.box", file_mode::WRITING));
   }
   
-  memory_buffer sink;
-  Archive archive = Archive::ofData(data);
-  archive.options().bufferSize = MB128;
-  archive.write(sink);
-  sink.serialize(file_handle("/Volumes/RAMDisk/test/Pokemon - Crystal Version.box", file_mode::WRITING));
+  {
+    ArchiveFactory::Data data;
+    
+    for (box::index_t i = 0; i < fileNames.size(); ++i)
+    {
+      sources[i].rewind();
+      data.entries.push_back({ strings::fileNameFromPath(fileNames[i]), &sources[i], { } });
+    }
+    
+    ArchiveEntry::ref base = 0;
+    std::vector<ArchiveEntry::ref> indices(sources.size());
+    std::generate_n(indices.begin(), indices.size(), [&base]() { return base++; });
+    data.streams.push_back({ indices, { new builders::lzma_builder(MB16) } });
+    
+    memory_buffer sink;
+    Archive archive = Archive::ofData(data);
+    archive.options().bufferSize = MB128;
+    archive.write(sink);
+    sink.serialize(file_handle("/Volumes/RAMDisk/test/test-solid.box", file_mode::WRITING));
+  }
   
   /*{
     std::vector<data_source*> solidSources;
@@ -486,32 +501,3 @@ struct ArchiveTester
   }
 };
 
-int main(int argc, const char* argv[])
-{
-  ArchiveFactory::Data data;
-  
-  memory_buffer e1 = memory_buffer(256);
-  for (size_t i = 0; i < 256; ++i)
-    e1.raw()[i] = rand()%256;
-  e1.advance(256);
-  
-  memory_buffer e2 = memory_buffer(512);
-  for (size_t i = 0; i < 512; ++i)
-    e2.raw()[i] = rand()%256;
-  e2.advance(512);
-  
-  data.entries.push_back({ "foobar1.bin", &e1 });
-  data.entries.push_back({ "foobar2.bin", &e2 });
-  
-  data.streams.push_back({ { 0, 1 }, { new builders::deflate_builder(256) } });
-  
-  Archive archive = Archive::ofData(data);
-  memory_buffer output;
-  archive.write(output);
-  output.rewind();
-  
-  Archive verify;
-  verify.read(output);
-  
-  ArchiveTester::verify(data, verify, output);
-}

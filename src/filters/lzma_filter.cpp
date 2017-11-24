@@ -39,7 +39,7 @@ void compression::lzma_filter<IS_ENCODER>::init()
   else
     _r = lzma_stream_decoder(&_stream, UINT64_MAX, /*LZMA_TELL_ANY_CHECK*/LZMA_TELL_NO_CHECK);
   
-  TRACE("%p: %s::process(): started", this, name().c_str());
+  TRACE("%p: %s::init()", this, name().c_str());
   
   assert(_r == LZMA_OK);
 }
