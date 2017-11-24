@@ -28,6 +28,8 @@ struct seekable
   virtual off_t tell() const = 0;
   virtual size_t size() const = 0;
   virtual bool isSeekable() const { return true; }
+  
+  void rewind() { seek(0); }
 };
 
 struct seekable_data_source : public data_source, public seekable { };
@@ -129,19 +131,22 @@ public:
   void setOnBegin(std::function<void(data_source*)> onBegin) { this->_onBegin = onBegin; }
   void setOnEnd(std::function<void(data_source*)> onEnd) { this->_onEnd = onEnd; }
   
+  size_t count() const { return _sources.size(); }
+  
   size_t read(byte* dest, size_t amount) override
   {
     if (_it == _sources.end())
       return END_OF_STREAM;
-    else if (_pristine)
-    {
-      _onBegin(*_it);
-      _pristine = false;
-    }
-    
+
     size_t effective = END_OF_STREAM;
     while (effective == END_OF_STREAM && _it != _sources.end())
     {
+      if (_pristine)
+      {
+        _onBegin(*_it);
+        _pristine = false;
+      }
+      
       effective = (*_it)->read(dest, amount);
       
       if (effective == END_OF_STREAM)
