@@ -54,10 +54,11 @@ TEST_CASE("archive names and files list")
   }
 }*/
 
+#include <cassert>
 #include <vector>
 #include <iostream>
 
-class ASCIITablePrinter
+class ascii_table
 {
 private:
   std::ostream& out;
@@ -72,8 +73,8 @@ private:
   struct ColumnSpec
   {
     std::string name;
-    int width;
-    int margin;
+    size_t width;
+    size_t margin;
     
     Padding titlePadding;
     Padding rowPadding;
@@ -84,20 +85,25 @@ private:
   
   void recomputeWidths()
   {
-    final int cols = columns.size();
+    const size_t cols = columns.size();
     
-    for (int i = 0; i < cols; ++i)
+    for (size_t i = 0; i < cols; ++i)
     {
-      int j = i;
+      size_t width = columns[i].name.size();
       
-      Stream<List<String>> measurer = Stream.concat(Stream.of(columns.stream().map(c -> c.name).collect(Collectors.toList())), rows.stream());
-      columns.get(j).width = measurer.map(row -> row.get(j)).mapToInt(String::length).max().getAsInt();
+      for (size_t r = 0; r < rows.size(); ++r)
+        width = std::max(width, rows[r][i].size());
+      
+      columns[i].width = width;
     }
   }
   
+  void pad(size_t width) { out << std::string(width, ' '); }
+  void ln() { out << std::endl; }
+  
 public:
   
-  ASCIITablePrinter(std::ostream& out) : out(out)
+  ascii_table(std::ostream& out) : out(out)
   {
 
   }
@@ -111,7 +117,7 @@ public:
   {
     for (const auto& name : names)
     {
-      columns.push_back({ name, 0, 1, Padding.LEFT, Padding.RIGHT });
+      columns.push_back({ name, 0, 1, Padding::LEFT, Padding::RIGHT });
     }
   }
   
@@ -119,8 +125,9 @@ public:
   {
     assert(paddings.size() <= columns.size());
     
-    for (size_t i = 0; i < paddings.length; ++i)
-      columns[i].rowPadding = paddings[i];
+    size_t i = 0;
+    for (const auto padding : paddings)
+      columns[i++].rowPadding = padding;
   }
   
   void clear()
@@ -137,68 +144,73 @@ public:
     out << std::endl;
   }
   
-  final private Function<Integer, String> rightPadder = i -> "%1$" + i + "s";
-  final private Function<Integer, String> leftPadder = i -> "%1$-" + i + "s";
+  /*final private Function<Integer, String> rightPadder = i -> "%1$" + i + "s";
+  final private Function<Integer, String> leftPadder = i -> "%1$-" + i + "s";*/
   
-  private void pad(int width) { for (int m = 0; m < width; ++m) wrt.write(" "); }
-  private void ln() { wrt.write("\n"); }
+
   
   
-  public void printTableRow(List<String> data, boolean isHeader) throws IOException
+  void printTableRow(const std::vector<std::string>& data, bool isHeader)
   {
+    out << "|";
     
-    
-    wrt.write("|");
     for (int c = 0; c < columns.size(); ++c)
     {
-      final ColumnSpec column = columns.get(c);
-      final Padding padding = isHeader ? column.titlePadding : column.rowPadding;
-      final int margin = column.margin;
-      final int width = column.width;
+      const ColumnSpec& column = columns[c];
+      const Padding padding = isHeader ? column.titlePadding : column.rowPadding;
+      const size_t margin = column.margin;
+      const size_t width = column.width;
       
       pad(margin);
       
-      if (padding != Padding.CENTER)
-        wrt.write(String.format(padding == Padding.LEFT ? leftPadder.apply(width) : rightPadder.apply(width), data.get(c)));
-        else
-        {
-          int leftOver = width - data.get(c).length();
-          int leftPad = leftOver / 2 + (leftOver % 2 != 0 ? 1 : 0);
-          int rightPad = leftOver / 2;
-          pad(leftPad);
-          wrt.write(data.get(c));
-          pad(rightPad);
-        }
+      const std::string& text = data[c];
+      size_t leftOver = width - text.size();
+      assert(leftOver >= 0);
+      
+      if (padding == Padding::LEFT)
+        out << std::string(leftOver, ' ') << text;
+      else if (padding == Padding::RIGHT)
+        out << text << std::string(leftOver, ' ');
+      else
+      {
+        size_t leftPad = leftOver / 2 + (leftOver % 2 != 0 ? 1 : 0);
+        size_t rightPad = leftOver / 2;
+        out << std::string(leftPad, ' ') << text << std::string(rightPad, ' ');
+      }
       
       pad(margin);
-      
-      wrt.write("|");
+      out << '|';
     }
+    
     ln();
   }
   
-  public void printTable() throws IOException
+  void printTable()
   {
     recomputeWidths();
     printSeparator();
-    printTableRow(columns.stream().map(c -> c.name).collect(Collectors.toList()), true);
+    
+    std::vector<std::string> header(columns.size());
+    std::transform(columns.begin(), columns.end(), header.begin(), [] (const ColumnSpec& spec) { return spec.name; });
+    printTableRow(header, true);
     printSeparator();
-    for (List<String> row : rows)
+    for (const auto& row : rows)
       printTableRow(row, false);
-      printSeparator();
+    
+    printSeparator();
   }
-}
-
-class ascii_table
-{
-  
 };
 
-
-void main(int argc, const char* argv[])
+int main(int argc, const char* argv[])
 {
+  ascii_table table(std::cout);
   
+  table.addColumn({ "SIZE", "CRC32", "MD5" });
+  table.addRow({ "32.1Gb", "0xAB12CD34", "312312c1d23c1231d23c3" });
+  table.addRow({ "32.1Gb", "0xAB12CD34", "123121112" });
+
   
-  
+  table.printTable();
+
   return 0;
 }
