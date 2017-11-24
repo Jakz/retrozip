@@ -105,19 +105,9 @@ bool Archive::checkEntriesMappingToStreams() const
 
 Archive Archive::ofSingleEntry(const std::string& name, seekable_data_source* source, const std::initializer_list<filter_builder*>& builders)
 {
-  return Archive::ofOneEntryPerStream({ { name, source } }, builders);
-  
-  Archive archive;
-  
-  archive._entries.emplace_back(name, source);
-  archive._streams.emplace_back(0UL);
-  
-  for (auto* builder : builders) archive._entries.front().addFilter(builder);
-  
-  archive._entries.front().binary().stream = 0;
-  archive._entries.front().binary().indexInStream = 0;
-  
-  return archive;
+  ArchiveFactory::Data data;
+  data.entries.push_back({ name, source, builders});
+  return Archive::ofData(data);
 }
 
 Archive Archive::ofOneEntryPerStream(const std::vector<std::tuple<std::string, seekable_data_source*>>& entries, std::initializer_list<filter_builder*> builders)
@@ -146,7 +136,7 @@ Archive Archive::ofData(const ArchiveFactory::Data& data)
 {
   Archive archive;
   
-  //TODO: check validity
+  //TODO: check validity (eg multiple ArchiveEntry::ref)b
   
   archive._entries.reserve(data.entries.size());
   
@@ -170,6 +160,8 @@ Archive Archive::ofData(const ArchiveFactory::Data& data)
     
     ++streamIndex;
   }
+  
+  archive.options().bufferSize = KB16;
   
   return archive;
 }
@@ -302,8 +294,9 @@ void Archive::write(W& w)
           stream.binary().offset = w.tell();
           stream.binary().length = 0;
           
+          writeStream(w, stream);
           
-          for (ArchiveEntry::ref ref : stream.entries())
+          /*for (ArchiveEntry::ref ref : stream.entries())
           {
             TRACE_A("%p: archive::write() writing entry %lu (stream %lu:%lu) at %Xh (%lu)", this, ref, streamIndex, indexInStream, stream.binary().offset, stream.binary().offset);
             
@@ -313,7 +306,7 @@ void Archive::write(W& w)
                               
             ++indexInStream;
           }
-          ++streamIndex;
+          ++streamIndex;*/
         }
         
         break;
@@ -391,7 +384,16 @@ void Archive::read(R& r)
     box::Stream stream;
     r.read(stream);
     
-    _streams.emplace_back(stream);
+    /* load payload */
+    std::vector<byte> payload;
+    if (stream.payloadLength > 0)
+    {
+      payload.resize(stream.payloadLength);
+      r.seek(stream.payload);
+      r.read(payload.data(), stream.payloadLength);
+    }
+    
+    _streams.emplace_back(stream, payload);
   }
   
   /* for each entry map it to the correct stream at correct index */
@@ -451,13 +453,112 @@ box::checksum_t Archive::calculateGlobalChecksum(W& w, size_t bufferSize) const
 
 void Archive::writeStream(W& w, ArchiveStream& stream)
 {
+  using digester_t = unbuffered_source_filter<filters::multiple_digest_filter>;
+  using counter_t = unbuffered_source_filter<filters::data_counter>;
   
+  struct data_source_helper
+  {
+    ArchiveEntry& entry;
+    data_source* source;
+    digester_t* digester;
+    counter_t* inputCounter;
+    counter_t* filteredCounter;
+    filter_cache cache;
+  };
+  
+  std::vector<data_source_helper> sources;
+  
+  sources.reserve(stream.entries().size());
+
+  for (ArchiveEntry::ref index : stream.entries())
+  {
+    ArchiveEntry& entry = _entries[index];
+    data_source* source = entry.source();
+    
+    /* first we wrap with a counter filter to calculate the original input size */
+    auto* inputCounter = new counter_t(source);
+    /* then we apply digest calculator filter */
+    auto* digester = new digester_t(inputCounter, _options.digest.crc32, _options.digest.md5, _options.digest.sha1);
+    
+    /* then we apply all filters from entry */
+    filter_cache cache = entry.filters().apply(digester);
+
+    /* size of input transformed by entry filters before being sent to stream */
+    auto* filteredCounter = new counter_t(cache.get());
+    
+    source = filteredCounter;
+
+    /* add counters to cache to allow releasing them after we've done with the stream */
+    cache.cache(inputCounter);
+    cache.cache(digester);
+    cache.cache(filteredCounter);
+  
+    /* we move because cache contains unique_ptr */
+    sources.push_back({ entry, source, digester, inputCounter, filteredCounter, std::move(cache) });
+  };
+  
+  std::vector<data_source*> sourcesOnly;
+  
+  sourcesOnly.reserve(sources.size());
+  std::transform(sources.begin(), sources.end(), std::back_inserter(sourcesOnly), [] (const data_source_helper& helper) { return helper.source; });
+  multiple_data_source source(sourcesOnly);
+  
+  
+  /* then we apply all filters from stream */
+  filter_cache streamCache = stream.filters().apply(&source);
+  
+  counter_t compressedCounter(streamCache.get());
+  counter_t wholeCounter(&compressedCounter);
+
+  data_source* finalStream = &wholeCounter;
+
+#if defined(DEBUG)
+  source.setOnBegin([this, &sources](data_source* source) {
+    auto it = std::find_if(sources.begin(), sources.end(), [source](const data_source_helper& helper) { return helper.source == source; });
+    assert(it != sources.end());
+    auto& entry = it->entry;
+    TRACE_A("%p: archive::write() preparing to write entry %s", this, entry.name().c_str());
+  });
+#endif
+
+  source.setOnEnd([this, &sources, &compressedCounter](data_source* source) {
+    /* TODO: this is linear, we can use a std::unordered_map if really many entries are stored in single stream but it's quite irrelevant */
+    auto it = std::find_if(sources.begin(), sources.end(), [source](const data_source_helper& helper) { return helper.source == source; });
+    assert(it != sources.end());
+    auto& entry = it->entry;
+    entry.binary().compressedSize = compressedCounter.filter().count();
+    compressedCounter.filter().reset();
+    TRACE_A("%p: archive::write() written %lu bytes, filtered into %lu and compressed into %lu bytes", this, it->inputCounter->filter().count(), it->filteredCounter->filter().count(), entry.binary().compressedSize);
+  });
+    
+  assert(_options.bufferSize > 0);
+  passthrough_pipe pipe(finalStream, &w, _options.bufferSize);
+  pipe.process();
+  
+  for (const data_source_helper& helper : sources)
+  {
+    auto& entry = helper.entry;
+    
+    entry.binary().originalSize = helper.inputCounter->filter().count();
+    entry.binary().filteredSize = helper.filteredCounter->filter().count();
+    
+    if (_options.digest.crc32)
+      entry.binary().digest.crc32 = helper.digester->filter().crc32();
+    
+    if (_options.digest.md5)
+      entry.binary().digest.md5 = helper.digester->filter().md5();
+    
+    if (_options.digest.sha1)
+      entry.binary().digest.sha1 = helper.digester->filter().sha1();
+  }
+  
+  stream.binary().length = wholeCounter.filter().count();
 }
 
 void Archive::writeEntry(W& w, ArchiveStream& stream, ArchiveEntry& entry)
 {
   data_source* source = entry.source();
-  
+
   /* first we wrap with a counter filter to calculate the original input size */
   unbuffered_source_filter<filters::data_counter> inputCounter(source);
   /* then we apply digest calculator filter */

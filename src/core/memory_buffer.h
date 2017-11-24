@@ -125,9 +125,7 @@ public:
       case Seek::END: _position = _size + offset; _position = std::max(0LL, _position); break;
     }
   }
-  
-  void rewind() { seek(0, Seek::SET); }
-  
+    
   void ensure_capacity(size_t capacity)
   {
     if (capacity > _capacity)

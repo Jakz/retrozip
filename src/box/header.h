@@ -10,6 +10,7 @@ namespace box
   using count_t = u32;
   using length_t = u64;
   using slength_t = u32;
+  using tlength_t = u16;
   using index_t = s32;
   using checksum_t = hash::crc32_t;
   using digester_t = hash::crc32_digester;
@@ -81,7 +82,7 @@ namespace box
   {
     length_t originalSize;
     length_t filteredSize;
-    length_t compressedSize;
+    length_t compressedSize; //TODO: probably useless because this should store the size in bytes inside a stream but most compressed streams are unseekable in any case
     
     DigestInfo digest;
     

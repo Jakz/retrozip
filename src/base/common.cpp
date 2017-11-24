@@ -76,6 +76,15 @@ std::string strings::fromByteArray(const byte* data, size_t length)
   return buf;
 }
 
+std::string strings::fileNameFromPath(const std::string& path)
+{
+  size_t lastSeparator = path.find_last_of('/');
+  if (lastSeparator != std::string::npos)
+    return path.substr(lastSeparator+1);
+  else
+    return path;
+}
+
 
 
 enum class ZlibResult : int

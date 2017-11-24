@@ -56,13 +56,13 @@ extern void debugnnprintf(const char* str, ...);
 #define LOG(...) do { } while (false)
 #endif
 
-#define TRACE_MEMORY_BUFFERS 1
-#define TRACE_PIPES 1
+#define TRACE_MEMORY_BUFFERS 0
+#define TRACE_PIPES 0
 #define TRACE_ARCHIVE 1
 #define TRACE_ENABLED 1
 #define TRACE_FILES 1
 
-#define TRACE_FORCE_DISABLE 1
+#define TRACE_FORCE_DISABLE 0
 
 
 #if defined(TRACE_FORCE_DISABLE) && TRACE_FORCE_DISABLE == 1
@@ -200,6 +200,8 @@ namespace strings
   std::vector<byte> toByteArray(const std::string& string);
   std::string fromByteArray(const byte* data, size_t length);
   inline std::string fromByteArray(const std::vector<byte>& data) { return fromByteArray(data.data(), data.size()); }
+  
+  std::string fileNameFromPath(const std::string& path);
 
 }
 

@@ -85,7 +85,11 @@ public:
   ArchiveStream(const std::vector<ArchiveEntry::ref>& indices, const std::vector<filter_builder*>& filters) : _entries(indices), _filters(filters) { }
   ArchiveStream(ArchiveEntry::ref entry) { assignEntry(entry); }
   ArchiveStream() { }
-  ArchiveStream(const box::Stream& binary) : _binary(binary) { }
+  ArchiveStream(const box::Stream& binary, const std::vector<byte>& payload) : _binary(binary), _payload(payload.size())
+  {
+    _payload.write(payload.data(), payload.size());
+    _filters.unserialize(_payload);
+  }
   
   void assignEntry(ArchiveEntry::ref entry) { _entries.push_back(entry); }
   void assignEntryAtIndex(size_t index, ArchiveEntry::ref entry) { _entries.resize(index+1, box::INVALID_INDEX); _entries[index] = entry; }
