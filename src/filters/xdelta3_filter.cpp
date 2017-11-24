@@ -198,6 +198,8 @@ void xdelta3_filter<FUNCTION>::finalize()
 {
   xd3_close_stream(&_stream);
   xd3_free_stream(&_stream);
+  //TODO: we should cache with tell on init() and restore here instead that blindly rewind
+  _source->rewind();
 }
 
 template class xdelta3_filter<xd3_encode_input>;

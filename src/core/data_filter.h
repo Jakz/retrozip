@@ -187,6 +187,9 @@ public:
       
       if (_filter.ended() && _filter.finished())
       {
+        /* this is needed because additional data could have been buffered, we must discard it */
+        _filter.in().consume(_filter.in().size());
+        
         _filter.finalize();
       }
     
