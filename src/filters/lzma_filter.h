@@ -13,6 +13,7 @@ namespace compression
   {
   private:
     lzma_stream _stream;
+    lzma_ret _r;
     
     static const char* printableErrorCode(lzma_ret value);
     

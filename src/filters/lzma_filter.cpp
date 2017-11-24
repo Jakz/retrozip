@@ -31,16 +31,17 @@ void compression::lzma_filter<IS_ENCODER>::init()
   //lzma_mt options;
   //lzma_ret r = lzma_stream_encoder_mt(&_stream, const lzma_mt *options)
   
-  lzma_ret r;
-  
   //TODO: arguments should be adjustable
+  //TODO: checks disabled since checksum are computed by archive itself, but they should be adjustable on filter
 
   if (IS_ENCODER)
-    r = lzma_easy_encoder(&_stream, 9 | LZMA_PRESET_EXTREME, LZMA_CHECK_CRC64);
+    _r = lzma_easy_encoder(&_stream, 9 | LZMA_PRESET_EXTREME, /*LZMA_CHECK_CRC64*/LZMA_CHECK_NONE);
   else
-    r = lzma_stream_decoder(&_stream, UINT64_MAX, LZMA_TELL_ANY_CHECK);
+    _r = lzma_stream_decoder(&_stream, UINT64_MAX, /*LZMA_TELL_ANY_CHECK*/LZMA_TELL_NO_CHECK);
   
-  assert(r == LZMA_OK);
+  TRACE("%p: %s::process(): started", this, name().c_str());
+  
+  assert(_r == LZMA_OK);
 }
 
 template<bool E>
@@ -58,7 +59,7 @@ void compression::lzma_filter<IS_ENCODER>::process()
   _stream.avail_out = static_cast<size_t>(_out.available());
   _stream.next_out = _out.tail();
   
-  lzma_ret r = lzma_code(&_stream, ended() ? LZMA_FINISH : LZMA_RUN);
+  _r = lzma_code(&_stream, ended() ? LZMA_FINISH : LZMA_RUN);
   
   size_t consumed = _in.used() - _stream.avail_in;
   size_t produced = _out.available() - _stream.avail_out;
@@ -69,7 +70,7 @@ void compression::lzma_filter<IS_ENCODER>::process()
   if (produced)
     _out.advance(produced);
   
-  if (r != LZMA_OK)
+  if (_r != LZMA_OK)
     TRACE("%p: %s::process() %s %lu bytes into %lu bytes (in: %lu out: %lu) (%s)",
           this,
           name().c_str(),
@@ -78,11 +79,14 @@ void compression::lzma_filter<IS_ENCODER>::process()
           produced,
           _stream.total_in,
           _stream.total_out,
-          printableErrorCode(r)
+          printableErrorCode(_r)
     );
   
-  assert(r == LZMA_OK || r == LZMA_STREAM_END);
-  markFinished(r == LZMA_STREAM_END);
+  //TODO: add additional check statuses?
+  assert(_r == LZMA_OK || _r == LZMA_STREAM_END || _r == LZMA_NO_CHECK);
+  markFinished(_r == LZMA_STREAM_END);
+  
+  TRACE_IF(_r == LZMA_STREAM_END, "%p: %s::process(): finished", this, name().c_str());
 }
 
 template class compression::lzma_filter<true>;
