@@ -62,7 +62,7 @@ extern LZMA_API(void) lzma_index_hash_end(
  *              - LZMA_PROG_ERROR: Invalid arguments or this function is being
  *                used when lzma_index_hash_decode() has already been used.
  */
-extern LZMA_API(lzma_ret) lzma_index_hash_append(lzma_index_hash *index_hash,
+extern LZMA_API(lzma_ret) lzma_index_hash_append(lzma_index_hash *index,
 		lzma_vli unpadded_size, lzma_vli uncompressed_size)
 		lzma_nothrow lzma_attr_warn_unused_result;
 

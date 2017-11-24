@@ -23,6 +23,7 @@ public:
   };
   
   
+  path() { }
   path(const char* data) : _data(data) { }
   path(const std::string& data) : _data(data) { }
   

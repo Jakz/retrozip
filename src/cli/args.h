@@ -1,15 +1,50 @@
 #include <string>
 
+#include "base/path.h"
+
 #include "libs/fmt/printf.h"
+
+namespace cli
+{
+  enum class Command
+  {
+    LIST_CONTENTS = 0,
+    TEST_INTEGRITY,
+    EXTRACT,
+    CREATE_SINGLE_STREAM
+  };
+  
+  enum class Switch
+  {
+    
+  };
+  
+  class GenericSwitch
+  {
+  private:
+    Switch _switch;
+    
+  protected:
+    GenericSwitch(Switch _switch) : _switch(_switch) { }
+    
+  };
+  
+  class BooleanSwitch
+  {
+    
+    
+  };
+}
 
 namespace args
 {
 
-  struct Command
+  struct CommandArgument
   {
-    std::string command;
+    cli::Command command;
+    std::string mnemonic;
     std::string help;
-    bool operator==(const std::string& command) const { return this->command == command; }
+    bool operator==(const std::string& mnemonic) const { return this->mnemonic == mnemonic; }
   };
 
   struct Error
@@ -24,9 +59,11 @@ namespace args
   struct Arguments
   {
     Error error;
-    Command command;
+    cli::Command command;
+    path archiveName;
+    std::vector<path> fileNames;
     
-    Arguments() { }
+    Arguments(cli::Command command, const path& archiveName, const std::vector<path>& fileNames) : command(command), archiveName(archiveName), fileNames(fileNames) { }
     Arguments(std::string& message) : error(message) { }
     Arguments(Error&& error) : error(error) { }
     
@@ -38,7 +75,7 @@ namespace args
     std::string program;
     std::string version;
     std::string copyright;
-    std::vector<Command> commands;
+    std::vector<CommandArgument> commands;
     
     Parser();
     Arguments parse(const std::vector<std::string>& args);
