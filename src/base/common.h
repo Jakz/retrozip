@@ -282,6 +282,7 @@ struct bit_mask
   bool isSet(T flag) const { return value & static_cast<utype>(flag); }
   void set(T flag) { value |= static_cast<utype>(flag); }
   void reset(T flag) { value &= ~static_cast<utype>(flag); }
+  void set(T flag, bool v) { if (v) set(flag); else reset(flag); }
   
   bit_mask<T>& operator&(T flag)
   {
