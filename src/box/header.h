@@ -28,7 +28,8 @@ namespace box
     STREAM_TABLE,
     STREAM_PAYLOAD,
     STREAM_DATA,
-    FILE_NAME_TABLE
+    FILE_NAME_TABLE,
+    GROUP_TABLE
   };
   
   enum class HeaderFlag : u64
@@ -54,7 +55,10 @@ namespace box
     offset_t entryTableOffset;
     offset_t streamTableOffset;
     offset_t nameTableOffset;
+    offset_t groupTableOffset;
+    
     count_t nameTableLength;
+    count_t groupCount;
     
     length_t fileLength;
     checksum_t fileChecksum;
@@ -118,4 +122,9 @@ namespace box
     length_t length;
     u32 hasNext; /* to pad to 16 bytes */
   } __attribute__((packed));
+  
+  struct Group
+  {
+    count_t size;
+  };
 }

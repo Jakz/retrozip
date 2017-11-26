@@ -114,6 +114,21 @@ public:
   box::Stream& binary() const { return _binary; }
 };
 
+class ArchiveGroup
+{
+private:
+  std::vector<ArchiveEntry::ref> _entries;
+  std::string _name;
+  
+public:
+  ArchiveGroup(const std::string& name) : _name(name) { }
+  
+  void addEntry(ArchiveEntry::ref index) { _entries.push_back(index); }
+  
+  box::count_t size() const { return static_cast<box::count_t>(_entries.size()); }
+  const std::string& name() const { return _name; }
+};
+
 struct Options
 {
   size_t bufferSize;
@@ -183,6 +198,7 @@ private:
   
   std::vector<ArchiveEntry> _entries;
   std::vector<ArchiveStream> _streams;
+  std::vector<ArchiveGroup> _groups;
   
   std::queue<box::Section> _ordering;
   
