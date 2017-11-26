@@ -184,3 +184,5 @@ public:
 
   operator bool() const { return _file != nullptr; }
 };
+
+using path_extension = std::string;

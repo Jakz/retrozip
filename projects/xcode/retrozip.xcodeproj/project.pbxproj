@@ -33,6 +33,9 @@
 		0420E09F1FC9AC1A008C8418 /* filter_options.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0420E09B1FC9AC1A008C8418 /* filter_options.cpp */; };
 		0420E0A31FC9E151008C8418 /* test_support.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0420E0A11FC9E151008C8418 /* test_support.cpp */; };
 		0420E0A51FCA53B1008C8418 /* test_support.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0420E0A11FC9E151008C8418 /* test_support.cpp */; };
+		0420E0A81FCA7D62008C8418 /* file_system.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0420E0A61FCA7D62008C8418 /* file_system.cpp */; };
+		0420E0A91FCA7D62008C8418 /* file_system.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0420E0A61FCA7D62008C8418 /* file_system.cpp */; };
+		0420E0AA1FCA7D62008C8418 /* file_system.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0420E0A61FCA7D62008C8418 /* file_system.cpp */; };
 		046B66D81FB2B76E007B58BD /* deflate_filter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 046B66D51FB2B76E007B58BD /* deflate_filter.cpp */; };
 		046B66D91FB2B76E007B58BD /* deflate_filter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 046B66D51FB2B76E007B58BD /* deflate_filter.cpp */; };
 		0478F16A1FAAE04A009183C7 /* xdelta3.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0478F1681FAAE04A009183C7 /* xdelta3.cpp */; };
@@ -111,6 +114,8 @@
 		0420E0A11FC9E151008C8418 /* test_support.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = test_support.cpp; sourceTree = "<group>"; };
 		0420E0A21FC9E151008C8418 /* test_support.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = test_support.h; sourceTree = "<group>"; };
 		0420E0A41FC9EAE5008C8418 /* catch.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = catch.h; sourceTree = "<group>"; };
+		0420E0A61FCA7D62008C8418 /* file_system.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = file_system.cpp; sourceTree = "<group>"; };
+		0420E0A71FCA7D62008C8418 /* file_system.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = file_system.h; sourceTree = "<group>"; };
 		04262F981FA76E3700B025B6 /* data_pipe.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = data_pipe.h; sourceTree = "<group>"; };
 		04262F991FA7725700B025B6 /* file_data_source.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = file_data_source.h; sourceTree = "<group>"; };
 		0451D6BE1FA3970900DFBA90 /* memory_buffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = memory_buffer.h; sourceTree = "<group>"; };
@@ -370,6 +375,8 @@
 				04D118191FA21A4900C59EC3 /* common.cpp */,
 				04D1181D1FA21A4900C59EC3 /* path.h */,
 				04D1181C1FA21A4900C59EC3 /* path.cpp */,
+				0420E0A71FCA7D62008C8418 /* file_system.h */,
+				0420E0A61FCA7D62008C8418 /* file_system.cpp */,
 			);
 			path = base;
 			sourceTree = "<group>";
@@ -560,6 +567,7 @@
 				040108A71FC8761F00ECCC98 /* printf.cc in Sources */,
 				04821C831FC88413004B27B4 /* args.cpp in Sources */,
 				040108A81FC8761F00ECCC98 /* archive.cpp in Sources */,
+				0420E0AA1FCA7D62008C8418 /* file_system.cpp in Sources */,
 				040108A91FC8761F00ECCC98 /* xdelta3_filter.cpp in Sources */,
 				040108AA1FC8761F00ECCC98 /* common.cpp in Sources */,
 				040108AB1FC8761F00ECCC98 /* md5.cpp in Sources */,
@@ -586,6 +594,7 @@
 				04D118301FA21A4900C59EC3 /* ostream.cc in Sources */,
 				04D118321FA21A4900C59EC3 /* printf.cc in Sources */,
 				0497EC141FB384E400011D57 /* archive.cpp in Sources */,
+				0420E0A81FCA7D62008C8418 /* file_system.cpp in Sources */,
 				0497EC0E1FB3499900011D57 /* xdelta3_filter.cpp in Sources */,
 				04D1182D1FA21A4900C59EC3 /* common.cpp in Sources */,
 				04D1183B1FA21AF600C59EC3 /* md5.cpp in Sources */,
@@ -612,6 +621,7 @@
 				04D118411FA21C5700C59EC3 /* printf.cc in Sources */,
 				0497EC151FB384E400011D57 /* archive.cpp in Sources */,
 				0497EC0F1FB3499900011D57 /* xdelta3_filter.cpp in Sources */,
+				0420E0A91FCA7D62008C8418 /* file_system.cpp in Sources */,
 				04D118421FA21C5700C59EC3 /* common.cpp in Sources */,
 				04D118431FA21C5700C59EC3 /* md5.cpp in Sources */,
 				04D35E371FC52DD500B9D8D5 /* lzma_filter.cpp in Sources */,
