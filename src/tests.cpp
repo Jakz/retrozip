@@ -4,6 +4,8 @@
 
 #include "test/catch.h"
 
+#include "base/file_system.h"
+
 #include "core/memory_buffer.h"
 #include "core/data_source.h"
 #include "core/file_data_source.h"
@@ -19,6 +21,128 @@
 #include "test/test_support.h"
 
 #include <random>
+
+TEST_CASE("path", "[base]") {
+  SECTION("initializing") {
+    REQUIRE(path("/foo") == path("/foo/"));
+    REQUIRE(path("/").data() == "/");
+  }
+  
+  SECTION("getting parent") {
+    path p("/foo/bar");
+    REQUIRE(p.parent() == "/foo");
+    
+    p = path("/foo/bar/");
+    REQUIRE(p.parent() == "/foo");
+    
+    p = path("/foo/bar.bin");
+    REQUIRE(p.parent() == "/foo");
+    
+    p = path("foobar.bin");
+    REQUIRE(p.parent() == "");
+  }
+  
+  SECTION("appending") {
+    REQUIRE(path("/foo") + path("bar") == path("/foo/bar"));
+    REQUIRE(path("/foo/") + path("bar") == path("/foo/bar"));
+    REQUIRE(path("/foo/") + path("bar/") == path("/foo/bar"));
+    REQUIRE(path("/") + path("foo") == path("/foo"));
+    
+    REQUIRE_THROWS(path("/foo") + path("/bar"));
+  }
+  
+  SECTION("relativizing") {
+    REQUIRE(path("/foo").relativizeChildren("/foo/bar") == path("bar"));
+    REQUIRE(path("/foo").relativizeChildren("/foo/bar/baz") == path("bar/baz"));
+    
+    REQUIRE(path("/foo/bar").relativizeToParent("/foo") == path("bar"));
+    REQUIRE(path("/foo/bar/baz").relativizeToParent("/foo") == path("bar/baz"));
+
+    
+    REQUIRE_THROWS(path("/foo").relativizeToParent("/bar"));
+    REQUIRE_THROWS(path("/foo").relativizeChildren("/bar"));
+  }
+}
+
+TEST_CASE("file system operations", "[base]") {
+  const FileSystem* fs = FileSystem::i();
+  path base = "folder";
+  path sub = base + "subfolder";
+  
+  fs->deleteFile(base);
+  
+  /* base doesn't exist in any form */
+  REQUIRE(!fs->existsAsFolder(base));
+  REQUIRE(!fs->existsAsFile(base));
+  
+  /* create folder */
+  REQUIRE(fs->createFolder(base));
+  
+  /* exists only as folder */
+  REQUIRE(fs->existsAsFolder(base));
+  REQUIRE(!fs->existsAsFile(base));
+  
+  /* folder should be empty */
+  std::vector<path> files = fs->contentsOfFolder(base);
+  REQUIRE(files.empty());
+  
+  /* create dummy file in folder */
+  testing::createDummyFile(base + "foobar.bin");
+  
+  /* folder should contain dummy file */
+  files = fs->contentsOfFolder(base);
+  REQUIRE(files.size() == 1);
+  REQUIRE(files[0] == base + "foobar.bin");
+  
+  /* dummy file should exist only as file */
+  REQUIRE(!fs->existsAsFolder(files[0]));
+  REQUIRE(fs->existsAsFile(files[0]));
+  
+  REQUIRE(fs->createFolder(sub));
+  
+  /* root folder should still contain just one file */
+  files = fs->contentsOfFolder(base);
+  REQUIRE(files.size() == 1);
+  REQUIRE(files[0] == base + "foobar.bin");
+  
+  /* create dummy file in subfolder */
+  testing::createDummyFile(sub + "subfoo.bin");
+  
+  /* dummy file should exist only as file */
+  REQUIRE(!fs->existsAsFolder(sub + "subfoo.bin"));
+  REQUIRE(fs->existsAsFile(sub + "subfoo.bin"));
+  
+  /* still just one file if scan is non recursive */
+  files = fs->contentsOfFolder(base, false);
+  REQUIRE(files.size() == 1);
+  REQUIRE(files[0] == base + "foobar.bin");
+  
+  /* both files is scan is recursive */
+  files = fs->contentsOfFolder(base);
+  REQUIRE(files.size() == 2);
+  REQUIRE(files[0] == base + "foobar.bin");
+  REQUIRE(files[1] == sub + "subfoo.bin");
+  
+  /* delete subfolder */
+  REQUIRE(fs->deleteFile(sub));
+  
+  /* subfolder doesn't exist in any form */
+  REQUIRE(!fs->existsAsFolder(sub));
+  REQUIRE(!fs->existsAsFile(sub));
+  
+  /* delete dummy file */
+  REQUIRE(fs->deleteFile(base + "foobar.bin"));
+  
+  /* removing a non existing file should return false */
+  REQUIRE_FALSE(fs->deleteFile(base + "foobar.bin"));
+  
+  /* dummy doesn't exist in any form */
+  REQUIRE(!fs->existsAsFolder(base + "foobar.bin"));
+  REQUIRE(!fs->existsAsFile(base + "foobar.bin"));
+  
+  fs->deleteFile(base);
+
+}
 
 TEST_CASE("optional", "[base]") {
   SECTION("u32") {

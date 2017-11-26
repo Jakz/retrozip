@@ -58,9 +58,10 @@ extern void debugnnprintf(const char* str, ...);
 
 #define TRACE_MEMORY_BUFFERS 0
 #define TRACE_PIPES 0
-#define TRACE_ARCHIVE 1
-#define TRACE_ENABLED 1
-#define TRACE_FILES 1
+#define TRACE_ARCHIVE 0
+#define TRACE_ENABLED 0
+#define TRACE_FILES 0
+#define TRACE_FILE_SYSTEM 1
 
 #define TRACE_FORCE_DISABLE 0
 
@@ -87,6 +88,12 @@ extern void debugnnprintf(const char* str, ...);
 #define TRACE_F TRACEL
 #else
 #define TRACE_F(...) do { } while (false)
+#endif
+
+#if defined(TRACE_FILE_SYSTEM) && TRACE_FILE_SYSTEM == 1
+#define TRACE_FS TRACEL
+#else
+#define TRACE_FS(...) do { } while (false)
 #endif
 
 #if defined(TRACE_ARCHIVE) && TRACE_ARCHIVE >= 1
@@ -244,6 +251,7 @@ public:
 
 template <bool B, typename T, T trueval, T falseval>
 struct conditional_value : std::conditional<B, std::integral_constant<T, trueval>, std::integral_constant<T, falseval>>::type { };
+template<typename T> using predicate = std::function<bool(const T&)>;
 
 template<size_t LENGTH>
 struct wrapped_array

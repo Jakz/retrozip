@@ -40,6 +40,17 @@ namespace exceptions
     const char* what() const noexcept override { return _parent.c_str(); }
   };
   
+  class path_exception : public box_exception
+  {
+  private:
+    std::string _message;
+    
+  public:
+    path_exception(const std::string& message) : _message(message) { }
+    
+    const char* what() const noexcept override { return _message.c_str(); }
+  };
+  
   class error_opening_file : public box_exception
   {
   private:

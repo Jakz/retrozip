@@ -16,6 +16,8 @@ namespace testing
   memory_buffer* randomDataSource(size_t size);
   memory_buffer* randomCompressibleDataSource(size_t size);
   
+  void createDummyFile(const path& path);
+  
   struct ArchiveTester
   {
     static void release(const ArchiveFactory::Data& data);

@@ -24,26 +24,30 @@ public:
   
   
   path() { }
-  path(const char* data) : _data(data) { }
-  path(const std::string& data) : _data(data) { }
+  path(const char* data);
+  path(const std::string& data);
   
   bool exists() const;
   size_t length() const;
   
   path relativizeToParent(const path& parent) const;
   path relativizeChildren(const path& children) const;
+  
   path append(const path& other) const;
+  path operator+(const path& other) const { return this->append(other); }
   
   bool operator==(const path& other) const { return _data == other._data; }
   
+  bool isAbsolute() const;
   bool hasExtension(const std::string& ext) const;
-
   
+  path removeLast() const;
+  path parent() const { return removeLast(); }
+
+  const std::string& data() { return _data; }
   const char* c_str() const { return _data.c_str(); }
   
   friend std::ostream& operator<<(std::ostream& os, const class path& path) { os << path._data; return os; }
-  
-  static std::unordered_set<path, hash> scanFolder(path base, bool recursive, predicate excludePredicate);
 };
 
 class relative_path

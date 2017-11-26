@@ -6,12 +6,30 @@
 #include <sys/stat.h>
 #include <dirent.h>
 
+#include "file_system.h"
+
 static constexpr const char SEPARATOR = '/';
+
+path::path(const char* data) : _data(data)
+{
+  if (_data.back() == SEPARATOR && _data.length() > 1)
+    _data.pop_back();
+}
+
+path::path(const std::string& data) : _data(data)
+{
+  if (_data.back() == SEPARATOR && _data.length() > 1)
+    _data.pop_back();
+}
+
+bool path::isAbsolute() const
+{
+  return !_data.empty() && _data[0] == SEPARATOR;
+}
 
 bool path::exists() const
 {
-  struct stat buffer;
-  return stat(_data.c_str(), &buffer) == 0;
+  return FileSystem::i()->existsAsFile(*this) || FileSystem::i()->existsAsFolder(*this);
 }
 
 path path::relativizeToParent(const path& parent) const
@@ -34,6 +52,9 @@ bool endsWith(const std::string& str, char c) { return str.back() == c; }
 bool startsWith(const std::string& str, char c) { return str.front() == c; }
 path path::append(const path& other) const
 {
+  if (other.isAbsolute())
+    throw exceptions::path_exception(fmt::sprintf("path::append: children %s can't be absolute", other.c_str()));
+  
   if (_data.empty())
     return other;
   else if (!endsWith(_data,SEPARATOR) && !startsWith(other._data, SEPARATOR))
@@ -50,36 +71,12 @@ bool path::hasExtension(const std::string& ext) const
   return index != std::string::npos && _data.substr(index+1) == ext;
 }
 
-std::unordered_set<path, path::hash> path::scanFolder(path base, bool recursive, predicate excludePredicate)
+path path::removeLast() const
 {
-  std::unordered_set<path, path::hash> files;
+  size_t index = _data.rfind(SEPARATOR);
   
-  DIR *d;
-  struct dirent *dir;
-  d = opendir(base.c_str());
-  
-  if (d)
-  {
-    while ((dir = readdir(d)) != NULL)
-    {
-      path name = path(dir->d_name);
-      
-      if (name == "." || name == ".." || name == ".DS_Store" || excludePredicate(path(name)))
-        continue;
-      else if (dir->d_type == DT_DIR && recursive)
-      {
-        auto rfiles = scanFolder(base.append(name), recursive, excludePredicate);
-        files.reserve(files.size() + rfiles.size());
-        files.insert(rfiles.begin(), rfiles.end());
-      }
-      else if (dir->d_type == DT_REG)
-        files.insert(base.append(name));
-    }
-    
-    closedir(d);
-  }
+  if (index != std::string::npos)
+    return path(_data.substr(0, index));
   else
-    throw exceptions::file_not_found(base);
-  
-  return files;
+    return path();
 }

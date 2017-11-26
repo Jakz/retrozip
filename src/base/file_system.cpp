@@ -12,33 +12,47 @@ const FileSystem* FileSystem::i()
 #include <sys/stat.h>
 #include <unistd.h>
 
-std::vector<path> FileSystem::contentsOfFolder(const path& folder) const
+std::vector<path> FileSystem::contentsOfFolder(const path& base, bool recursive, predicate<path> excludePredicate) const
 {
   std::vector<path> files;
   
-  //TODO: throw except if not exists
+  TRACE_FS("%p: scanning folder %s", this, base.c_str());
   
   DIR *d;
   struct dirent *dir;
-  d = opendir(folder.c_str());
+  d = opendir(base.c_str());
+  
   if (d)
   {
     while ((dir = readdir(d)) != NULL)
     {
-      std::string fileName = dir->d_name;
+      path name = path(dir->d_name);
       
-      if (fileName != "." && fileName != "..")
-        files.push_back(dir->d_name);
+      if (name == "." || name == ".." || name == ".DS_Store" || excludePredicate(name))
+        continue;
+      else if (dir->d_type == DT_DIR && recursive)
+      {
+        auto rfiles = contentsOfFolder(base.append(name), recursive, excludePredicate);
+        files.reserve(files.size() + rfiles.size());
+        std::move(rfiles.begin(), rfiles.end(), std::back_inserter(files));
+      }
+      else if (dir->d_type == DT_REG)
+        files.push_back(base.append(name));
     }
     
     closedir(d);
   }
+  else
+    throw exceptions::file_not_found(base);
   
   return files;
 }
 
 bool FileSystem::createFolder(const path& path, bool intermediate) const
 {
+  TRACE_FS("%p: creating folder %s (intermediate: %s)", this, path.c_str(), intermediate ? "true" : "false");
+
+  
   if (intermediate)
     system((std::string("mkdir -p ")+path.c_str()).c_str());
   else
@@ -85,7 +99,8 @@ bool FileSystem::internalDeleteDirectory(const path& path) const
 
 bool FileSystem::deleteFile(const path& path) const
 {
-  struct stat buf;
+  TRACE_FS("%p: deleting file %s", this, path.c_str());
+
   bool isDirectory = existsAsFolder(path);
   bool success = isDirectory ? internalDeleteDirectory(path) :  (remove(path.c_str()) == 0);
   return success;

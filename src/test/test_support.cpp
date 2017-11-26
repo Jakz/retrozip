@@ -9,6 +9,13 @@
 #define REQUIRE assert
 #endif
 
+void testing::createDummyFile(const path& path)
+{
+  FILE* file = fopen(path.c_str(), "wb+");
+  assert(file);
+  fclose(file);
+}
+
 u32 testing::random(u32 modulo)
 {
   static std::random_device device;
