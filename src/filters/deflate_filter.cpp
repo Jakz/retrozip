@@ -66,7 +66,7 @@ void zlib_filter<computer, finalizer, OPTIONS>::process()
     TRACE("%p: %s_filter::process() %s %lu bytes into %lu bytes (in: %lu out: %lu) (%s)",
            this,
            name().c_str(),
-           std::is_same<OPTIONS, DeflateOptions>::value ? "zipped" : "unzipped",
+            std::is_same<OPTIONS, options::Deflate>::value ? "zipped" : "unzipped",
            consumed,
            produced,
            _stream.total_in,
@@ -116,5 +116,5 @@ void zlib_filter<computer, finalizer, OPTIONS>::process()
     finalizer(&_stream);
 }
 
-template class compression::zlib_filter<deflate, deflateEnd, DeflateOptions>;
-template class compression::zlib_filter<inflate, inflateEnd, InflateOptions>;
+template class compression::zlib_filter<deflate, deflateEnd, options::Deflate>;
+template class compression::zlib_filter<inflate, inflateEnd, options::Inflate>;

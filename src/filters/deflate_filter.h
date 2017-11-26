@@ -6,9 +6,9 @@
 
 #include <zlib.h>
 
-namespace compression
+namespace options
 {
-  struct DeflateOptions
+  struct Deflate
   {
     enum class Strategy : int
     {
@@ -18,12 +18,15 @@ namespace compression
       FILTERED = Z_FILTERED
     };
     
-    int level;
-    int windowSize;
-    int memLevel;
+    int level; /* 0-9 */
+    int windowSize; /* 9-15 */
+    int memLevel; /* 1-9 */
     Strategy strategy;
     
-    DeflateOptions() : level(Z_DEFAULT_COMPRESSION), windowSize(15), memLevel(8), strategy(Strategy::DEFAULT) { }
+    Deflate() : level(Z_DEFAULT_COMPRESSION), windowSize(15), memLevel(8), strategy(Strategy::DEFAULT)
+    {
+    
+    }
     
     int init(z_streamp stream)
     {
@@ -31,18 +34,21 @@ namespace compression
     }
   };
   
-  struct InflateOptions
+  struct Inflate
   {
     int windowSize;
     
-    InflateOptions() : windowSize(15) { }
+    Inflate() : windowSize(15) { }
     
     int init(z_streamp stream)
     {
       return inflateInit2(stream, -windowSize);
     }
   };
-  
+}
+
+namespace compression
+{
   using zlib_compute_function = int(*)(z_streamp, int);
   using zlib_end_function = int(*)(z_streamp);
   
@@ -63,12 +69,12 @@ namespace compression
     void process() override;
     void finalize() override;
     
-    std::string name() override { return std::is_same<OPTIONS, DeflateOptions>::value ? "deflater" : "inflater"; }
+    std::string name() override { return std::is_same<OPTIONS, options::Deflate>::value ? "deflater" : "inflater"; }
     
   public:
     const z_stream& zstream() { return _stream; }
   };
   
-  using deflater_filter = zlib_filter<deflate, deflateEnd, DeflateOptions>;
-  using inflater_filter = zlib_filter<inflate, inflateEnd, InflateOptions>;
+  using deflater_filter = zlib_filter<deflate, deflateEnd, options::Deflate>;
+  using inflater_filter = zlib_filter<inflate, inflateEnd, options::Inflate>;
 }

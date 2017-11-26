@@ -301,6 +301,22 @@ struct bit_mask
   bool operator&&(T flag) const { return (value & static_cast<utype>(flag)) != 0; }
 };
 
+#pragma mark null ostream
+class null_buffer : public std::streambuf
+{
+public:
+  int overflow(int c) { return c; }
+};
+
+class null_stream : public std::ostream
+{
+public:
+  null_stream() : std::ostream(&m_sb) {}
+private:
+  null_buffer m_sb; }
+;
+
+#pragma powers of two
 constexpr size_t KB8 = 8192;
 constexpr size_t KB16 = 16384;
 constexpr size_t KB32 = 16384 << 1;
