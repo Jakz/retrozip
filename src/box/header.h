@@ -20,9 +20,10 @@ namespace box
   
   static constexpr version_t CURRENT_VERSION = 0x00000001;
   
-  enum class Section
+  enum class Section : u32
   {
     HEADER = 1,
+    SECTION_TABLE,
     ENTRY_TABLE,
     ENTRY_PAYLOAD,
     STREAM_TABLE,
@@ -42,6 +43,15 @@ namespace box
     SEEKABLE
   };
   
+  struct SectionHeader
+  {
+    offset_t offset;
+    length_t size;
+    Section type;
+    count_t count;
+    
+  } __attribute__((packed));
+  
   struct Header
   {
     std::array<u8, 4> magic; // must be "box!"
@@ -49,26 +59,18 @@ namespace box
     
     bit_mask<HeaderFlag> flags;
     
-    count_t entryCount;
-    count_t streamCount;
-    
-    offset_t entryTableOffset;
-    offset_t streamTableOffset;
-    offset_t nameTableOffset;
-    offset_t groupTableOffset;
-    
-    count_t nameTableLength;
-    count_t groupCount;
+    SectionHeader index;
     
     length_t fileLength;
     checksum_t fileChecksum;
-    
+
     Header() : magic({{'b','o','x','!'}}) { }
     
     bool hasFlag(HeaderFlag flag) const { return flags && flag; }
     
   } __attribute__((packed));
   
+
   struct DigestInfo
   {
     hash::crc32_t crc32;
@@ -126,5 +128,5 @@ namespace box
   struct Group
   {
     count_t size;
-  };
+  } __attribute__((packed));
 }

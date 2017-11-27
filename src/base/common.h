@@ -58,7 +58,7 @@ extern void debugnnprintf(const char* str, ...);
 
 #define TRACE_MEMORY_BUFFERS 0
 #define TRACE_PIPES 0
-#define TRACE_ARCHIVE 0
+#define TRACE_ARCHIVE 1
 #define TRACE_ENABLED 0
 #define TRACE_FILES 0
 #define TRACE_FILE_SYSTEM 0
@@ -247,6 +247,17 @@ public:
   void clear() { this->_data = EMPTY_VALUE; }
   
   u32 get() const { return _data & 0xFFFFFFFF; }
+};
+
+struct enum_hash
+{
+  template <typename T>
+  inline
+  typename std::enable_if<std::is_enum<T>::value, size_t>::type
+  operator ()(T const value) const
+  {
+    return static_cast<size_t>(static_cast<size_t>(value));
+  }
 };
 
 template <bool B, typename T, T trueval, T falseval>

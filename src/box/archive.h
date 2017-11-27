@@ -7,7 +7,7 @@
 #include "filter_queue.h"
 #include "header.h"
 
-#include <queue>
+#include <list>
 
 class memory_buffer;
 using W = memory_buffer;
@@ -122,10 +122,17 @@ private:
   
 public:
   ArchiveGroup(const std::string& name) : _name(name) { }
+  ArchiveGroup(const std::string& name, const std::vector<ArchiveEntry::ref>& entries) : _name(name), _entries(entries) { }
   
   void addEntry(ArchiveEntry::ref index) { _entries.push_back(index); }
   
+  using iterator = decltype(_entries)::const_iterator;
+  iterator begin() const { return _entries.begin(); }
+  iterator end() const { return _entries.end(); }
+  
+  const std::vector<ArchiveEntry::ref>& entries() const { return _entries; }
   box::count_t size() const { return static_cast<box::count_t>(_entries.size()); }
+
   const std::string& name() const { return _name; }
 };
 
@@ -200,15 +207,21 @@ private:
   std::vector<ArchiveStream> _streams;
   std::vector<ArchiveGroup> _groups;
   
-  std::queue<box::Section> _ordering;
+  std::unordered_map<box::Section, box::SectionHeader, enum_hash> _headers;
+  
+  std::list<box::Section> _ordering;
   
   void finalizeHeader(W& w);
   box::checksum_t calculateGlobalChecksum(W& w, size_t bufferSize) const;
+  
+  bool willSectionBeSerialized(box::Section section) const;
   
   void writeStream(W& w, ArchiveStream& stream);
   void writeEntry(W& w, ArchiveStream& stream, ArchiveEntry& entry);
   void writeEntryPayloads(W& w);
   void writeStreamPayloads(W& w);
+  
+  void readSection(R& r, const box::SectionHeader& header);
   
   const ArchiveEntry& entryForRef(ArchiveEntry::ref ref) const { return _entries[ref]; }
   ArchiveEntry& entryForRef(ArchiveEntry::ref ref) { return _entries[ref]; }
@@ -220,6 +233,12 @@ public:
   void read(R& r);
   
   const box::Header& header() const { return _header; }
+  const decltype(_headers)& sections() const { return _headers; }
+  const box::SectionHeader* section(box::Section section) const
+  {
+    auto it = _headers.find(section);
+    return it != _headers.end() ? &(it->second) : nullptr;
+  }
 
   Options& options() { return _options; }
   const Options& options() const { return _options; }

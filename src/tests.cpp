@@ -1554,9 +1554,7 @@ TEST_CASE("empty archive", "[box archive]") {
   REQUIRE(buffer.size() == sizeof(box::Header));
   REQUIRE(buffer.size() == result.header().fileLength);
   
-  REQUIRE(result.header().entryTableOffset == sizeof(box::Header));
-  REQUIRE(result.header().streamTableOffset == sizeof(box::Header));
-  REQUIRE(result.header().nameTableOffset == sizeof(box::Header));
+  REQUIRE(result.sections().empty());
   
   REQUIRE(result.isValidMagicNumber());
   REQUIRE(result.header().hasFlag(box::HeaderFlag::INTEGRITY_CHECKSUM_ENABLED));

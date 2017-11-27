@@ -303,12 +303,13 @@ class array_reference
 private:
   memory_buffer* _buffer;
   off_t _position;
-  size_t size;
-  array_reference(memory_buffer& buffer, off_t position, size_t size) : _buffer(&buffer), _position(position) { }
+  size_t _count;
+  array_reference(memory_buffer& buffer, off_t position, size_t count) : _buffer(&buffer), _position(position), _count(count) { }
   
 public:
   array_reference() : _buffer(nullptr), _position(0) { }
   operator off_t() const { return _position; }
+  size_t count() const { return _count; }
   
   void write(const T& value, size_t index)
   {

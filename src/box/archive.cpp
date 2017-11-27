@@ -11,19 +11,24 @@ template<typename T> using aref = array_reference<T>;
 struct refs
 {
   ref<box::Header> header;
+  aref<box::SectionHeader> sectionTable;
+  
   aref<box::Entry> entryTable;
   aref<box::Stream> streamTable;
+  aref<box::Group> groupTable;
 };
 
 Archive::Archive()
 {
-  _ordering.push(box::Section::HEADER);
-  _ordering.push(box::Section::ENTRY_TABLE);
-  _ordering.push(box::Section::ENTRY_PAYLOAD);
-  _ordering.push(box::Section::STREAM_TABLE);
-  _ordering.push(box::Section::STREAM_PAYLOAD);
-  _ordering.push(box::Section::STREAM_DATA);
-  _ordering.push(box::Section::FILE_NAME_TABLE);
+  _ordering.push_back(box::Section::HEADER);
+  _ordering.push_back(box::Section::SECTION_TABLE);
+  _ordering.push_back(box::Section::ENTRY_TABLE);
+  _ordering.push_back(box::Section::ENTRY_PAYLOAD);
+  _ordering.push_back(box::Section::STREAM_TABLE);
+  _ordering.push_back(box::Section::STREAM_PAYLOAD);
+  _ordering.push_back(box::Section::STREAM_DATA);
+  _ordering.push_back(box::Section::FILE_NAME_TABLE);
+  _ordering.push_back(box::Section::GROUP_TABLE);
 }
 
 bool Archive::isValidMagicNumber() const { return _header.magic == std::array<u8, 4>({ 'b', 'o', 'x', '!' }); }
@@ -99,6 +104,18 @@ bool Archive::checkEntriesMappingToStreams() const
     
     ++index;
   }
+  
+  /* check that all groups have valid indices */
+  for (const auto& group : _groups)
+  {
+    std::unordered_set<ArchiveEntry::ref> uniques(group.entries().begin(), group.entries().end());
+    
+    if (uniques.size() != group.size())
+      throw uexc(fmt::sprintf("group %s has non unique entries", group.name().c_str()));
+    
+    if (std::any_of(group.begin(), group.end(), [this](ArchiveEntry::ref index) { return index >= _entries.size() || index < 0; }))
+      throw uexc(fmt::sprintf("group '%s' has invalid indices", group.name()));
+  }
 
   return true;
 }
@@ -166,44 +183,91 @@ Archive Archive::ofData(const ArchiveFactory::Data& data)
   return archive;
 }
 
+bool Archive::willSectionBeSerialized(box::Section section) const
+{
+  switch (section)
+  {
+    case box::Section::HEADER: assert(false); return false;
+    case box::Section::SECTION_TABLE: assert(false); return false;
+    case box::Section::ENTRY_TABLE: return !_entries.empty();
+    case box::Section::ENTRY_PAYLOAD: return std::any_of(_entries.begin(), _entries.end(), [] (const ArchiveEntry& entry) { return entry.payloadLength() > 0; });
+    
+    case box::Section::STREAM_TABLE: return !_streams.empty();
+    case box::Section::STREAM_PAYLOAD: return std::any_of(_streams.begin(), _streams.end(), [] (const ArchiveStream& stream) { return stream.payloadLength() > 0; });
+      
+    case box::Section::FILE_NAME_TABLE: return !_entries.empty();
+    case box::Section::STREAM_DATA: return !_streams.empty();
+      
+    case box::Section::GROUP_TABLE: return !_groups.empty();
+  }
+}
+
 void Archive::write(W& w)
 {
   assert(_ordering.front() == box::Section::HEADER);
-  _ordering.pop();
+  _ordering.pop_front();
   
+  _headers.clear();
+
   refs refs;
-  
   refs.header = w.reserve<box::Header>();
 
-  _header.entryCount = static_cast<box::count_t>(_entries.size());
-  _header.streamCount = static_cast<box::count_t>(_streams.size());
-  
-  TRACE_A("%p: archive::write() writing %lu entries in %lu streams", this, _header.entryCount, _header.streamCount);
+  TRACE_A("%p: archive::write() writing %lu entries in %lu streams", this, _entries.size(), _streams.size());
 
   while (!_ordering.empty())
   {
     box::Section section = _ordering.front();
-    _ordering.pop();
+    _ordering.pop_front();
     
+    box::SectionHeader sectionHeader { 0, 0, section, 0 };
+
     switch (section)
     {
-      case box::Section::HEADER: /* already managed */ break;
+      case box::Section::HEADER:
+        /* already managed */
+        
+        /* section table must be first section after header */
+        assert(_ordering.front() == box::Section::SECTION_TABLE);
+      break;
+        
+      case box::Section::SECTION_TABLE:
+      {
+        size_t effectiveSections = std::count_if(_ordering.begin(), _ordering.end(), [this] (box::Section section) { return willSectionBeSerialized(section); });
+        
+        refs.sectionTable = w.reserveArray<box::SectionHeader>(effectiveSections);
+
+        _header.index.offset = refs.sectionTable;
+        _header.index.count = static_cast<box::count_t>(effectiveSections);
+        _header.index.size = sizeof(box::SectionHeader)* _header.index.count;
+        _header.index.type = box::Section::SECTION_TABLE;
+        
+        TRACE_A("%p: archive::write() reserved section table for %lu entries (%lu bytes) at %Xh (%lu)", this, _header.index.count, _header.index.size, _header.index.offset, _header.index.offset);
+        break;
+      }
         
       case box::Section::ENTRY_TABLE:
       {
         /* save offset to the entry table and store it into header */
-        refs.entryTable = w.reserveArray<box::Entry>(_header.entryCount);
-        _header.entryTableOffset = refs.entryTable;
-        TRACE_A("%p: archive::write() reserved entry table for %lu entries (%lu bytes) at %Xh (%lu)", this, _header.entryCount, _header.entryCount*sizeof(box::Entry), _header.entryTableOffset,  _header.entryTableOffset);
+        refs.entryTable = w.reserveArray<box::Entry>(_entries.size());
+        
+        sectionHeader.offset = refs.entryTable;
+        sectionHeader.count = static_cast<box::count_t>(_entries.size());
+        sectionHeader.size = static_cast<box::length_t>(sizeof(box::Entry) * sectionHeader.count);
+        
+        TRACE_A("%p: archive::write() reserved entry table for %lu entries (%lu bytes) at %Xh (%lu)", this, sectionHeader.count, sectionHeader.size, sectionHeader.offset, sectionHeader.offset);
         break;
       }
         
       case box::Section::STREAM_TABLE:
       {
         /* save offset to the stream table and store it into header */
-        refs.streamTable = w.reserveArray<box::Stream>(_header.streamCount);
-        _header.streamTableOffset = refs.streamTable;
-        TRACE_A("%p: archive::write() reserved stream table for %lu streams (%lu bytes) at %Xh (%lu)", this, _header.streamCount, _header.streamCount*sizeof(box::Stream), _header.streamTableOffset,  _header.streamTableOffset);
+        refs.streamTable = w.reserveArray<box::Stream>(_streams.size());
+        
+        sectionHeader.offset = refs.streamTable;
+        sectionHeader.count = static_cast<box::count_t>(_streams.size());
+        sectionHeader.size = static_cast<box::length_t>(sizeof(box::Stream) * sectionHeader.count);
+        
+        TRACE_A("%p: archive::write() reserved stream table for %lu streams (%lu bytes) at %Xh (%lu)", this, sectionHeader.count, sectionHeader.size, sectionHeader.offset, sectionHeader.offset);
         break;
       }
         
@@ -229,6 +293,9 @@ void Archive::write(W& w)
         if (length > 0)
           TRACE_A("%p: archive::write() reserved entries payload of %lu bytes at %Xh (%lu)", this, length, w.tell(), w.tell());
         
+        sectionHeader.offset = w.tell();
+        sectionHeader.size = length;
+        
         w.reserve(length);
         break;
       }
@@ -252,7 +319,11 @@ void Archive::write(W& w)
           length += sentry.payloadLength;
         }
         
-        TRACE_A("%p: archive::write() reserved stream payload of %lu bytes at %Xh (%lu)", this, length, w.tell(), w.tell());
+        if (length > 0)
+          TRACE_A("%p: archive::write() reserved stream payload of %lu bytes at %Xh (%lu)", this, length, w.tell(), w.tell());
+        
+        sectionHeader.offset = w.tell();
+        sectionHeader.size = length;
         
         w.reserve(length);
         break;
@@ -263,7 +334,7 @@ void Archive::write(W& w)
         off_t base = w.tell();
         off_t offset = w.tell();
         
-        _header.nameTableOffset = base;
+        sectionHeader.offset = w.tell();
         
         /* write NUL terminated name */
         for (const ArchiveEntry& entry : _entries)
@@ -277,14 +348,40 @@ void Archive::write(W& w)
           offset = w.tell();
         }
         
-        _header.nameTableLength = static_cast<box::count_t>(offset - base);
+        sectionHeader.size = static_cast<box::count_t>(offset - base);
         
-        TRACE_A("%p: archive::write() written name table of %lu bytes at %Xh (%lu)", this, _header.nameTableLength, _header.nameTableOffset, _header.nameTableOffset);
+        TRACE_A("%p: archive::write() written name table of %lu bytes at %Xh (%lu)", this, sectionHeader.size, sectionHeader.offset, sectionHeader.offset);
+        break;
+      }
+        
+      case box::Section::GROUP_TABLE:
+      {
+        off_t base = w.tell();
+        off_t offset = w.tell();
+        
+        sectionHeader.offset = base;
+        sectionHeader.count = static_cast<box::count_t>(_groups.size());
+        
+        for (const auto& group : _groups)
+        {
+          /* write group size, then indices, then name */
+          w.write(static_cast<box::count_t>(group.size()));
+          w.write(group.entries().data(), sizeof(ArchiveEntry::ref), group.size());
+          w.write(group.name().c_str(), 1, group.name().length());
+          w.write((char)'\0');
+        }
+        
+        sectionHeader.size = static_cast<box::count_t>(offset - base);
+        
+        TRACE_A("%p: archive::write() written group table of %lu bytes at %Xh (%lu)", this, sectionHeader.count, sectionHeader.offset, sectionHeader.offset);
         break;
       }
         
       case box::Section::STREAM_DATA:
       {
+        sectionHeader.offset = w.tell();
+        sectionHeader.count = 1;
+        
         /* main stream writing */
         box::index_t streamIndex = 0, indexInStream = 0;
         for (ArchiveStream& stream : _streams)
@@ -309,9 +406,14 @@ void Archive::write(W& w)
           ++streamIndex;*/
         }
         
+        sectionHeader.size = w.tell() - sectionHeader.offset;
+        
         break;
       }
     }
+    
+    if (section != box::Section::HEADER && section != box::Section::SECTION_TABLE && sectionHeader.size > 0)
+      _headers.emplace(std::make_pair(section, sectionHeader));
   }
   
   writeEntryPayloads(w);
@@ -320,6 +422,11 @@ void Archive::write(W& w)
   /* when we arrive here we suppose all streams have been written and all data
      in Stream and Entry has been prepared and filled */
   
+  /* fill section headers */
+  assert(_headers.size() == refs.sectionTable.count());
+  size_t i = 0;
+  for (const auto& section : _headers)
+    refs.sectionTable.write(section.second, i++);
   
   /* fill the array of file entries */
   for (size_t i = 0; i < _entries.size(); ++i)
@@ -334,67 +441,140 @@ void Archive::write(W& w)
   refs.header.write(_header);
 }
 
+void Archive::readSection(R& r, const box::SectionHeader& header)
+{
+  const box::Section section = header.type;
+  using S = box::Section;
+  
+  switch (section)
+  {
+    case S::HEADER: /* should never happen */ assert(false); break;
+    case S::SECTION_TABLE: /* should never happen */ assert(false); break;
+    
+    case S::ENTRY_TABLE:
+    {
+      /* read entries */
+      for (size_t i = 0; i < header.count; ++i)
+      {
+        r.seek(header.offset + i*sizeof(box::Entry));
+        
+        /* read entry */
+        box::Entry entry;
+        r.read(entry);
+        
+        /* read entry name */
+        r.seek(entry.entryNameOffset);
+        //TODO: ugly
+        std::string name;
+        char c;
+        r.read(c);
+        while (c) {
+          name += c;
+          r.read(c);
+        }
+        
+        /* load payload */
+        std::vector<byte> payload;
+        if (entry.payloadLength > 0)
+        {
+          payload.resize(entry.payloadLength);
+          r.seek(entry.payload);
+          r.read(payload.data(), entry.payloadLength);
+        }
+        
+        _entries.emplace_back(name, entry, payload);
+      }
+
+      break;
+    }
+      
+    case S::STREAM_TABLE:
+    {
+      for (size_t i = 0; i < header.count; ++i)
+      {
+        r.seek(header.offset + i*sizeof(box::Stream));
+        
+        /* read stream header */
+        box::Stream stream;
+        r.read(stream);
+        
+        /* load payload */
+        std::vector<byte> payload;
+        if (stream.payloadLength > 0)
+        {
+          payload.resize(stream.payloadLength);
+          r.seek(stream.payload);
+          r.read(payload.data(), stream.payloadLength);
+        }
+        
+        _streams.emplace_back(stream, payload);
+      }
+      
+      break;
+    }
+      
+    case S::GROUP_TABLE:
+    {
+      r.seek(header.offset);
+      for (size_t i = 0; i < header.count; ++i)
+      {
+        box::count_t size;
+        r.read(size);
+        
+        std::vector<ArchiveEntry::ref> indices(size);
+        r.read((byte*)indices.data(), sizeof(ArchiveEntry::ref) * size);
+        
+        //TODO: ugly
+        std::string name;
+        char c;
+        r.read(c);
+        while (c) {
+          name += c;
+          r.read(c);
+        }
+        
+        _groups.emplace_back(name, indices);
+      }
+      
+      break;
+    }
+      
+    case S::ENTRY_PAYLOAD:
+    case S::STREAM_PAYLOAD:
+    case S::FILE_NAME_TABLE:
+      /* do nothing, these are managed when reading respective parents */
+      break;
+  }
+}
+
 void Archive::read(R& r)
 {
+  /* clear everything */
+  _headers.clear();
+  _entries.clear();
+  _streams.clear();
+  _groups.clear();
+  
+  /* read header */
   r.seek(0);
   r.read(_header);
+  
+  /* read sections */
+  r.seek(_header.index.offset);
+  for (size_t i = 0; i < _header.index.count; ++i)
+  {
+    box::SectionHeader header;
+    r.read(header);
+    _headers.emplace(std::make_pair(header.type, header));
+  }
   
   if (!isValidMagicNumber())
     throw uexc("invalid magic number, expecting 'box!'");
   //TODO: check validity checksum etc
   
-  /* read entries */
-  for (size_t i = 0; i < _header.entryCount; ++i)
-  {
-    r.seek(_header.entryTableOffset + i*sizeof(box::Entry));
-
-    /* read entry */
-    box::Entry entry;
-    r.read(entry);
-    
-    /* read entry name */
-    r.seek(entry.entryNameOffset);
-    //TODO: ugly
-    std::string name;
-    char c;
-    r.read(c);
-    while (c) {
-      name += c;
-      r.read(c);
-    }
-    
-    /* load payload */
-    std::vector<byte> payload;
-    if (entry.payloadLength > 0)
-    {
-      payload.resize(entry.payloadLength);
-      r.seek(entry.payload);
-      r.read(payload.data(), entry.payloadLength);
-    }
-    
-    _entries.emplace_back(name, entry, payload);
-  }
-  
-  /* read stream headers */
-  for (size_t i = 0; i < _header.streamCount; ++i)
-  {
-    r.seek(_header.streamTableOffset + i*sizeof(box::Stream));
-
-    /* read stream header */
-    box::Stream stream;
-    r.read(stream);
-    
-    /* load payload */
-    std::vector<byte> payload;
-    if (stream.payloadLength > 0)
-    {
-      payload.resize(stream.payloadLength);
-      r.seek(stream.payload);
-      r.read(payload.data(), stream.payloadLength);
-    }
-    
-    _streams.emplace_back(stream, payload);
-  }
+  /* read each section if needed */
+  for (const auto& section : _headers)
+    readSection(r, section.second);
   
   /* for each entry map it to the correct stream at correct index */
   ArchiveEntry::ref index = 0;

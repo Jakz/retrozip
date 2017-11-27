@@ -140,10 +140,19 @@ void testing::ArchiveTester::verify(const ArchiveFactory::Data& data, const Arch
     return count + stream.binary().payloadLength;
   });
   
+  if (payloadSizeForStream > 0)
+  {
+    REQUIRE(verify.section(box::Section::STREAM_PAYLOAD));
+    REQUIRE(verify.section(box::Section::STREAM_PAYLOAD)->size == payloadSizeForStream);
+  }
+  
   /* size of archive must match, header + entry*entries + stream*streams + entry names */
   size_t archiveSize = sizeof(box::Header)
   + sizeof(box::Entry) * data.entries.size()
   + sizeof(box::Stream) * data.streams.size()
+  + ((!data.entries.empty() && !data.streams.empty()) ? sizeof(box::Section)*4 : 0) /* entry table, stream table, stream data, entry names section headers */
+  + (payloadSizeForEntries > 0 ? sizeof(box::Section) : 0)
+  + (payloadSizeForStream > 0 ? sizeof(box::Section) : 0)
   + std::accumulate(verify.streams().begin(), verify.streams().end(), 0UL, [] (size_t count, const ArchiveStream& entry) { return entry.binary().length + count; })
   + std::accumulate(data.entries.begin(), data.entries.end(), 0UL, [] (size_t count, const ArchiveFactory::Entry& entry) { return entry.name.length() + 1 + count; })
   + payloadSizeForEntries + payloadSizeForStream;
