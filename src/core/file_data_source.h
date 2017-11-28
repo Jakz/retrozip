@@ -11,6 +11,7 @@ private:
   size_t _length;
   
 public:
+  file_data_source(const path& path, file_handle&& handle) : _path(path), _handle(handle), _length(handle.length()) { }
   file_data_source(path path, bool waitForOpen = false) : _path(path), _handle(waitForOpen ? file_handle(path) : file_handle(path, file_mode::READING)), _length(waitForOpen ? 0 : _handle.length()) { }
   
   void open()

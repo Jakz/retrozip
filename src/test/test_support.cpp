@@ -79,6 +79,11 @@ void testing::ArchiveTester::verifyFilters(const std::vector<filter_builder*>& o
 
 void testing::ArchiveTester::verify(const ArchiveFactory::Data& data, const Archive& verify, memory_buffer& buffer)
 {
+  /* magic number and checksum */
+  REQUIRE(verify.isValidMagicNumber());
+  if (verify.header().hasFlag(box::HeaderFlag::INTEGRITY_CHECKSUM_ENABLED))
+    REQUIRE(verify.isValidGlobalChecksum(buffer));
+  
   /* amount of entries / streams */
   REQUIRE(data.entries.size() == verify.entries().size());
   REQUIRE(data.streams.size() == verify.streams().size());
@@ -145,6 +150,55 @@ void testing::ArchiveTester::verify(const ArchiveFactory::Data& data, const Arch
     REQUIRE(verify.section(box::Section::STREAM_PAYLOAD));
     REQUIRE(verify.section(box::Section::STREAM_PAYLOAD)->size == payloadSizeForStream);
   }
+  else
+    REQUIRE(verify.section(box::Section::STREAM_PAYLOAD) == nullptr);
+
+  
+  if (payloadSizeForEntries > 0)
+  {
+    REQUIRE(verify.section(box::Section::ENTRY_PAYLOAD));
+    REQUIRE(verify.section(box::Section::ENTRY_PAYLOAD)->size == payloadSizeForEntries);
+  }
+  else
+    REQUIRE(verify.section(box::Section::ENTRY_PAYLOAD) == nullptr);
+
+  /* verify entry section header */
+  {
+    const auto* entrySection = verify.section(box::Section::ENTRY_TABLE);
+    
+    if (data.entries.empty())
+      REQUIRE(entrySection == nullptr);
+    else
+    {
+      REQUIRE(entrySection->size == sizeof(box::Entry) * data.entries.size());
+      REQUIRE(entrySection->count == data.entries.size());
+    }
+  }
+
+  /* verify stream section header */
+  {
+    const auto* streamSection = verify.section(box::Section::STREAM_TABLE);
+    const auto* streamDataSection = verify.section(box::Section::STREAM_DATA);
+
+    if (data.streams.empty())
+    {
+      REQUIRE(streamSection == nullptr);
+      REQUIRE(streamDataSection == nullptr);
+    }
+    else
+    {
+      REQUIRE(streamSection->count == data.streams.size());
+      REQUIRE(streamSection->size == sizeof(box::Stream) * data.streams.size());
+
+      REQUIRE(streamDataSection->count == 1);
+      /* size of stream data section == sum of stream sizes */
+      REQUIRE(streamDataSection->size == std::accumulate(verify.streams().begin(), verify.streams().end(), 0UL, [](size_t count, const ArchiveStream& stream) {
+        return count + stream.binary().length;
+      }));
+
+    }
+  }
+  
   
   /* size of archive must match, header + entry*entries + stream*streams + entry names */
   size_t archiveSize = sizeof(box::Header)
@@ -158,6 +212,15 @@ void testing::ArchiveTester::verify(const ArchiveFactory::Data& data, const Arch
   + payloadSizeForEntries + payloadSizeForStream;
   
   REQUIRE(buffer.size() == archiveSize);
+  
+  /* size of archive must be header + section header * sections + section size for each section */
+  size_t archiveSizeBySections = sizeof(box::Header)
+  + sizeof(box::SectionHeader) * verify.header().index.count
+  + std::accumulate(verify.sections().begin(), verify.sections().end(), 0UL, [] (size_t count, const std::pair<box::Section, box::SectionHeader>& entry) {
+    return count + entry.second.size;
+  });
+  
+  REQUIRE(buffer.size() == archiveSizeBySections);
   
   /* now we need to verify stream data */
   for (size_t i = 0; i < data.entries.size(); ++i)

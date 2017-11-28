@@ -27,15 +27,13 @@ const char* compression::lzma_filter<E>::printableErrorCode(lzma_ret r)
 template<bool IS_ENCODER>
 void compression::lzma_filter<IS_ENCODER>::init()
 {
-
   //lzma_mt options;
   //lzma_ret r = lzma_stream_encoder_mt(&_stream, const lzma_mt *options)
   
-  //TODO: arguments should be adjustable
   //TODO: checks disabled since checksum are computed by archive itself, but they should be adjustable on filter
 
   if (IS_ENCODER)
-    _r = lzma_easy_encoder(&_stream, 9 | LZMA_PRESET_EXTREME, /*LZMA_CHECK_CRC64*/LZMA_CHECK_NONE);
+    _r = lzma_easy_encoder(&_stream, _options.level | (_options.extreme ? LZMA_PRESET_EXTREME : 0), /*LZMA_CHECK_CRC64*/LZMA_CHECK_NONE);
   else
     _r = lzma_stream_decoder(&_stream, UINT64_MAX, /*LZMA_TELL_ANY_CHECK*/LZMA_TELL_NO_CHECK);
   

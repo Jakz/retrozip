@@ -28,6 +28,9 @@
 		040108BF1FC8762F00ECCC98 /* cli.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 040108A31FC8761300ECCC98 /* cli.cpp */; };
 		040937211FB94F2400FE70C7 /* filter_queue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 040937201FB94F2400FE70C7 /* filter_queue.cpp */; };
 		040937221FB94F2400FE70C7 /* filter_queue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 040937201FB94F2400FE70C7 /* filter_queue.cpp */; };
+		04149F1B1FCCFB580042DD55 /* archive_builder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 04149F191FCCFB580042DD55 /* archive_builder.cpp */; };
+		04149F1C1FCCFB580042DD55 /* archive_builder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 04149F191FCCFB580042DD55 /* archive_builder.cpp */; };
+		04149F1D1FCCFB580042DD55 /* archive_builder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 04149F191FCCFB580042DD55 /* archive_builder.cpp */; };
 		0420E09D1FC9AC1A008C8418 /* filter_options.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0420E09B1FC9AC1A008C8418 /* filter_options.cpp */; };
 		0420E09E1FC9AC1A008C8418 /* filter_options.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0420E09B1FC9AC1A008C8418 /* filter_options.cpp */; };
 		0420E09F1FC9AC1A008C8418 /* filter_options.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0420E09B1FC9AC1A008C8418 /* filter_options.cpp */; };
@@ -109,6 +112,8 @@
 		040108A31FC8761300ECCC98 /* cli.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = cli.cpp; sourceTree = "<group>"; };
 		040108BE1FC8761F00ECCC98 /* cli */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = cli; sourceTree = BUILT_PRODUCTS_DIR; };
 		040937201FB94F2400FE70C7 /* filter_queue.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = filter_queue.cpp; sourceTree = "<group>"; };
+		04149F191FCCFB580042DD55 /* archive_builder.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = archive_builder.cpp; sourceTree = "<group>"; };
+		04149F1A1FCCFB580042DD55 /* archive_builder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = archive_builder.h; sourceTree = "<group>"; };
 		0420E09B1FC9AC1A008C8418 /* filter_options.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = filter_options.cpp; sourceTree = "<group>"; };
 		0420E09C1FC9AC1A008C8418 /* filter_options.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = filter_options.h; sourceTree = "<group>"; };
 		0420E0A11FC9E151008C8418 /* test_support.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = test_support.cpp; sourceTree = "<group>"; };
@@ -307,6 +312,8 @@
 				0497EC131FB384E400011D57 /* header.h */,
 				0497EC121FB384E400011D57 /* archive.h */,
 				0497EC111FB384E400011D57 /* archive.cpp */,
+				04149F1A1FCCFB580042DD55 /* archive_builder.h */,
+				04149F191FCCFB580042DD55 /* archive_builder.cpp */,
 				0497EC161FB40D9D00011D57 /* filter_queue.h */,
 				040937201FB94F2400FE70C7 /* filter_queue.cpp */,
 				0420E09C1FC9AC1A008C8418 /* filter_options.h */,
@@ -577,6 +584,7 @@
 				040108BF1FC8762F00ECCC98 /* cli.cpp in Sources */,
 				040108AF1FC8761F00ECCC98 /* aes.cpp in Sources */,
 				040108B01FC8761F00ECCC98 /* format.cc in Sources */,
+				04149F1D1FCCFB580042DD55 /* archive_builder.cpp in Sources */,
 				040108B11FC8761F00ECCC98 /* path.cpp in Sources */,
 				040108B21FC8761F00ECCC98 /* filter_queue.cpp in Sources */,
 				040108B31FC8761F00ECCC98 /* sha1.cpp in Sources */,
@@ -604,6 +612,7 @@
 				04D118311FA21A4900C59EC3 /* posix.cc in Sources */,
 				049CD8251FB1704C001E7DB8 /* aes.cpp in Sources */,
 				04D1182F1FA21A4900C59EC3 /* format.cc in Sources */,
+				04149F1B1FCCFB580042DD55 /* archive_builder.cpp in Sources */,
 				04D1182E1FA21A4900C59EC3 /* path.cpp in Sources */,
 				040937211FB94F2400FE70C7 /* filter_queue.cpp in Sources */,
 				04D118541FA25B4000C59EC3 /* sha1.cpp in Sources */,
@@ -631,6 +640,7 @@
 				049CD8261FB1704C001E7DB8 /* aes.cpp in Sources */,
 				04D118471FA21C5700C59EC3 /* path.cpp in Sources */,
 				04D118481FA21C5700C59EC3 /* crc32.cpp in Sources */,
+				04149F1C1FCCFB580042DD55 /* archive_builder.cpp in Sources */,
 				040937221FB94F2400FE70C7 /* filter_queue.cpp in Sources */,
 				04D118551FA25B4000C59EC3 /* sha1.cpp in Sources */,
 				046B66D91FB2B76E007B58BD /* deflate_filter.cpp in Sources */,

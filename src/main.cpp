@@ -169,10 +169,13 @@ int mainzzzz(int argc, const char * argv[])
 }
 
 #include <numeric>
+#include "box/archive_builder.h"
 
 int main(int argc, const char * argv[])
 {
-  std::vector<std::string> fileNames = {
+  ArchiveBuilder builder(CachePolicy(CachePolicy::Mode::ALWAYS, 0));
+  
+  std::vector<path> paths = {
     "/Volumes/RAMDisk/test/Pocket Monsters - Crystal Version (Japan).gbc",
     "/Volumes/RAMDisk/test/Pokemon - Crystal Version (USA, Europe) (Rev A).gbc",
     "/Volumes/RAMDisk/test/Pokemon - Crystal Version (USA, Europe).gbc",
@@ -184,24 +187,21 @@ int main(int argc, const char * argv[])
   
   size_t baseIndex = 2;
   
-  std::vector<file_data_source> sources;
-  std::transform(fileNames.begin(), fileNames.end(), std::back_inserter(sources), [](const std::string& fileName) {
-    return file_data_source(path(fileName));
-  });
-  
+  const auto sources = builder.buildSources(paths);
+
   {
     ArchiveFactory::Data data;
     
-    for (box::index_t i = 0; i < fileNames.size(); ++i)
+    for (box::index_t i = 0; i < paths.size(); ++i)
     {
-      sources[i].rewind();
+      sources[i]->rewind();
       
       if (i == baseIndex)
       {
-        data.entries.push_back({ strings::fileNameFromPath(fileNames[i]), &sources[i], { new builders::lzma_builder(MB128) } });
+        data.entries.push_back({ paths[i].filename(), sources[i].get(), { new builders::lzma_builder(MB128) } });
       }
       else
-        data.entries.push_back({ strings::fileNameFromPath(fileNames[i]), &sources[i], { new builders::xdelta3_builder(MB128, &sources[baseIndex], MB16, sources[baseIndex].size())/*, new builders::lzma_builder(derived1.size() >> 2)*/ } });
+        data.entries.push_back({ paths[i].filename(), sources[i].get(), { new builders::xdelta3_builder(MB128, sources[baseIndex].get(), MB16, sources[baseIndex]->size())/*, new builders::lzma_builder(derived1.size() >> 2)*/ } });
 
       data.streams.push_back({ { i } });
     }
@@ -216,10 +216,10 @@ int main(int argc, const char * argv[])
   {
     ArchiveFactory::Data data;
     
-    for (box::index_t i = 0; i < fileNames.size(); ++i)
+    for (box::index_t i = 0; i < paths.size(); ++i)
     {
-      sources[i].rewind();
-      data.entries.push_back({ strings::fileNameFromPath(fileNames[i]), &sources[i], { } });
+      sources[i]->rewind();
+      data.entries.push_back({ paths[i].filename(), sources[i].get(), { } });
     }
     
     ArchiveEntry::ref base = 0;

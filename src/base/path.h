@@ -43,6 +43,8 @@ public:
   
   path removeLast() const;
   path parent() const { return removeLast(); }
+  
+  std::string filename() const;
 
   const std::string& data() { return _data; }
   const char* c_str() const { return _data.c_str(); }

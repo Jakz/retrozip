@@ -48,6 +48,13 @@ path path::relativizeChildren(const path& children) const
     return path(children._data.substr(_data.length()+1));
 }
 
+std::string path::filename() const
+{
+  size_t index = _data.find_last_of(SEPARATOR);
+
+  return index != std::string::npos ? _data.substr(index+1) : _data;
+}
+
 bool endsWith(const std::string& str, char c) { return str.back() == c; }
 bool startsWith(const std::string& str, char c) { return str.front() == c; }
 path path::append(const path& other) const
