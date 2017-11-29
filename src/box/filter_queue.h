@@ -13,7 +13,8 @@ class filter_repository;
 struct archive_environment
 {
   Archive* archive;
-  filter_repository* repository;
+  const filter_repository* repository;
+  mutable std::unordered_map<data_source*, box::DigestInfo> digestCache;
 };
 
 struct filter_builder
@@ -31,6 +32,7 @@ public:
   virtual data_source* unapply(data_source* source) const = 0;
   virtual box::payload_uid identifier() const = 0;
   virtual memory_buffer payload() const = 0;
+  virtual void setup(const archive_environment& env) { }
 };
 
 struct symmetric_filter_builder : public filter_builder
@@ -113,6 +115,12 @@ public:
   }
   
   void unserialize(memory_buffer& data);
+  
+  void setup(const archive_environment& env) const
+  {
+    for (const auto& builder : _builders)
+      builder->setup(env);
+  }
   
   void add(filter_builder* builder)
   {
@@ -281,12 +289,15 @@ namespace builders
     box::index_t _sourceIndex;
     seekable_data_source* _source;
     
+    box::DigestInfo _sourceDigest;
+    
     size_t _xdeltaWindowSize;
     size_t _sourceBlockSize;
     
   public:
     xdelta3_builder(size_t bufferSize, seekable_data_source* source, size_t xdeltaWindowSize, size_t sourceBlockSize) : filter_builder(bufferSize), _source(source), _xdeltaWindowSize(xdeltaWindowSize), _sourceBlockSize(sourceBlockSize) { }
-    xdelta3_builder(size_t bufferSize, box::index_t sourceIndex, size_t xdeltaWindowSize, size_t sourceBlockSize) : filter_builder(bufferSize), _source(nullptr), _xdeltaWindowSize(xdeltaWindowSize), _sourceBlockSize(sourceBlockSize) { }
+    
+    void setup(const archive_environment& env) override;
     
     box::payload_uid identifier() const override { return identifier::XDELTA3_FILTER; }
     memory_buffer payload() const override { return memory_buffer(0); }

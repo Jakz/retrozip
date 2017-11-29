@@ -73,12 +73,13 @@ namespace box
 
   struct DigestInfo
   {
+    size_t size;
     hash::crc32_t crc32;
     hash::md5_t md5;
     hash::sha1_t sha1;
     
-    DigestInfo() : crc32(0), md5(), sha1() { }
-    DigestInfo(hash::crc32_t crc32, const hash::md5_t& md5, const hash::sha1_t& sha1) : crc32(crc32), md5(md5), sha1(sha1) { }
+    DigestInfo() : size(0), crc32(0), md5(), sha1() { }
+    DigestInfo(size_t size, hash::crc32_t crc32, const hash::md5_t& md5, const hash::sha1_t& sha1) : size(size), crc32(crc32), md5(md5), sha1(sha1) { }
   };
   
   enum class StorageMode : u32;
@@ -86,7 +87,7 @@ namespace box
   
   struct Entry
   {
-    length_t originalSize;
+    //length_t originalSize; //TODO moved to DigestInfo
     length_t filteredSize;
     length_t compressedSize; //TODO: probably useless because this should store the size in bytes inside a stream but most compressed streams are unseekable in any case
     
@@ -101,7 +102,7 @@ namespace box
     offset_t entryNameOffset;
     
     Entry() :
-      originalSize(0), filteredSize(0), compressedSize(0), digest(),
+      filteredSize(0), compressedSize(0), digest(),
       stream(INVALID_INDEX), indexInStream(INVALID_INDEX) { }
   } __attribute__((packed));
   

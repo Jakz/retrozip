@@ -3,6 +3,26 @@
 #include "core/data_filter.h"
 #include "patch/xdelta3/xdelta3.h"
 
+namespace options
+{
+  class Xdelta3
+  {
+    enum class Compression
+    {
+      NONE,
+      STATIC_HUFFMAN,
+      ADAPTIVE_HUFFMAN,
+      LZMA
+    };
+    
+    using Level = u32;
+    
+  private:
+    size_t windowSize;
+    size_t sourceBlockSize;
+  };
+}
+
 using xd3_function = int (*) (xd3_stream*);
 
 template<xd3_function FUNCTION>

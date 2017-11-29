@@ -88,3 +88,23 @@ data_source* builders::xdelta3_builder::unapply(data_source* source) const
   return new source_filter<xdelta3_decoder>(source, _source, _bufferSize, _xdeltaWindowSize, _sourceBlockSize);
 }
 
+void builders::xdelta3_builder::setup(const archive_environment& env)
+{
+  _source->rewind();
+  
+  auto cached = env.digestCache.find(_source);
+  
+  if (cached != env.digestCache.end())
+    this->_sourceDigest = cached->second;
+  else
+  {
+    unbuffered_source_filter<filters::data_counter> counter(_source);
+    unbuffered_source_filter<filters::multiple_digest_filter> digester(&counter);
+    null_data_sink sink;
+    passthrough_pipe pipe(&digester, &sink, _bufferSize);
+    pipe.process();
+    this->_sourceDigest = box::DigestInfo(counter.filter().count(), digester.filter().crc32(), digester.filter().md5(), digester.filter().sha1());
+    env.digestCache.emplace(std::make_pair(_source, _sourceDigest));
+  }
+
+}

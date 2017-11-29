@@ -373,7 +373,8 @@ void Archive::write(W& w)
         
         sectionHeader.size = static_cast<box::count_t>(offset - base);
         
-        TRACE_A("%p: archive::write() written group table of %lu bytes at %Xh (%lu)", this, sectionHeader.count, sectionHeader.offset, sectionHeader.offset);
+        if (sectionHeader.size > 0)
+          TRACE_A("%p: archive::write() written group table of %lu bytes at %Xh (%lu)", this, sectionHeader.count, sectionHeader.offset, sectionHeader.offset);
         break;
       }
         
@@ -649,7 +650,9 @@ void Archive::writeStream(W& w, ArchiveStream& stream)
   std::vector<data_source_helper> sources;
   
   sources.reserve(stream.entries().size());
-
+  
+  archive_environment env = { this, filter_repository::instance() };
+  
   for (ArchiveEntry::ref index : stream.entries())
   {
     ArchiveEntry& entry = _entries[index];
@@ -661,6 +664,7 @@ void Archive::writeStream(W& w, ArchiveStream& stream)
     auto* digester = new digester_t(inputCounter, _options.digest.crc32, _options.digest.md5, _options.digest.sha1);
     
     /* then we apply all filters from entry */
+    entry.filters().setup(env);
     filter_cache cache = entry.filters().apply(digester);
 
     /* size of input transformed by entry filters before being sent to stream */
@@ -685,6 +689,7 @@ void Archive::writeStream(W& w, ArchiveStream& stream)
   
   
   /* then we apply all filters from stream */
+  stream.filters().setup(env);
   filter_cache streamCache = stream.filters().apply(&source);
   
   counter_t compressedCounter(streamCache.get());
@@ -719,7 +724,7 @@ void Archive::writeStream(W& w, ArchiveStream& stream)
   {
     auto& entry = helper.entry;
     
-    entry.binary().originalSize = helper.inputCounter->filter().count();
+    entry.binary().digest.size = helper.inputCounter->filter().count();
     entry.binary().filteredSize = helper.filteredCounter->filter().count();
     
     if (_options.digest.crc32)
@@ -765,7 +770,7 @@ void Archive::writeEntry(W& w, ArchiveStream& stream, ArchiveEntry& entry)
   passthrough_pipe pipe(source, &w, _options.bufferSize);
   pipe.process();
   
-  entry.binary().originalSize = inputCounter.filter().count();
+  entry.binary().digest.size = inputCounter.filter().count();
   entry.binary().filteredSize = filteredInputCounter.filter().count();
   entry.binary().compressedSize = outputCounter.filter().count();
   
@@ -780,7 +785,7 @@ void Archive::writeEntry(W& w, ArchiveStream& stream, ArchiveEntry& entry)
   if (_options.digest.sha1)
     entry.binary().digest.sha1 = digester.filter().sha1();
   
-  TRACE_A("%p: archive::write() written %lu bytes, filtered into %lu and compressed into %lu bytes", this, entry.binary().originalSize, entry.binary().filteredSize, entry.binary().compressedSize);
+  TRACE_A("%p: archive::write() written %lu bytes, filtered into %lu and compressed into %lu bytes", this, entry.binary().digest.size, entry.binary().filteredSize, entry.binary().compressedSize);
   
   //entry.binary().indexInStream
   //entry.binary().stream
@@ -814,7 +819,7 @@ data_source* ArchiveReadHandle::source(bool total)
 {
   _cache.clear();
   
-  TRACE_A("%p: archive::read() reading entry from stream %lu:%lu (size: %lu %lu %lu)", this, _entry.binary().stream, _entry.binary().indexInStream, _entry.binary().originalSize, _entry.binary().filteredSize, _entry.binary().compressedSize);
+  TRACE_A("%p: archive::read() reading entry from stream %lu:%lu (size: %lu %lu %lu)", this, _entry.binary().stream, _entry.binary().indexInStream, _entry.binary().digest.size, _entry.binary().filteredSize, _entry.binary().compressedSize);
 
   /* first we need to know if stream is seekable, if it is we can seek to correct entry
      offset before reading from it, otherwise we need to skip */
@@ -855,13 +860,13 @@ data_source* ArchiveReadHandle::source(bool total)
   if (!isSeekable)
   {
     size_t skipAmount = 0;
-    size_t amount = total ? _entry.binary().originalSize : _entry.binary().filteredSize;
+    size_t amount = total ? _entry.binary().digest.size : _entry.binary().filteredSize;
     
     for (box::index_t i = 0; i < _entry.binary().indexInStream; ++i)
     {
       const auto& b = _archive.entries()[stream.entries()[i]].binary();
       /* the amount to skip depends if we're extracting from stream filters or from both stream and entry */
-      skipAmount += total ? b.originalSize : b.filteredSize;
+      skipAmount += total ? b.digest.size : b.filteredSize;
     }
     
     TRACE_A("%p: archive::read() stream not seekable, preparing to seek to %lu+%lu and read %lu bytes", this, offset, skipAmount, amount);

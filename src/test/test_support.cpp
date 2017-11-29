@@ -81,6 +81,7 @@ void testing::ArchiveTester::verify(const ArchiveFactory::Data& data, const Arch
 {
   /* magic number and checksum */
   REQUIRE(verify.isValidMagicNumber());
+  REQUIRE(verify.header().fileLength == buffer.size());
   if (verify.header().hasFlag(box::HeaderFlag::INTEGRITY_CHECKSUM_ENABLED))
     REQUIRE(verify.isValidGlobalChecksum(buffer));
   
@@ -95,7 +96,7 @@ void testing::ArchiveTester::verify(const ArchiveFactory::Data& data, const Arch
     const auto& entry = verify.entries()[i];
     
     REQUIRE(dentry.name == entry.name()); /* name match */
-    REQUIRE(((memory_buffer*)dentry.source)->size() == entry.binary().originalSize); /* uncompressed size match */
+    REQUIRE(((memory_buffer*)dentry.source)->size() == entry.binary().digest.size); /* uncompressed size match */
     
     REQUIRE(dentry.filters.size() == entry.filters().size()); /* filter count match */
     
@@ -231,7 +232,7 @@ void testing::ArchiveTester::verify(const ArchiveFactory::Data& data, const Arch
     data_source* source = handle.source(true);
     
     memory_buffer sink;
-    passthrough_pipe pipe(source, &sink, entry.binary().originalSize);
+    passthrough_pipe pipe(source, &sink, entry.binary().digest.size);
     pipe.process();
     
     REQUIRE(*((memory_buffer*)data.entries[i].source) == sink);

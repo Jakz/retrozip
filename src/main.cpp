@@ -175,6 +175,18 @@ int main(int argc, const char * argv[])
 {
   ArchiveBuilder builder(CachePolicy(CachePolicy::Mode::ALWAYS, 0));
   
+  /*{
+    const auto sources = builder.buildSourcesFromFolder("/Volumes/RAMDisk/test2");
+    Archive archive = builder.buildBestSingleStreamDeltaArchive(sources);
+    memory_buffer sink;
+    archive.write(sink);
+    sink.serialize(file_handle("/Volumes/RAMDisk/paper-mario-64.box", file_mode::WRITING));
+  }
+   
+  return 0;*/
+  
+  
+  
   std::vector<path> paths = {
     "/Volumes/RAMDisk/test/Pocket Monsters - Crystal Version (Japan).gbc",
     "/Volumes/RAMDisk/test/Pokemon - Crystal Version (USA, Europe) (Rev A).gbc",
@@ -190,46 +202,15 @@ int main(int argc, const char * argv[])
   const auto sources = builder.buildSources(paths);
 
   {
-    ArchiveFactory::Data data;
-    
-    for (box::index_t i = 0; i < paths.size(); ++i)
-    {
-      sources[i]->rewind();
-      
-      if (i == baseIndex)
-      {
-        data.entries.push_back({ paths[i].filename(), sources[i].get(), { new builders::lzma_builder(MB128) } });
-      }
-      else
-        data.entries.push_back({ paths[i].filename(), sources[i].get(), { new builders::xdelta3_builder(MB128, sources[baseIndex].get(), MB16, sources[baseIndex]->size())/*, new builders::lzma_builder(derived1.size() >> 2)*/ } });
-
-      data.streams.push_back({ { i } });
-    }
-    
+    Archive archive = builder.buildBestSingleStreamDeltaArchive(sources);
     memory_buffer sink;
-    Archive archive = Archive::ofData(data);
-    archive.options().bufferSize = MB128;
     archive.write(sink);
     sink.serialize(file_handle("/Volumes/RAMDisk/test/test-lzma+delta.box", file_mode::WRITING));
   }
   
   {
-    ArchiveFactory::Data data;
-    
-    for (box::index_t i = 0; i < paths.size(); ++i)
-    {
-      sources[i]->rewind();
-      data.entries.push_back({ paths[i].filename(), sources[i].get(), { } });
-    }
-    
-    ArchiveEntry::ref base = 0;
-    std::vector<ArchiveEntry::ref> indices(sources.size());
-    std::generate_n(indices.begin(), indices.size(), [&base]() { return base++; });
-    data.streams.push_back({ indices, { new builders::lzma_builder(MB16) } });
-    
+    Archive archive = builder.buildSingleStreamSolidArchive(sources);
     memory_buffer sink;
-    Archive archive = Archive::ofData(data);
-    archive.options().bufferSize = MB128;
     archive.write(sink);
     sink.serialize(file_handle("/Volumes/RAMDisk/test/test-solid.box", file_mode::WRITING));
   }
