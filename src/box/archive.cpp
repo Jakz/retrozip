@@ -579,6 +579,12 @@ void Archive::read(R& r)
   for (const auto& section : _headers)
     readSection(r, section.second);
   
+  /* unserialize payload for filters */
+  for (auto& entry : _entries)
+    entry.unserializePayload(env);
+  for (auto& stream : _streams)
+    stream.unserializePayload(env);
+
   /* for each entry map it to the correct stream at correct index */
   ArchiveEntry::ref index = 0;
   for (const auto& entry : _entries)
@@ -796,6 +802,7 @@ void Archive::writeEntryPayloads(W& w)
 {
   for (const ArchiveEntry& entry : _entries)
   {
+    entry.serializePayload(env);
     const memory_buffer& payload = entry.payload();
     
     w.seek(entry.binary().payload);
@@ -808,6 +815,7 @@ void Archive::writeStreamPayloads(W& w)
 {
   for (const ArchiveStream& stream : _streams)
   {
+    stream.serializePayload(env);
     const memory_buffer& payload = stream.payload();
     
     w.seek(stream.binary().payload);

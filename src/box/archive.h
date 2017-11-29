@@ -13,7 +13,46 @@ class memory_buffer;
 using W = memory_buffer;
 using R = seekable_data_source;
 
-class ArchiveEntry
+template<typename ENV>
+class FilteredEntry
+{
+private:
+  filter_builder_queue _filters;
+  mutable memory_buffer _payload;
+  
+public:
+  FilteredEntry() { }
+  FilteredEntry(const std::vector<filter_builder*>& filters) : _filters(filters) { }
+  FilteredEntry(const std::vector<byte>& payload) : _payload(payload.size())
+  {
+    _payload.write(payload.data(), payload.size());
+  }
+  
+  box::count_t payloadLength() const
+  {
+    return static_cast<box::count_t>(_filters.payloadLength());
+  }
+  
+  const memory_buffer& payload() const
+  {
+    return _payload;
+  }
+  
+  void serializePayload(const ENV& env) const
+  {
+    _payload = _filters.payload();
+  }
+  
+  void unserializePayload(const ENV& env)
+  {
+    _filters.unserialize(_payload);
+  }
+  
+  void addFilter(filter_builder* builder) { _filters.add(builder); }
+  const filter_builder_queue& filters() const { return _filters; }
+};
+
+class ArchiveEntry : public FilteredEntry<archive_environment>
 {
 public:
   using ref = box::index_t;
@@ -24,21 +63,15 @@ private:
   /* TODO: manage data ownership */
   data_source* _source;
   std::string _name;
-  filter_builder_queue _filters;
-  mutable memory_buffer _payload;
-    
-  void serializePayload() const { _payload = _filters.payload(); }
-  void unserializePayload() { _filters.unserialize(_payload); }
-  
+
 public:
-  ArchiveEntry(const std::string& name, const box::Entry& binary, const std::vector<byte>& payload) :
-    _name(name), _source(nullptr), _binary(binary), _payload(payload.size())
+  ArchiveEntry(const std::string& name, const box::Entry& binary, const std::vector<byte>& payload) : FilteredEntry<archive_environment>(payload),
+    _name(name), _source(nullptr), _binary(binary)
   {
-    _payload.write(payload.data(), payload.size());
-    unserializePayload();
+
   }
   
-  ArchiveEntry(const std::string& name, data_source* source, const std::vector<filter_builder*>& filters) : _source(source), _name(name), _filters(filters) { }
+  ArchiveEntry(const std::string& name, data_source* source, const std::vector<filter_builder*>& filters) : FilteredEntry<archive_environment>(filters), _source(source), _name(name) { }
   ArchiveEntry(const std::string& name, data_source* source) : _source(source), _name(name) { }
   
   void setName(const std::string& name) { this->_name = name; }
@@ -46,70 +79,36 @@ public:
   
   const decltype(_source)& source() { return _source; }
 
-  const memory_buffer& payload() const
-  {
-    serializePayload();
-    return _payload;
-  }
-  
-  box::count_t payloadLength() const
-  {
-    return static_cast<box::count_t>(_filters.payloadLength());
-  }
-  
   void mapToStream(box::index_t streamIndex, box::index_t indexInStream)
   {
     _binary.stream = streamIndex;
     _binary.indexInStream = indexInStream;
   }
-
-  void addFilter(filter_builder* builder) { _filters.add(builder); }
-  const filter_builder_queue& filters() const { return _filters; }
   
   box::Entry& binary() const { return _binary; }
 };
 
-class ArchiveStream
+class ArchiveStream : public FilteredEntry<archive_environment>
 {
 public:
   using ref = box::index_t;
   
 private:
   mutable box::Stream _binary;
-  
   std::vector<ArchiveEntry::ref> _entries;
-  filter_builder_queue _filters;
-  mutable memory_buffer _payload;
 
 public:
-  ArchiveStream(const std::vector<ArchiveEntry::ref>& indices, const std::vector<filter_builder*>& filters) : _entries(indices), _filters(filters) { }
+  ArchiveStream(const std::vector<ArchiveEntry::ref>& indices, const std::vector<filter_builder*>& filters) : FilteredEntry<archive_environment>(filters), _entries(indices) { }
   ArchiveStream(ArchiveEntry::ref entry) { assignEntry(entry); }
   ArchiveStream() { }
-  ArchiveStream(const box::Stream& binary, const std::vector<byte>& payload) : _binary(binary), _payload(payload.size())
+  ArchiveStream(const box::Stream& binary, const std::vector<byte>& payload) : FilteredEntry<archive_environment>(payload), _binary(binary)
   {
-    _payload.write(payload.data(), payload.size());
-    _filters.unserialize(_payload);
   }
   
   void assignEntry(ArchiveEntry::ref entry) { _entries.push_back(entry); }
   void assignEntryAtIndex(size_t index, ArchiveEntry::ref entry) { _entries.resize(index+1, box::INVALID_INDEX); _entries[index] = entry; }
   
   const std::vector<ArchiveEntry::ref>& entries() const { return _entries; }
-  
-                
-  const memory_buffer& payload() const
-  {
-    _payload = _filters.payload();
-    return _payload;
-  }
-  
-  box::count_t payloadLength() const
-  {
-    return static_cast<box::count_t>(_filters.payloadLength());
-  }
-  
-  void addFilter(filter_builder* builder) { _filters.add(builder); }
-  const filter_builder_queue& filters() const { return _filters; }
   
   box::Stream& binary() const { return _binary; }
 };
