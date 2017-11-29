@@ -117,7 +117,7 @@ Archive ArchiveBuilder::buildSingleStreamBaseWithDeltasArchive(const data_source
 
 Archive ArchiveBuilder::buildBestSingleStreamDeltaArchive(const data_source_vector& sources)
 {
-  TRACE_AB("%p builder::bestDeltaArchive()", this, sources.size());
+  TRACE_AB("%p: builder::bestDeltaArchive()", this, sources.size());
   
   //TODO: totally unoptmized for now
   size_t index = 0;
@@ -140,4 +140,31 @@ Archive ArchiveBuilder::buildBestSingleStreamDeltaArchive(const data_source_vect
   TRACE_AB("%p builder::bestDeltaArchive(): Best base entry is %s, archive size is %s", this, sources[index].name.c_str(), strings::humanReadableSize(size, false).c_str());
   
   return buildSingleStreamBaseWithDeltasArchive(sources, index);
+}
+
+
+void ArchiveBuilder::extractWholeArchiveIntoFolder(const class path& path, const class path& destination)
+{
+  const auto* fs = FileSystem::i();
+  
+  if (!fs->existsAsFile(path))
+    throw exceptions::file_not_found(path);
+  
+  Archive archive;
+  file_data_source source(path);
+  archive.options().bufferSize = MB1;
+  archive.read(source);
+  
+  for (const auto& entry : archive.entries())
+  {
+    TRACE_AB("%p: builder::extract() extracting entry %s (%s)", this, entry.name().c_str(), entry.filters().mnemonic().c_str());
+    auto handle = ArchiveReadHandle(source, archive, entry);
+    auto* entrySource = handle.source(true);
+    
+    class path dest = destination.append(entry.name());
+    file_data_sink sink(dest);
+    
+    passthrough_pipe pipe(entrySource, &sink, _bufferSize);
+    pipe.process();
+  }
 }

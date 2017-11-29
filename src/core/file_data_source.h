@@ -59,7 +59,7 @@ private:
   file_handle _handle;
   
 public:
-  file_data_sink(path path, bool waitForOpen = false) : _path(path), _handle(waitForOpen ? file_handle(path) : file_handle(path, file_mode::APPENDING)) { }
+  file_data_sink(path path, bool waitForOpen = false) : _path(path), _handle(waitForOpen ? file_handle(path) : file_handle(path, file_mode::WRITING)) { }
     
   void open()
   {

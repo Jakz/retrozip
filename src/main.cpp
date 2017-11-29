@@ -174,6 +174,7 @@ int mainzzzz(int argc, const char * argv[])
 int main(int argc, const char * argv[])
 {
   ArchiveBuilder builder(CachePolicy(CachePolicy::Mode::ALWAYS, 0));
+  builder.setBufferSize(MB1);
   
   /*{
     const auto sources = builder.buildSourcesFromFolder("/Volumes/RAMDisk/test2");
@@ -202,11 +203,13 @@ int main(int argc, const char * argv[])
   const auto sources = builder.buildSources(paths);
 
   {
-    Archive archive = builder.buildSingleStreamBaseWithDeltasArchive(sources, baseIndex);
+    /*Archive archive = builder.buildSingleStreamBaseWithDeltasArchive(sources, baseIndex);
     //Archive archive = builder.buildBestSingleStreamDeltaArchive(sources);
     memory_buffer sink;
     archive.write(sink);
-    sink.serialize(file_handle("/Volumes/RAMDisk/test/test-lzma+delta.box", file_mode::WRITING));
+    sink.serialize(file_handle("/Volumes/RAMDisk/test/test-lzma+delta.box", file_mode::WRITING));*/
+    
+    builder.extractWholeArchiveIntoFolder("/Volumes/RAMDisk/test/test-lzma+delta.box", "/Volumes/RAMDisk/dest");
   }
   
   return 0;

@@ -45,7 +45,7 @@ public:
   
   void unserializePayload(const ENV& env)
   {
-    _filters.unserialize(_payload);
+    _filters.unserialize(env, _payload);
   }
   
   void addFilter(filter_builder* builder) { _filters.add(builder); }
@@ -161,6 +161,7 @@ class ArchiveReadHandle : public data_source
 {
 private:
   R& r;
+  archive_environment _env;
   const Archive& _archive;
   const ArchiveEntry& _entry;
   filter_cache _cache;
@@ -218,7 +219,6 @@ private:
   bool willSectionBeSerialized(box::Section section) const;
   
   void writeStream(W& w, ArchiveStream& stream);
-  void writeEntry(W& w, ArchiveStream& stream, ArchiveEntry& entry);
   void writeEntryPayloads(W& w);
   void writeStreamPayloads(W& w);
   

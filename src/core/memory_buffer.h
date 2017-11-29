@@ -119,6 +119,8 @@ public:
   void seek(off_t offset) override { seek(offset, Seek::SET); }
   void seek(off_t offset, Seek origin)
   {
+    TRACE_MB("%p: memory_buffer::seek(%lu, %d)", this, offset, origin);
+
     switch (origin) {
       case Seek::CUR: _position += offset; _position = std::max(0LL, _position); break;
       case Seek::SET: _position = std::max(0LL, offset); break;

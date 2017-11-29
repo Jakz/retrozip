@@ -83,8 +83,10 @@ void compression::lzma_filter<IS_ENCODER>::process()
   //TODO: add additional check statuses?
   assert(_r == LZMA_OK || _r == LZMA_STREAM_END || _r == LZMA_NO_CHECK);
   markFinished(_r == LZMA_STREAM_END);
+  if (_r == LZMA_STREAM_END)
+    markEnded();
   
-  TRACE_IF(_r == LZMA_STREAM_END, "%p: %s::process(): finished", this, name().c_str());
+  TRACE_IF(_r == LZMA_STREAM_END, "%p: %s::process() finished", this, name().c_str());
 }
 
 template class compression::lzma_filter<true>;

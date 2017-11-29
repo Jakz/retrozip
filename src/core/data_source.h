@@ -249,3 +249,26 @@ public:
   
   data_sink* operator[](size_t index) const { return _sinks[index]; }
 };
+
+template<typename S>
+class lambda_init_data_source : public S
+{
+private:
+  bool _executed;
+  std::function<void(void)> _lambda;
+  S* _source;
+  
+public:
+  lambda_init_data_source(S* source, std::function<void(void)> lambda) : _source(source), _executed(false), _lambda(lambda) { }
+  
+  size_t read(byte* dest, size_t amount) override
+  {
+    if (!_executed)
+    {
+      _lambda();
+      _executed = true;
+    }
+    
+    return _source->read(dest, amount);
+  }
+};

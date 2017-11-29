@@ -1,5 +1,9 @@
 #include "filter_queue.h"
 
+#include "archive.h" /* needed for options() */
+
+#include <sstream>
+
 const filter_repository* filter_repository::instance()
 {
   static bool init = false;
@@ -7,24 +11,24 @@ const filter_repository* filter_repository::instance()
   
   if (!init)
   {
-    repository.registerGenerator(builders::identifier::XOR_FILTER, [] (const byte* payload) {
-      size_t bufferSize = repository.bufferSizeFor(builders::identifier::XOR_FILTER, payload);
+    repository.registerGenerator(builders::identifier::XOR_FILTER, [] (const byte* payload, const archive_environment& env) {
+      size_t bufferSize = env.archive->options().bufferSize;
       return new builders::xor_builder(bufferSize, payload);
     });
     
-    repository.registerGenerator(builders::identifier::DEFLATE_FILTER, [] (const byte* payload) {
-      size_t bufferSize = repository.bufferSizeFor(builders::identifier::DEFLATE_FILTER, payload);
+    repository.registerGenerator(builders::identifier::DEFLATE_FILTER, [] (const byte* payload, const archive_environment& env) {
+      size_t bufferSize = env.archive->options().bufferSize;
       return new builders::deflate_builder(bufferSize);
     });
     
-    repository.registerGenerator(builders::identifier::LZMA_FILTER, [] (const byte* payload) {
-      size_t bufferSize = repository.bufferSizeFor(builders::identifier::LZMA_FILTER, payload);
+    repository.registerGenerator(builders::identifier::LZMA_FILTER, [] (const byte* payload, const archive_environment& env) {
+      size_t bufferSize = env.archive->options().bufferSize;
       return new builders::lzma_builder(bufferSize);
     });
     
-    repository.registerGenerator(builders::identifier::XDELTA3_FILTER, [] (const byte* payload) {
-      size_t bufferSize = repository.bufferSizeFor(builders::identifier::XDELTA3_FILTER, payload);
-      return new builders::lzma_builder(bufferSize);
+    repository.registerGenerator(builders::identifier::XDELTA3_FILTER, [] (const byte* payload, const archive_environment& env) {
+      size_t bufferSize = env.archive->options().bufferSize;
+      return new builders::xdelta3_builder(bufferSize, payload);
     });
     
     
@@ -34,19 +38,25 @@ const filter_repository* filter_repository::instance()
   return &repository;
 }
 
-filter_builder* filter_repository::generate(box::payload_uid identifier, const byte* data) const
+filter_builder* filter_repository::generate(box::payload_uid identifier, const byte* data, const archive_environment& env) const
 {
   const auto it = repository.find(identifier);
   
   if (it == repository.end())
     throw exceptions::unserialization_exception(fmt::sprintf("unknown filter identifier: %lu", identifier));
   else
-    return it->second(data);
+    return it->second(data, env);
 }
 
 
+std::string filter_builder_queue::mnemonic() const
+{
+  std::stringstream ss;
+  for (const auto& builder : _builders) ss << builder->mnemonic() << ";";
+  return ss.str();
+}
 
-void filter_builder_queue::unserialize(memory_buffer& data)
+void filter_builder_queue::unserialize(const archive_environment& env, memory_buffer& data)
 {
   bool hasNext = data.size() > 0;
   
@@ -68,7 +78,7 @@ void filter_builder_queue::unserialize(memory_buffer& data)
       hasNext = header->hasNext;
       
       box::payload_uid identifier = header->identifier;
-      add(filter_repository::instance()->generate(identifier, data.direct()));
+      add(filter_repository::instance()->generate(identifier, data.direct(), env));
       data.seek(header->length, Seek::CUR);
     }
   }
@@ -112,5 +122,38 @@ void builders::xdelta3_builder::setup(const archive_environment& env)
     this->_sourceDigest = box::DigestInfo(counter.filter().count(), digester.filter().crc32(), digester.filter().md5(), digester.filter().sha1());
     env.digestCache.emplace(std::make_pair(_source, _sourceDigest));
   }
+}
 
+void builders::xdelta3_builder::unsetup(const archive_environment& env)
+{
+  assert(_source == nullptr);
+  
+  /* search for matching source between entries */
+  for (const auto& entry : env.archive->entries())
+  {
+    /* we found a matching source */
+    if (entry.binary().digest == _sourceDigest)
+    {
+      TRACE_A("%p: xdelta3_builder::unsetup() found matching source %s", this, entry.name().c_str());
+      
+      //TODO: multiple choices here, we could build a source which is read together with this one, cache it on memory, cache it on a file etc
+      memory_buffer* sink = new memory_buffer(entry.binary().digest.size);
+      ArchiveReadHandle handle = ArchiveReadHandle(*env.r, *env.archive, entry);
+      
+      //TODO: it could be lazy or not, but source not uses seek asynchronously
+
+      passthrough_pipe pipe(handle.source(true), sink, env.archive->options().bufferSize);
+      pipe.process();
+      
+      _source = sink;
+      env.cache.emplace(std::make_pair(_sourceDigest, std::unique_ptr<seekable_data_source>(sink)));
+      
+      return;
+    }
+  }
+  
+  throw exceptions::missing_source_file_exception("can't find required source file to rebuild entry");
+  
+  //TODO: multiple ways to manage this
+  
 }

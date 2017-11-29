@@ -102,4 +102,14 @@ namespace exceptions
     unserialization_exception(const std::string& what) : _what(what) { }
     const char* what() const noexcept override { return _what.c_str(); }
   };
+  
+  class missing_source_file_exception : public box_exception
+  {
+  private:
+    const std::string _what;
+    
+  public:
+    missing_source_file_exception(const std::string& what) : _what(what) { }
+    const char* what() const noexcept override { return _what.c_str(); }
+  };
 }

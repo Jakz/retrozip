@@ -13,8 +13,15 @@ class filter_repository;
 struct archive_environment
 {
   Archive* archive;
+  union
+  {
+    seekable_data_source* r;
+    memory_buffer* w;
+  };
+  
   const filter_repository* repository;
   mutable std::unordered_map<data_source*, box::DigestInfo> digestCache;
+  mutable std::unordered_map<box::DigestInfo, std::unique_ptr<data_source>, box::DigestInfo::hash> cache;
   
   /*archive_environment& operator=(const archive_environment&) = delete;
   archive_environment(const archive_environment&) = delete;*/
@@ -38,8 +45,12 @@ public:
   virtual memory_buffer payload() const = 0;
   virtual size_t payloadLength() const = 0;
   
+  virtual std::string mnemonic() const = 0;
+  
   virtual void setup(const archive_environment& env) { }
+  virtual void unsetup(const archive_environment& env) { }
 };
+
 
 struct symmetric_filter_builder : public filter_builder
 {
@@ -128,12 +139,18 @@ public:
                            });
   }
   
-  void unserialize(memory_buffer& data);
+  void unserialize(const archive_environment& env, memory_buffer& data);
   
   void setup(const archive_environment& env) const
   {
     for (const auto& builder : _builders)
       builder->setup(env);
+  }
+  
+  void unsetup(const archive_environment& env) const
+  {
+    for (const auto& builder : _builders)
+      builder->unsetup(env);
   }
   
   void add(filter_builder* builder)
@@ -167,6 +184,8 @@ public:
     return cache;
   }
   
+  std::string mnemonic() const;
+  
   const decltype(_builders)::value_type& operator[](size_t index) const { return _builders[index]; }
   size_t size() const { return _builders.size(); }
   bool empty() const { return _builders.empty(); }
@@ -175,13 +194,11 @@ public:
 class filter_repository
 {
 public:
-  using generator_t = std::function<filter_builder*(const byte* payload)>;
+  using generator_t = std::function<filter_builder*(const byte* payload, const archive_environment&)>;
   
 private:
   std::unordered_map<box::payload_uid, generator_t> repository;
-  
-  size_t bufferSizeFor(box::payload_uid identifier, const byte* payload) { return KB16; }
-  
+    
 public:
   void registerGenerator(box::payload_uid identifier, generator_t generator)
   {
@@ -189,7 +206,7 @@ public:
     repository[identifier] = generator;
   }
   
-  filter_builder* generate(box::payload_uid identifier, const byte* data) const;
+  filter_builder* generate(box::payload_uid identifier, const byte* data, const archive_environment& env) const;
   
   static const filter_repository* instance();
 };
@@ -245,6 +262,7 @@ namespace builders
     }
     
     box::payload_uid identifier() const override { return identifier::XOR_FILTER; }
+    std::string mnemonic() const override { return fmt::sprintf("xor:key=%s", strings::fromByteArray(_key)); }
     
     size_t payloadLength() const override { return sizeof(box::slength_t) + _key.size(); }
     memory_buffer payload() const override
@@ -264,8 +282,11 @@ namespace builders
     deflate_builder(size_t bufferSize) : filter_builder(bufferSize) { }
     
     box::payload_uid identifier() const override { return identifier::DEFLATE_FILTER; }
+    std::string mnemonic() const override { return "deflate"; }
+    
     size_t payloadLength() const override { return 0; }
     memory_buffer payload() const override { return memory_buffer(0); }
+    
     
     data_source* apply(data_source* source) const override
     {
@@ -286,6 +307,8 @@ namespace builders
     lzma_builder(size_t bufferSize) : filter_builder(bufferSize) { }
     
     box::payload_uid identifier() const override { return identifier::LZMA_FILTER; }
+    std::string mnemonic() const override { return "lzma"; }
+    
     size_t payloadLength() const override { return 0; }
     memory_buffer payload() const override { return memory_buffer(0); }
     
@@ -303,7 +326,6 @@ namespace builders
   class xdelta3_builder : public filter_builder
   {
   private:
-    box::index_t _sourceIndex;
     seekable_data_source* _source;
     
     box::DigestInfo _sourceDigest;
@@ -313,16 +335,27 @@ namespace builders
     
   public:
     xdelta3_builder(size_t bufferSize, seekable_data_source* source, size_t xdeltaWindowSize, size_t sourceBlockSize) : filter_builder(bufferSize), _source(source), _xdeltaWindowSize(xdeltaWindowSize), _sourceBlockSize(sourceBlockSize) { }
+    xdelta3_builder(size_t bufferSize, const byte* payload) : filter_builder(bufferSize), _source(nullptr)
+    {
+      payload += sizeof(box::Payload);
+      _sourceDigest = *(const box::DigestInfo*)payload;
+      _xdeltaWindowSize = *(const box::length_t*)(payload + sizeof(box::DigestInfo));
+      _sourceBlockSize = *(const box::length_t*)(payload + sizeof(box::DigestInfo) + sizeof(box::length_t));
+    }
     
     void setup(const archive_environment& env) override;
+    void unsetup(const archive_environment& env) override;
     
     box::payload_uid identifier() const override { return identifier::XDELTA3_FILTER; }
+    std::string mnemonic() const override { return fmt::sprintf("xdelta3:source_size=%lu,source_crc32=%08X", _sourceDigest.size, _sourceDigest.crc32); }
     
-    size_t payloadLength() const override { return sizeof(box::DigestInfo); }
+    size_t payloadLength() const override { return sizeof(box::DigestInfo) + sizeof(box::length_t)*2; }
     memory_buffer payload() const override
     {
       memory_buffer buffer(sizeof(box::DigestInfo));
       buffer.write(_sourceDigest);
+      buffer.write((box::length_t)_xdeltaWindowSize);
+      buffer.write((box::length_t)_sourceBlockSize);
       return buffer;
     }
     

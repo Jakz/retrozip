@@ -88,19 +88,7 @@ void xdelta3_filter<FUNCTION>::process()
     else
       xd3_avail_input(&_stream, _in.head(), 0);
   }
-  
-  /*if (!isEncoder)
-   {
-   for (size_t kk = 0; kk < _in.used() + _stream.total_in; ++kk)
-   printf("%02lu ", kk);
-   printf("\n");
-   for (size_t kk = 0; kk < _in.used() + _stream.total_in; ++kk)
-   if (kk < _stream.total_in) printf("   ");
-   else printf("%02X ", _in.raw()[kk - _stream.total_in]);
-   
-   printf("\n");
-   }*/
-  
+
   _state = FUNCTION(&_stream);
   
   if (!isEncoder)

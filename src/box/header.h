@@ -40,7 +40,8 @@ namespace box
   
   enum class StreamFlag : u64
   {
-    SEEKABLE
+    SEEKABLE,
+    HAS_CHECKSUM
   };
   
   struct SectionHeader
@@ -80,6 +81,14 @@ namespace box
     
     DigestInfo() : size(0), crc32(0), md5(), sha1() { }
     DigestInfo(size_t size, hash::crc32_t crc32, const hash::md5_t& md5, const hash::sha1_t& sha1) : size(size), crc32(crc32), md5(md5), sha1(sha1) { }
+    
+    bool operator==(const DigestInfo& other) const { return size == other.size && crc32 == other.crc32 && md5 == other.md5 && sha1 == other.sha1; }
+    
+    struct hash
+    {
+      size_t operator()(const DigestInfo& digest) const { return std::hash<size_t>()(digest.crc32); }
+    };
+    
   } __attribute__((packed));
   
   enum class StorageMode : u32;
@@ -89,7 +98,6 @@ namespace box
   {
     //length_t originalSize; //TODO moved to DigestInfo
     length_t filteredSize;
-    length_t compressedSize; //TODO: probably useless because this should store the size in bytes inside a stream but most compressed streams are unseekable in any case
     
     DigestInfo digest;
     
@@ -102,7 +110,7 @@ namespace box
     offset_t entryNameOffset;
     
     Entry() :
-      filteredSize(0), compressedSize(0), digest(),
+      filteredSize(0), digest(),
       stream(INVALID_INDEX), indexInStream(INVALID_INDEX) { }
   } __attribute__((packed));
   

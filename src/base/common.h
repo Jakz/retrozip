@@ -60,8 +60,8 @@ extern void debugnnprintf(const char* str, ...);
 #define TRACE_PIPES 0
 #define TRACE_ARCHIVE 1
 #define TRACE_ARCHIVE_BUILDER 1
-#define TRACE_ENABLED 0
-#define TRACE_FILES 0
+#define TRACE_ENABLED 1
+#define TRACE_FILES 1
 #define TRACE_FILE_SYSTEM 0
 
 #define TRACE_FORCE_DISABLE 0

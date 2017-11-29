@@ -73,11 +73,19 @@ private:
   
   filter_builder* buildLZMA();
   filter_builder* buildDeflater();
+  
+  enum class Log { INFO, ERROR };
+  
+  template<typename... Args> void log(Log log, const std::string& format, Args... args);
+  template<typename... Args> void error(const std::string& format, Args... args) { log(Log::ERROR, format, args...); }
 
+  
 public:
   ArchiveBuilder(CachePolicy sourceCachingPolicy)
   : _sourceCachingPolicy(sourceCachingPolicy), _entryNameBuilder([](const path& path) { return path.filename(); }),
   _bufferSize(MB1) { }
+  
+  void setBufferSize(size_t bufferSize) { _bufferSize = bufferSize; }
   
   size_t maxBufferSize(const data_source_vector& sources);
   size_t bufferSizeForPolicy(const data_source_vector& sources);
@@ -92,5 +100,5 @@ public:
   Archive buildSingleStreamSolidArchive(const data_source_vector& sources);
   
   
-  void extractWholeArchiveIntoFolder(const path& archive, const path& destination);
+  void extractWholeArchiveIntoFolder(const class path& path, const class path& destination);
 };
