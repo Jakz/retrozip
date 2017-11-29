@@ -80,7 +80,7 @@ namespace box
     
     DigestInfo() : size(0), crc32(0), md5(), sha1() { }
     DigestInfo(size_t size, hash::crc32_t crc32, const hash::md5_t& md5, const hash::sha1_t& sha1) : size(size), crc32(crc32), md5(md5), sha1(sha1) { }
-  };
+  } __attribute__((packed));
   
   enum class StorageMode : u32;
   enum class StorageSubmode : u32;

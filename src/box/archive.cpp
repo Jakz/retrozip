@@ -209,6 +209,8 @@ void Archive::write(W& w)
   
   _headers.clear();
 
+  env = { this, filter_repository::instance() };
+
   refs refs;
   refs.header = w.reserve<box::Header>();
 
@@ -650,9 +652,7 @@ void Archive::writeStream(W& w, ArchiveStream& stream)
   std::vector<data_source_helper> sources;
   
   sources.reserve(stream.entries().size());
-  
-  archive_environment env = { this, filter_repository::instance() };
-  
+    
   for (ArchiveEntry::ref index : stream.entries())
   {
     ArchiveEntry& entry = _entries[index];

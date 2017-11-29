@@ -6,7 +6,7 @@
 #include "header.h"
 #include <vector>
 #include <unordered_map>
-
+#include <numeric>
 
 class Archive;
 class filter_repository;
@@ -15,6 +15,9 @@ struct archive_environment
   Archive* archive;
   const filter_repository* repository;
   mutable std::unordered_map<data_source*, box::DigestInfo> digestCache;
+  
+  /*archive_environment& operator=(const archive_environment&) = delete;
+  archive_environment(const archive_environment&) = delete;*/
 };
 
 struct filter_builder
@@ -31,7 +34,10 @@ public:
   virtual data_source* apply(data_source* source) const = 0;
   virtual data_source* unapply(data_source* source) const = 0;
   virtual box::payload_uid identifier() const = 0;
+  
   virtual memory_buffer payload() const = 0;
+  virtual size_t payloadLength() const = 0;
+  
   virtual void setup(const archive_environment& env) { }
 };
 
@@ -112,6 +118,14 @@ public:
     }
     
     return total;
+  }
+  
+  size_t payloadLength() const
+  {
+    return std::accumulate(_builders.begin(), _builders.end(), 0UL,
+                           [] (size_t length, const decltype(_builders)::value_type& builder) {
+                             return length + builder->payloadLength() + sizeof(box::Payload);
+                           });
   }
   
   void unserialize(memory_buffer& data);
@@ -232,9 +246,10 @@ namespace builders
     
     box::payload_uid identifier() const override { return identifier::XOR_FILTER; }
     
+    size_t payloadLength() const override { return sizeof(box::slength_t) + _key.size(); }
     memory_buffer payload() const override
     {
-      memory_buffer buffer(sizeof(box::slength_t) + _key.size());
+      memory_buffer buffer(payloadLength());
       buffer.write((box::slength_t)_key.size());
       buffer.write(_key.data(), 1, _key.size());
       return buffer;
@@ -249,6 +264,7 @@ namespace builders
     deflate_builder(size_t bufferSize) : filter_builder(bufferSize) { }
     
     box::payload_uid identifier() const override { return identifier::DEFLATE_FILTER; }
+    size_t payloadLength() const override { return 0; }
     memory_buffer payload() const override { return memory_buffer(0); }
     
     data_source* apply(data_source* source) const override
@@ -270,6 +286,7 @@ namespace builders
     lzma_builder(size_t bufferSize) : filter_builder(bufferSize) { }
     
     box::payload_uid identifier() const override { return identifier::LZMA_FILTER; }
+    size_t payloadLength() const override { return 0; }
     memory_buffer payload() const override { return memory_buffer(0); }
     
     data_source* apply(data_source* source) const override
@@ -300,7 +317,14 @@ namespace builders
     void setup(const archive_environment& env) override;
     
     box::payload_uid identifier() const override { return identifier::XDELTA3_FILTER; }
-    memory_buffer payload() const override { return memory_buffer(0); }
+    
+    size_t payloadLength() const override { return sizeof(box::DigestInfo); }
+    memory_buffer payload() const override
+    {
+      memory_buffer buffer(sizeof(box::DigestInfo));
+      buffer.write(_sourceDigest);
+      return buffer;
+    }
     
     data_source* apply(data_source* source) const override;
     data_source* unapply(data_source* source) const override;

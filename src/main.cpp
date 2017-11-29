@@ -202,11 +202,14 @@ int main(int argc, const char * argv[])
   const auto sources = builder.buildSources(paths);
 
   {
-    Archive archive = builder.buildBestSingleStreamDeltaArchive(sources);
+    Archive archive = builder.buildSingleStreamBaseWithDeltasArchive(sources, baseIndex);
+    //Archive archive = builder.buildBestSingleStreamDeltaArchive(sources);
     memory_buffer sink;
     archive.write(sink);
     sink.serialize(file_handle("/Volumes/RAMDisk/test/test-lzma+delta.box", file_mode::WRITING));
   }
+  
+  return 0;
   
   {
     Archive archive = builder.buildSingleStreamSolidArchive(sources);
@@ -214,21 +217,6 @@ int main(int argc, const char * argv[])
     archive.write(sink);
     sink.serialize(file_handle("/Volumes/RAMDisk/test/test-solid.box", file_mode::WRITING));
   }
-  
-  /*{
-    std::vector<data_source*> solidSources;
-    std::transform(sources.begin(), sources.end(), std::back_inserter(solidSources), [](file_data_source& source) {
-      source.rewind();
-      return &source;
-    });
-    multiple_data_source source(solidSources);
-    
-    file_data_sink sink("/Volumes/RAMDisk/test/solid.lzma");
-    source_filter<compression::lzma_encoder> encoder(&source, MB128);
-    
-    passthrough_pipe pipe(&encoder, &sink, MB128);
-    pipe.process();
-  }*/
-  
+
   return 0;
 }

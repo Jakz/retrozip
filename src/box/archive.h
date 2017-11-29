@@ -54,7 +54,7 @@ public:
   
   box::count_t payloadLength() const
   {
-    return static_cast<box::count_t>(payload().size());
+    return static_cast<box::count_t>(_filters.payloadLength());
   }
   
   void mapToStream(box::index_t streamIndex, box::index_t indexInStream)
@@ -105,7 +105,7 @@ public:
   
   box::count_t payloadLength() const
   {
-    return static_cast<box::count_t>(payload().size());
+    return static_cast<box::count_t>(_filters.payloadLength());
   }
   
   void addFilter(filter_builder* builder) { _filters.add(builder); }
@@ -202,6 +202,8 @@ private:
   Options _options;
   
   box::Header _header;
+  
+  archive_environment env;
   
   std::vector<ArchiveEntry> _entries;
   std::vector<ArchiveStream> _streams;

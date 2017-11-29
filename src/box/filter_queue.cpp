@@ -95,9 +95,15 @@ void builders::xdelta3_builder::setup(const archive_environment& env)
   auto cached = env.digestCache.find(_source);
   
   if (cached != env.digestCache.end())
+  {
+    TRACE_A("%p: xdelta3_builder::setup() using cached source digest information", this);
+
     this->_sourceDigest = cached->second;
+  }
   else
   {
+    TRACE_A("%p: xdelta3_builder::setup() caching source digest information", this);
+    
     unbuffered_source_filter<filters::data_counter> counter(_source);
     unbuffered_source_filter<filters::multiple_digest_filter> digester(&counter);
     null_data_sink sink;
