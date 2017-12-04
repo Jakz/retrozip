@@ -186,7 +186,13 @@ public:
     rows.push_back(row);
   }
   
-  void addColumn(const std::initializer_list<std::string>& names)
+  void addColumn(const std::initializer_list<std::tuple<std::string, padding, padding>>& columns)
+  {
+    for (const auto& c : columns)
+      this->columns.push_back({ std::get<0>(c), 0, 1, std::get<1>(c), std::get<2>(c) });
+  }
+  
+  void addColumnSimple(const std::initializer_list<std::string>& names)
   {
     for (const auto& name : names)
     {
@@ -298,9 +304,9 @@ public:
       size_t leftOver = width - text.size();
       assert(leftOver >= 0);
       
-      if (padding == padding::LEFT)
+      if (padding == padding::RIGHT)
         out << std::string(leftOver, ' ') << text;
-      else if (padding == padding::RIGHT)
+      else if (padding == padding::LEFT)
         out << text << std::string(leftOver, ' ');
       else
       {
@@ -346,17 +352,84 @@ public:
   }
 };
 
-int main(int argc, const char* argv[])
+#include "core/file_data_source.h"
+#include "box/archive.h"
+
+class cli
+{
+public:
+  struct ListArchiveOptions
+  {
+    bool showCRC32 = true;
+    bool showMD5andSHA1 = false;
+    bool showReadableSize = true;
+  };
+
+public:
+  static void listArchiveContent(const ListArchiveOptions& options, const Archive& archive);
+};
+
+
+
+void cli::listArchiveContent(const ListArchiveOptions& options, const Archive& archive)
 {
   ascii_table table(std::cout);
+  table.setFlag(ascii_table::flag::DRAW_BETWEEN_ROW_EDGE, false);
+  table.addColumn({ { "SIZE", ascii_table::padding::RIGHT, ascii_table::padding::RIGHT } });
   
-  table.addColumn({ "SIZE", "CRC32", "MD5" });
-  table.addRow({ "32.1Gb", "0xAB12CD34", "312312c1d23c1231d23c3" });
-  table.addRow({ "32.1Gb", "0xAB12CD34", "123121112" });
+  if (options.showReadableSize)
+    table.addColumn({ {"" } });
 
-  table.setRowPadding(2, ascii_table::padding::CENTER);
+  if (options.showCRC32)
+    table.addColumnSimple({ "CRC32" });
+  if (options.showMD5andSHA1)
+    table.addColumnSimple({ "MD5", "SHA1" });
+  
+  table.addColumn({ { "S:I", ascii_table::padding::RIGHT, ascii_table::padding::RIGHT }, { "NAME", ascii_table::padding::LEFT, ascii_table::padding::LEFT } });
+  
+  for (const auto& entry : archive.entries())
+  {
+    const auto& binary = entry.binary();
+    
+    std::vector<std::string> row;
+    
+    row.push_back(std::to_string(binary.digest.size));
+    
+    if (options.showReadableSize)
+    {
+      row.push_back(strings::humanReadableSize(binary.digest.size, true));
+    }
+  
+    //TODO: choose if all uppercase or not
+    if (options.showCRC32)
+    {
+      row.push_back(fmt::sprintf("%08X", binary.digest.crc32));
+    }
+    
+    if (options.showMD5andSHA1)
+    {
+      row.push_back(binary.digest.md5);
+      row.push_back(binary.digest.sha1);
+    }
+    
+    row.push_back(fmt::sprintf("%lu:%lu", binary.stream, binary.indexInStream));
+    row.push_back(entry.name());
+    
+    table.addRow(row);
+  }
   
   table.printTable();
+}
 
+int main(int argc, const char* argv[])
+{
+  path p = "/Volumes/OSX SSD Data/large/Innocent Life.box";
+  auto source = file_data_source(p);
+  
+  Archive archive;
+  archive.read(source);
+  
+  cli::listArchiveContent({}, archive);
+  
   return 0;
 }
