@@ -38,6 +38,37 @@ bool Archive::isValidGlobalChecksum(W& w) const
   return !_header.hasFlag(box::HeaderFlag::INTEGRITY_CHECKSUM_ENABLED) || _header.fileChecksum == calculateGlobalChecksum(w, _options.checksum.digesterBuffer);
 }
 
+ArchiveSizeInfo Archive::sizeInfo() const
+{
+  const size_t uncompressedEntriesSize = std::accumulate(_entries.begin(), _entries.end(), 0UL, [] (size_t count, const ArchiveEntry& entry) {
+    return count + entry.binary().digest.size;
+  });
+  
+  const size_t entriesPayload = std::accumulate(_entries.begin(), _entries.end(), 0UL, [] (size_t count, const ArchiveEntry& entry) {
+    return count + entry.binary().payloadLength;
+  });
+  
+  const size_t streamsPayload = std::accumulate(_streams.begin(), _streams.end(), 0UL, [] (size_t count, const ArchiveStream& stream) {
+    return count + stream.binary().payloadLength;
+  });
+  
+  const size_t streamData = std::accumulate(_streams.begin(), _streams.end(), 0UL, [] (size_t count, const ArchiveStream& stream) {
+    return count + stream.binary().length;
+  });
+  
+  const size_t sizeOnDisk = sizeof(box::Header)
+  + sizeof(box::Entry) * _entries.size()
+  + sizeof(box::Stream) * _streams.size()
+  + ((!_entries.empty() && !_streams.empty()) ? sizeof(box::SectionHeader)*4 : 0) /* entry table, stream table, stream data, entry names section headers */
+  + (entriesPayload > 0 ? sizeof(box::SectionHeader) : 0)
+  + (streamsPayload > 0 ? sizeof(box::SectionHeader) : 0)
+  + std::accumulate(_streams.begin(), _streams.end(), 0UL, [] (size_t count, const ArchiveStream& entry) { return entry.binary().length + count; })
+  + std::accumulate(_entries.begin(), _entries.end(), 0UL, [] (size_t count, const ArchiveEntry& entry) { return entry.name().length() + 1 + count; })
+  + entriesPayload + streamsPayload;
+  
+  return { sizeOnDisk, streamsPayload, entriesPayload, streamData, uncompressedEntriesSize };
+}
+
 bool Archive::checkEntriesMappingToStreams() const
 {
   struct index_pair

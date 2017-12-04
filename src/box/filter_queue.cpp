@@ -51,10 +51,19 @@ filter_builder* filter_repository::generate(box::payload_uid identifier, const b
 }
 
 
-std::string filter_builder_queue::mnemonic() const
+std::string filter_builder_queue::mnemonic(bool shortMode) const
 {
   std::stringstream ss;
-  for (const auto& builder : _builders) ss << builder->mnemonic() << ";";
+  
+  const char* separator = ";";
+  const char* sep = "";
+  
+  for (const auto& builder : _builders)
+  {
+    ss << builder->mnemonic(shortMode) << sep;
+    sep = separator;
+  }
+  
   return ss.str();
 }
 

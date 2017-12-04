@@ -161,7 +161,7 @@ void ArchiveBuilder::extractWholeArchiveIntoFolder(const class path& path, const
   
   for (const auto& entry : archive.entries())
   {
-    TRACE_AB("%p: builder::extract() extracting entry %s (%s)", this, entry.name().c_str(), entry.filters().mnemonic().c_str());
+    TRACE_AB("%p: builder::extract() extracting entry %s (%s)", this, entry.name().c_str(), entry.filters().mnemonic(false).c_str());
     auto handle = ArchiveReadHandle(source, archive, entry);
     auto* entrySource = handle.source(true);
     

@@ -79,7 +79,8 @@ public:
     DRAW_HEADER_EDGE = 0x0008,
     DRAW_BETWEEN_ROW_EDGE = 0x0010,
     DRAW_BOTTOM_EDGE = 0x0020,
-    DRAW_HEADER = 0x0040
+    DRAW_HEADER = 0x0040,
+    DRAW_BETWEEN_COLS_EDGE = 0x0080,
   };
   
 private:
@@ -105,6 +106,8 @@ private:
     MIDDLE_UP_BOLD,
     MIDDLE_LEFT_BOLD,
     MIDDLE_RIGHT_BOLD,
+    VERTICAL_EMPTY,
+    CROSS_EMPTY,
     STYLE_COUNT
   };
   
@@ -113,24 +116,25 @@ private:
     START,
     AFTER_HEADER,
     BETWEEN_ROWS,
-    END
+    END,
+    FORCED
   };
   
   using edge_style = std::array<std::string, STYLE_COUNT>;
   
   edge_style asciiStyle()
   {
-    return { "+","+","+","+",  "|","-","|","-","|","-",  "+","+",  "+","+","+","+",  "+","+","+","+" };
+    return { "+","+","+","+",  "|","-","|","-","|","-",  "+","+",  "+","+","+","+",  "+","+","+","+", " ", " " };
   }
   
   edge_style utf8Style()
   {
-    return { "┏","┓","┗","┛",  "┃","━","│","─","┃","━",  "┼","╇",  "┯","┷","┨","┠",  "┳","┻","┫","┣" };
+    return { "┏","┓","┗","┛",  "┃","━","│","─","┃","━",  "┼","╇",  "┯","┷","┨","┠",  "┳","┻","┫","┣", " ", " " };
   }
   
   edge_style unixStyle()
   {
-    return { "┌","┐","└","┘",  "│","─","│","─","│","─",  "┼","┼",  "┬","┴","┤","├",  "┬","┴","┤","├" };
+    return { "┌","┐","└","┘",  "│","─","│","─","│","─",  "┼","┼",  "┬","┴","┤","├",  "┬","┴","┤","├", " ", " " };
   }
   
   std::ostream& out;
@@ -159,7 +163,10 @@ private:
       size_t width = columns[i].name.size();
       
       for (size_t r = 0; r < rows.size(); ++r)
-        width = std::max(width, rows[r][i].size());
+      {
+        if (i < rows[r].size())
+          width = std::max(width, rows[r][i].size());
+      }
       
       columns[i].width = width;
     }
@@ -178,6 +185,7 @@ public:
     setFlag(flag::DRAW_BOTTOM_EDGE, true);
     setFlag(flag::DRAW_BETWEEN_ROW_EDGE, true);
     setFlag(flag::DRAW_HEADER, true);
+    setFlag(flag::DRAW_BETWEEN_COLS_EDGE, true);
 
   }
 
@@ -244,21 +252,22 @@ public:
         break;
       }
         
+      case position::FORCED:
       case position::BETWEEN_ROWS:
       {
-        start = edge::MIDDLE_RIGHT_ROW;
+        start = flags.isSet(flag::DRAW_LEFT_EDGE) ? edge::MIDDLE_RIGHT_ROW : edge::HORIZONTAL_ROW;
         hor = edge::HORIZONTAL_ROW;
         sep = edge::CROSS;
-        end = edge::MIDDLE_LEFT_ROW;
+        end = flags.isSet(flag::DRAW_RIGHT_EDGE) ? edge::MIDDLE_LEFT_ROW : edge::HORIZONTAL_ROW;
         break;
       }
         
       case position::AFTER_HEADER:
       {
-        start = edge::MIDDLE_RIGHT_BOLD;
+        start = flags.isSet(flag::DRAW_LEFT_EDGE) ? edge::MIDDLE_RIGHT_BOLD : edge::HORIZONTAL_AFTER_HEADER;
         hor = edge::HORIZONTAL_AFTER_HEADER;
         sep = edge::CROSS_AFTER_HEADER;
-        end = edge::MIDDLE_LEFT_BOLD;
+        end = flags.isSet(flag::DRAW_RIGHT_EDGE) ? edge::MIDDLE_LEFT_BOLD : edge::HORIZONTAL_AFTER_HEADER;
         break;
       }
         
@@ -271,6 +280,9 @@ public:
         break;
       }
     }
+    
+    if (!flags.isSet(flag::DRAW_BETWEEN_COLS_EDGE))
+      sep = edge::CROSS_EMPTY;
     
     assert(start != edge::STYLE_COUNT && hor != edge::STYLE_COUNT && sep != edge::STYLE_COUNT && end != edge::STYLE_COUNT);
     
@@ -289,8 +301,14 @@ public:
 
   void printTableRow(const std::vector<std::string>& data, bool isHeader)
   {
+    if (data.empty())
+    {
+      printSeparator(position::FORCED);
+      return;
+    }
+    
     out << ((flags && flag::DRAW_LEFT_EDGE) ? style[VERTICAL_EDGE] : " ");
-
+    
     for (int c = 0; c < columns.size(); ++c)
     {
       const ColumnSpec& column = columns[c];
@@ -300,7 +318,7 @@ public:
       
       pad(margin);
       
-      const std::string& text = data[c];
+      const std::string& text = c < data.size() ? data[c] : "";
       size_t leftOver = width - text.size();
       assert(leftOver >= 0);
       
@@ -317,14 +335,18 @@ public:
       
       pad(margin);
       
-      if (flags && flag::DRAW_RIGHT_EDGE)
+      if (c < columns.size() - 1)
       {
-        out << ((isHeader || c == columns.size()-1) ? style[VERTICAL_EDGE] : style[VERTICAL_ROW]);
+        if (flags.isSet(flag::DRAW_BETWEEN_COLS_EDGE))
+          out << (isHeader ? style[VERTICAL_EDGE] : style[VERTICAL_ROW]);
+        else
+          out << style[VERTICAL_EMPTY];
       }
-      
-      
     }
     
+    if (flags.isSet(flag::DRAW_RIGHT_EDGE))
+      out << (isHeader ? style[VERTICAL_EDGE] : style[VERTICAL_ROW]);
+
     ln();
   }
   
@@ -358,34 +380,80 @@ public:
 class cli
 {
 public:
+  enum class SizeMode
+  {
+    BYTES,
+    READABLE
+  };
+  
   struct ListArchiveOptions
   {
-    bool showCRC32 = true;
+    bool showCRC32 = false;
     bool showMD5andSHA1 = false;
-    bool showReadableSize = true;
+    bool showFilteredSize = true;
+    bool showFilterChain = true;
+    SizeMode sizeMode = SizeMode::READABLE;
+    
   };
+  
+  static void addSizeValueToRow(const ListArchiveOptions& options, std::vector<std::string>& row, size_t size)
+  {
+    row.push_back(options.sizeMode == SizeMode::BYTES ?
+                  std::to_string(size) :
+                  strings::humanReadableSize(size, true)
+    );
+  }
 
 public:
+  static void printArchiveInformation(const class path& path, const Archive& archive);
   static void listArchiveContent(const ListArchiveOptions& options, const Archive& archive);
 };
 
 
+void cli::printArchiveInformation(const class path& path, const Archive& archive)
+{
+  using namespace std;
+  
+  ArchiveSizeInfo info = archive.sizeInfo();
+  
+  cout << endl;
+  cout << "Path : " << path << endl;
+  cout << "Size on disk : " << info.totalSize << " bytes" << endl;
+  cout << "Bytes used for data : " << info.streamsData << " bytes" << endl;
+  cout << "Bytes used for structure : " << (info.totalSize - info.streamsData) << " bytes" << endl;
+  cout << "Content : " << archive.entries().size() << " entries in " << archive.streams().size() << " streams" << endl;
+
+  cout << endl;
+}
 
 void cli::listArchiveContent(const ListArchiveOptions& options, const Archive& archive)
 {
-  ascii_table table(std::cout);
-  table.setFlag(ascii_table::flag::DRAW_BETWEEN_ROW_EDGE, false);
-  table.addColumn({ { "SIZE", ascii_table::padding::RIGHT, ascii_table::padding::RIGHT } });
+  using p = ascii_table::padding;
+  using f = ascii_table::flag;
   
-  if (options.showReadableSize)
-    table.addColumn({ {"" } });
+  ascii_table table(std::cout);
+  table.setFlag(f::DRAW_BETWEEN_ROW_EDGE, false);
+  table.setFlag(f::DRAW_TOP_EDGE, false);
+  table.setFlag(f::DRAW_BOTTOM_EDGE, false);
+  table.setFlag(f::DRAW_LEFT_EDGE, false);
+  table.setFlag(f::DRAW_RIGHT_EDGE, false);
+  table.setFlag(f::DRAW_BETWEEN_COLS_EDGE, false);
+
+  
+  table.addColumn({ { "SIZE", p::RIGHT, p::RIGHT } });
+
+  if (options.showFilteredSize)
+    table.addColumn({ { "FILTERED", p::RIGHT, p::RIGHT } });
 
   if (options.showCRC32)
-    table.addColumnSimple({ "CRC32" });
+    table.addColumn({ { "CRC", p::CENTER, p::CENTER } });
   if (options.showMD5andSHA1)
     table.addColumnSimple({ "MD5", "SHA1" });
   
-  table.addColumn({ { "S:I", ascii_table::padding::RIGHT, ascii_table::padding::RIGHT }, { "NAME", ascii_table::padding::LEFT, ascii_table::padding::LEFT } });
+  if (options.showFilterChain)
+    table.addColumnSimple({"FILTERS"});
+  
+  table.addColumn({ { "S:I", p::RIGHT, p::RIGHT }, { "NAME", p::LEFT, p::LEFT } });
   
   for (const auto& entry : archive.entries())
   {
@@ -393,13 +461,16 @@ void cli::listArchiveContent(const ListArchiveOptions& options, const Archive& a
     
     std::vector<std::string> row;
     
-    row.push_back(std::to_string(binary.digest.size));
+    addSizeValueToRow(options, row, binary.digest.size);
     
-    if (options.showReadableSize)
+    if (options.showFilteredSize)
     {
-      row.push_back(strings::humanReadableSize(binary.digest.size, true));
+      if (binary.filteredSize != binary.digest.size)
+        addSizeValueToRow(options, row, binary.filteredSize);
+      else
+        row.push_back("");
     }
-  
+
     //TODO: choose if all uppercase or not
     if (options.showCRC32)
     {
@@ -412,23 +483,62 @@ void cli::listArchiveContent(const ListArchiveOptions& options, const Archive& a
       row.push_back(binary.digest.sha1);
     }
     
+    if (options.showFilterChain)
+    {
+      std::string entryMnemonic = entry.filters().mnemonic(true);
+      std::string streamMnemonic = archive.streams()[entry.binary().stream].filters().mnemonic(true);
+      
+      if (!entryMnemonic.empty() && !streamMnemonic.empty())
+        row.push_back(entryMnemonic + ";" + streamMnemonic);
+      else
+        row.push_back(entryMnemonic + streamMnemonic);
+    }
+    
     row.push_back(fmt::sprintf("%lu:%lu", binary.stream, binary.indexInStream));
     row.push_back(entry.name());
     
     table.addRow(row);
   }
   
+  table.addRow({});
+  
+  ArchiveSizeInfo sizeInfo = archive.sizeInfo();
+  size_t totalSizeUncompressed = sizeInfo.uncompressedEntriesData;
+  
+  std::vector<std::string> summary;
+  
+  addSizeValueToRow(options, summary, totalSizeUncompressed);
+  
+  if (options.showFilteredSize)
+    summary.push_back("");
+  
+  if (options.showCRC32) //TODO: could be file checksum?
+    summary.push_back("");
+  
+  if (options.showMD5andSHA1)
+  {
+    summary.push_back("");
+    summary.push_back("");
+  }
+  
+  summary.push_back("");
+  summary.push_back("");
+  summary.push_back(fmt::sprintf("%lu files in %lu streams", archive.entries().size(), archive.streams().size()));
+  
+  table.addRow(summary);
+  
   table.printTable();
 }
 
 int main(int argc, const char* argv[])
 {
-  path p = "/Volumes/OSX SSD Data/large/Innocent Life.box";
+  path p = "/Volumes/RAMDisk/test/test-lzma+delta.box"; //"/Volumes/OSX SSD Data/large/Innocent Life.box";
   auto source = file_data_source(p);
   
   Archive archive;
   archive.read(source);
   
+  cli::printArchiveInformation(p, archive);
   cli::listArchiveContent({}, archive);
   
   return 0;

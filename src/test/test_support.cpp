@@ -138,13 +138,8 @@ void testing::ArchiveTester::verify(const ArchiveFactory::Data& data, const Arch
     verifyFilters(dstream.filters, stream.filters());
   }
   
-  const size_t payloadSizeForEntries = std::accumulate(verify.entries().begin(), verify.entries().end(), 0UL, [] (size_t count, const ArchiveEntry& entry) {
-    return count + entry.binary().payloadLength;
-  });
-  
-  const size_t payloadSizeForStream = std::accumulate(verify.streams().begin(), verify.streams().end(), 0UL, [] (size_t count, const ArchiveStream& stream) {
-    return count + stream.binary().payloadLength;
-  });
+  const size_t payloadSizeForEntries = verify.sizeOfEntriesPayload();
+  const size_t payloadSizeForStream = verify.sizeOfStreamsPayload();
   
   if (payloadSizeForStream > 0)
   {

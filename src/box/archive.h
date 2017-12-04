@@ -198,6 +198,16 @@ struct ArchiveFactory
   };
 };
 
+struct ArchiveSizeInfo
+{
+  size_t totalSize;
+  size_t streamsPayload;
+  size_t entriesPayload;
+  size_t streamsData;
+  
+  size_t uncompressedEntriesData;
+};
+
 class Archive
 {
 private:
@@ -246,6 +256,7 @@ public:
   Options& options() { return _options; }
   const Options& options() const { return _options; }
 
+  ArchiveSizeInfo sizeInfo() const;
   
   bool isValidMagicNumber() const;
   bool isValidGlobalChecksum(W& w) const;

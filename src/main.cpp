@@ -172,21 +172,22 @@ int mainzzzz(int argc, const char * argv[])
 #include "box/archive_builder.h"
 
 int main(int argc, const char * argv[])
-{
-  ArchiveBuilder builder(CachePolicy(CachePolicy::Mode::ALWAYS, 0));
-  builder.setBufferSize(MB1);
+{  
+  ArchiveBuilder builder(CachePolicy(CachePolicy::Mode::ALWAYS, 0), MB16, MB16);
   
-  /*{
-    const auto sources = builder.buildSourcesFromFolder("/Volumes/RAMDisk/test2");
-    Archive archive = builder.buildBestSingleStreamDeltaArchive(sources);
-    memory_buffer sink;
-    archive.write(sink);
-    sink.serialize(file_handle("/Volumes/RAMDisk/paper-mario-64.box", file_mode::WRITING));
-  }
-   
+  return 0;
+  
+  //builder.extractWholeArchiveIntoFolder("/Volumes/RAMDisk/large/Innocent Life.box", "/Volumes/RAMDisk/large/verify");
+  //return 0;
+  
+  /*auto sources = builder.buildSourcesFromFolder("/Volumes/RAMDisk/large/base");
+  Archive archive = builder.buildSingleStreamBaseWithDeltasArchive(sources, 0);
+  memory_buffer sink;
+  archive.options().bufferSize = MB32;
+  archive.write(sink);
+  sink.serialize(file_handle("/Volumes/RAMDisk/large/Innocent Life.box", file_mode::WRITING));
+  
   return 0;*/
-  
-  
   
   std::vector<path> paths = {
     "/Volumes/RAMDisk/test/Pocket Monsters - Crystal Version (Japan).gbc",
@@ -200,19 +201,17 @@ int main(int argc, const char * argv[])
   
   size_t baseIndex = 2;
   
-  const auto sources = builder.buildSources(paths);
+  auto sources = builder.buildSources(paths);
 
   {
-    /*Archive archive = builder.buildSingleStreamBaseWithDeltasArchive(sources, baseIndex);
+    Archive archive = builder.buildSingleStreamBaseWithDeltasArchive(sources, baseIndex);
     //Archive archive = builder.buildBestSingleStreamDeltaArchive(sources);
     memory_buffer sink;
     archive.write(sink);
-    sink.serialize(file_handle("/Volumes/RAMDisk/test/test-lzma+delta.box", file_mode::WRITING));*/
+    sink.serialize(file_handle("/Volumes/RAMDisk/test/test-lzma+delta.box", file_mode::WRITING));
     
-    builder.extractWholeArchiveIntoFolder("/Volumes/RAMDisk/test/test-lzma+delta.box", "/Volumes/RAMDisk/dest");
+    //builder.extractWholeArchiveIntoFolder("/Volumes/RAMDisk/test/test-lzma+delta.box", "/Volumes/RAMDisk/dest");
   }
-  
-  return 0;
   
   {
     Archive archive = builder.buildSingleStreamSolidArchive(sources);

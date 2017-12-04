@@ -48,7 +48,7 @@ public:
   virtual memory_buffer payload() const = 0;
   virtual size_t payloadLength() const = 0;
   
-  virtual std::string mnemonic() const = 0;
+  virtual std::string mnemonic(bool shortMode) const = 0;
   
   virtual void setup(const archive_environment& env) { }
   virtual void unsetup(const archive_environment& env) { }
@@ -187,7 +187,7 @@ public:
     return cache;
   }
   
-  std::string mnemonic() const;
+  std::string mnemonic(bool shortMode) const;
   
   const decltype(_builders)::value_type& operator[](size_t index) const { return _builders[index]; }
   size_t size() const { return _builders.size(); }
@@ -265,7 +265,7 @@ namespace builders
     }
     
     box::payload_uid identifier() const override { return identifier::XOR_FILTER; }
-    std::string mnemonic() const override { return fmt::sprintf("xor:key=%s", strings::fromByteArray(_key)); }
+    std::string mnemonic(bool shortMode) const override { return shortMode ? "xor" : fmt::sprintf("xor:key=%s", strings::fromByteArray(_key)); }
     
     size_t payloadLength() const override { return sizeof(box::slength_t) + _key.size(); }
     memory_buffer payload() const override
@@ -285,7 +285,7 @@ namespace builders
     deflate_builder(size_t bufferSize) : filter_builder(bufferSize) { }
     
     box::payload_uid identifier() const override { return identifier::DEFLATE_FILTER; }
-    std::string mnemonic() const override { return "deflate"; }
+    std::string mnemonic(bool shortMode) const override { return "deflate"; }
     
     size_t payloadLength() const override { return 0; }
     memory_buffer payload() const override { return memory_buffer(0); }
@@ -310,7 +310,7 @@ namespace builders
     lzma_builder(size_t bufferSize) : filter_builder(bufferSize) { }
     
     box::payload_uid identifier() const override { return identifier::LZMA_FILTER; }
-    std::string mnemonic() const override { return "lzma"; }
+    std::string mnemonic(bool shortMode) const override { return "lzma"; }
     
     size_t payloadLength() const override { return 0; }
     memory_buffer payload() const override { return memory_buffer(0); }
@@ -350,7 +350,7 @@ namespace builders
     void unsetup(const archive_environment& env) override;
     
     box::payload_uid identifier() const override { return identifier::XDELTA3_FILTER; }
-    std::string mnemonic() const override { return fmt::sprintf("xdelta3:source_size=%lu,source_crc32=%08X", _sourceDigest.size, _sourceDigest.crc32); }
+    std::string mnemonic(bool shortMode) const override { return shortMode ? "xdelta3" : fmt::sprintf("xdelta3:source_size=%lu,source_crc32=%08X", _sourceDigest.size, _sourceDigest.crc32); }
     
     size_t payloadLength() const override { return sizeof(box::DigestInfo) + sizeof(box::length_t)*2; }
     memory_buffer payload() const override
