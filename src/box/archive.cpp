@@ -697,7 +697,6 @@ void Archive::writeStream(W& w, ArchiveStream& stream)
   std::transform(sources.begin(), sources.end(), std::back_inserter(sourcesOnly), [] (const data_source_helper& helper) { return helper.source; });
   multiple_data_source source(sourcesOnly);
   
-  
   /* then we apply all filters from stream */
   stream.filters().setup(env);
   filter_cache streamCache = stream.filters().apply(&source);
@@ -724,7 +723,14 @@ void Archive::writeStream(W& w, ArchiveStream& stream)
     
   assert(_options.bufferSize > 0);
   passthrough_pipe pipe(finalStream, &w, _options.bufferSize);
-  pipe.process();
+  pipe.process([this, &wholeCounter, &sources]() {
+    //TODO: performance costly
+    size_t inputSum = std::accumulate(sources.begin(), sources.end(), 0, [] (size_t v, const data_source_helper& helper) {
+      return v + helper.inputCounter->filter().count();
+    });
+    
+    TRACE_A("%p: archive::write() processed %s into %s bytes", this, strings::humanReadableSize(inputSum, true).c_str(), strings::humanReadableSize(wholeCounter.filter().count(), true).c_str());
+  });
   
   for (const data_source_helper& helper : sources)
   {

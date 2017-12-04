@@ -90,7 +90,10 @@ public:
   data_filter() : data_filter(KB16, KB16) { }
   data_filter(size_t bufferSize) : data_filter(bufferSize, bufferSize) { }
 
-  ~data_filter() { }
+  virtual ~data_filter()
+  {
+
+  }
   
   memory_buffer& in() { return _in; }
   memory_buffer& out() { return _out; }

@@ -9,6 +9,7 @@
 #include <numeric>
 
 class Archive;
+class Options;
 class filter_repository;
 struct archive_environment
 {
@@ -23,6 +24,8 @@ struct archive_environment
   mutable std::unordered_map<data_source*, box::DigestInfo> digestCache;
   mutable std::unordered_map<box::DigestInfo, std::unique_ptr<data_source>, box::DigestInfo::hash> cache;
   
+  const Options& options() const;
+    
   /*archive_environment& operator=(const archive_environment&) = delete;
   archive_environment(const archive_environment&) = delete;*/
 };

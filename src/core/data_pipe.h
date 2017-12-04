@@ -91,19 +91,53 @@ public:
     }
   }
   
+  inline void step()
+  {
+    if (_state == state::OPENED)
+      stepInput();
+    
+    stepOutput();
+  }
+  
   void process() override
   {
+    while (_state != state::CLOSED)
+      step();
+    
+    TRACE_P("%p: pipe::process() pipe closed", this);
+  }
+  
+  void process(size_t requiredSize)
+  {
+    size_t size = 0;
+    
     while (_state != state::CLOSED)
     {
       if (_state == state::OPENED)
         stepInput();
-
+      
+      size_t availableOutput = _buffer.used();
+      
       stepOutput();
+      
+      size += availableOutput - _buffer.used();
+      
+      if (size >= requiredSize)
+        break;
+    }
+    
+    TRACE_P("%p: pipe::process() pipe closed", this);
+  }
+  
+  void process(std::function<void(void)> monitor)
+  {    
+    while (_state != state::CLOSED)
+    {
+      step();
+      monitor();
     }
     
     TRACE_P("%p: pipe::process() pipe closed", this);
   }
 };
-
-
 

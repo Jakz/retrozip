@@ -2,6 +2,8 @@
 
 #include "archive.h" /* needed for options() */
 
+const Options& archive_environment::options() const { return archive->options(); }
+
 #include <sstream>
 
 const filter_repository* filter_repository::instance()
@@ -12,22 +14,22 @@ const filter_repository* filter_repository::instance()
   if (!init)
   {
     repository.registerGenerator(builders::identifier::XOR_FILTER, [] (const byte* payload, const archive_environment& env) {
-      size_t bufferSize = env.archive->options().bufferSize;
+      size_t bufferSize = env.options().bufferSize;
       return new builders::xor_builder(bufferSize, payload);
     });
     
     repository.registerGenerator(builders::identifier::DEFLATE_FILTER, [] (const byte* payload, const archive_environment& env) {
-      size_t bufferSize = env.archive->options().bufferSize;
+      size_t bufferSize = env.options().bufferSize;
       return new builders::deflate_builder(bufferSize);
     });
     
     repository.registerGenerator(builders::identifier::LZMA_FILTER, [] (const byte* payload, const archive_environment& env) {
-      size_t bufferSize = env.archive->options().bufferSize;
+      size_t bufferSize = env.options().bufferSize;
       return new builders::lzma_builder(bufferSize);
     });
     
     repository.registerGenerator(builders::identifier::XDELTA3_FILTER, [] (const byte* payload, const archive_environment& env) {
-      size_t bufferSize = env.archive->options().bufferSize;
+      size_t bufferSize = env.options().bufferSize;
       return new builders::xdelta3_builder(bufferSize, payload);
     });
     
@@ -114,7 +116,15 @@ void builders::xdelta3_builder::setup(const archive_environment& env)
   {
     TRACE_A("%p: xdelta3_builder::setup() caching source digest information", this);
     
-    unbuffered_source_filter<filters::data_counter> counter(_source);
+    auto source = _source;
+    
+    if (env.options().isMultithreaded())
+    {
+      seekable_source_slice slice(_source);
+      source = &slice;
+    }
+    
+    unbuffered_source_filter<filters::data_counter> counter(source);
     unbuffered_source_filter<filters::multiple_digest_filter> digester(&counter);
     null_data_sink sink;
     passthrough_pipe pipe(&digester, &sink, _bufferSize);
@@ -142,7 +152,7 @@ void builders::xdelta3_builder::unsetup(const archive_environment& env)
       
       //TODO: it could be lazy or not, but source not uses seek asynchronously
 
-      passthrough_pipe pipe(handle.source(true), sink, env.archive->options().bufferSize);
+      passthrough_pipe pipe(handle.source(true), sink, env.options().bufferSize);
       pipe.process();
       
       _source = sink;

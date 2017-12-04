@@ -2,14 +2,14 @@
 
 #include "base/file_system.h"
 
-filter_builder* ArchiveBuilder::buildLZMA()
+filter_builder* ArchiveBuilder::buildLZMA(const data_source_vector& sources)
 {
-  return new builders::lzma_builder(_bufferSize);
+  return new builders::lzma_builder(filterBufferSizeForPolicy(sources));
 }
 
-filter_builder* ArchiveBuilder::buildDeflater()
+filter_builder* ArchiveBuilder::buildDeflater(const data_source_vector& sources)
 {
-  return new builders::deflate_builder(_bufferSize);
+  return new builders::deflate_builder(filterBufferSizeForPolicy(sources));
 }
 
 data_source_vector ArchiveBuilder::buildSources(const path_vector& paths)
@@ -62,19 +62,23 @@ size_t ArchiveBuilder::maxBufferSize(const data_source_vector& sources)
   return maxSize;
 }
 
-size_t ArchiveBuilder::bufferSizeForPolicy(const data_source_vector& sources)
+size_t ArchiveBuilder::filterBufferSizeForPolicy(const data_source_vector& sources)
 {
-  return maxBufferSize(sources);
+  switch (_filterBufferPolicy.mode)
+  {
+    case BufferSizePolicy::Mode::FIXED: return _filterBufferPolicy.size;
+    case BufferSizePolicy::Mode::AS_LARGE_AS_SOURCE: return maxBufferSize(sources);
+  }
 }
 
-filter_builder* ArchiveBuilder::buildDefaultCompressor()
+filter_builder* ArchiveBuilder::buildDefaultCompressor(const data_source_vector& sources)
 {
-  return _compressionPolicy.mode == CompressionPolicy::Mode::LZMA ? buildLZMA() : buildDeflater();
+  return _compressionPolicy.mode == CompressionPolicy::Mode::LZMA ? buildLZMA(sources) : buildDeflater(sources);
 }
 
 Archive ArchiveBuilder::buildSingleStreamSolidArchive(const data_source_vector& sources)
 {
-  size_t bufferSize = bufferSizeForPolicy(sources);
+  size_t bufferSize = filterBufferSizeForPolicy(sources);
   ArchiveFactory::Data data;
   
   for (const auto& source : sources)
@@ -93,7 +97,7 @@ Archive ArchiveBuilder::buildSingleStreamSolidArchive(const data_source_vector& 
 
 Archive ArchiveBuilder::buildSingleStreamBaseWithDeltasArchive(const data_source_vector& sources, size_t baseIndex)
 {
-  size_t bufferSize = bufferSizeForPolicy(sources);
+  size_t bufferSize = filterBufferSizeForPolicy(sources);
 
   ArchiveFactory::Data data;
   
@@ -152,7 +156,7 @@ void ArchiveBuilder::extractWholeArchiveIntoFolder(const class path& path, const
   
   Archive archive;
   file_data_source source(path);
-  archive.options().bufferSize = MB1;
+  archive.options().bufferSize = MB64;
   archive.read(source);
   
   for (const auto& entry : archive.entries())
@@ -164,7 +168,7 @@ void ArchiveBuilder::extractWholeArchiveIntoFolder(const class path& path, const
     class path dest = destination.append(entry.name());
     file_data_sink sink(dest);
     
-    passthrough_pipe pipe(entrySource, &sink, _bufferSize);
-    pipe.process();
+    passthrough_pipe pipe(entrySource, &sink, _pipeBufferPolicy);
+    pipe.process(entry.binary().digest.size);
   }
 }

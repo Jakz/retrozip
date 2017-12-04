@@ -218,7 +218,7 @@ namespace filters
         
         TRACE_IF(stillToSkip > 0, "%p: skip_filter::process() skipping %lu bytes", this, stillToSkip);
 
-        if (!_in.empty()) process();
+        if (stillToSkip > 0 && !_in.empty()) process();
       }
 
       markFinished(_skipped == _amountToSkip && _passed >= _amountToPassThrough && _in.empty() && _out.empty() && ended());

@@ -153,6 +153,8 @@ struct Options
   } checksum;
   
   Options() : bufferSize(16), digest({true, true, true}), checksum({true, MB1}) { }
+  
+  bool isMultithreaded() const { return false; }
 };
 
 class Archive;
