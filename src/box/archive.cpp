@@ -796,7 +796,7 @@ void Archive::writeEntryPayloads(W& w)
   }
 }
 
-/* precondition: payload offset has been set for entries */
+/* precondition: payload offset has been set for streams */
 void Archive::writeStreamPayloads(W& w)
 {
   for (const ArchiveStream& stream : _streams)

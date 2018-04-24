@@ -138,8 +138,10 @@ void testing::ArchiveTester::verify(const ArchiveFactory::Data& data, const Arch
     verifyFilters(dstream.filters, stream.filters());
   }
   
-  const size_t payloadSizeForEntries = verify.sizeOfEntriesPayload();
-  const size_t payloadSizeForStream = verify.sizeOfStreamsPayload();
+  const auto& sizeInfo = verify.sizeInfo();
+  
+  const size_t payloadSizeForEntries = sizeInfo.entriesPayload;
+  const size_t payloadSizeForStream = sizeInfo.streamsPayload;
   
   if (payloadSizeForStream > 0)
   {

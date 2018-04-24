@@ -154,6 +154,9 @@ void ArchiveBuilder::extractWholeArchiveIntoFolder(const class path& path, const
   if (!fs->existsAsFile(path))
     throw exceptions::file_not_found(path);
   
+  if (!fs->existsAsFolder(destination))
+    throw exceptions::file_not_found(destination);
+  
   Archive archive;
   file_data_source source(path);
   archive.options().bufferSize = MB64;

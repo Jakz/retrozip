@@ -175,10 +175,10 @@ int main(int argc, const char * argv[])
 {  
   ArchiveBuilder builder(CachePolicy(CachePolicy::Mode::ALWAYS, 0), MB16, MB16);
   
-  return 0;
-  
-  //builder.extractWholeArchiveIntoFolder("/Volumes/RAMDisk/large/Innocent Life.box", "/Volumes/RAMDisk/large/verify");
   //return 0;
+  
+  builder.extractWholeArchiveIntoFolder("/Volumes/RAMDisk/large/Innocent Life.box", "/Volumes/RAMDisk/large/verify");
+  return 0;
   
   /*auto sources = builder.buildSourcesFromFolder("/Volumes/RAMDisk/large/base");
   Archive archive = builder.buildSingleStreamBaseWithDeltasArchive(sources, 0);
