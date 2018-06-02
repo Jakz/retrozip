@@ -206,7 +206,7 @@ namespace filters
         
         _position += effective;
         
-        if (!_in.empty()) process();
+        if (!_out.full() && !_in.empty()) process();
       }
       /* otherwise we must skip */
       else
