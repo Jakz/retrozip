@@ -396,6 +396,14 @@ public:
     
   };
   
+  static std::string size_to_string(SizeMode mode, u64 size)
+  {
+    return mode == SizeMode::BYTES ?
+    fmt::sprintf("%zu bytes", size) :
+    strings::humanReadableSize(size, true, 2);
+  }
+  
+  
   static void addSizeValueToRow(const ListArchiveOptions& options, std::vector<std::string>& row, size_t size)
   {
     row.push_back(options.sizeMode == SizeMode::BYTES ?
@@ -416,11 +424,15 @@ void cli::printArchiveInformation(const class path& path, const Archive& archive
   
   ArchiveSizeInfo info = archive.sizeInfo();
   
+  SizeMode mode = SizeMode::READABLE;
+  
   cout << endl;
   cout << "Path : " << path << endl;
-  cout << "Size on disk : " << info.totalSize << " bytes" << endl;
-  cout << "Bytes used for data : " << info.streamsData << " bytes" << endl;
-  cout << "Bytes used for structure : " << (info.totalSize - info.streamsData) << " bytes" << endl;
+  cout << "Size on disk : " << size_to_string(mode, info.totalSize) << endl;
+  cout << "Uncompressed data size : " << size_to_string(mode, info.uncompressedEntriesData) << endl;
+  cout << "Compression ratio: " << fmt::sprintf("%1.2f", (float)info.uncompressedEntriesData / info.totalSize) << endl;
+  cout << "Bytes used for data : " << size_to_string(SizeMode::BYTES, info.streamsData) << endl;
+  cout << "Bytes used for structure : " << size_to_string(SizeMode::BYTES, (info.totalSize - info.streamsData)) << endl;
   cout << "Content : " << archive.entries().size() << " entries in " << archive.streams().size() << " streams" << endl;
 
   cout << endl;
@@ -532,14 +544,19 @@ void cli::listArchiveContent(const ListArchiveOptions& options, const Archive& a
 
 int main(int argc, const char* argv[])
 {
-  path p = "/Volumes/RAMDisk/test/test-lzma+delta.box"; //"/Volumes/OSX SSD Data/large/Innocent Life.box";
+  path p = "/Users/jack/Desktop/XNB To PNG Converter/patapon-lzma+delta.box"; //"/Volumes/OSX SSD Data/large/Innocent Life.box";
   auto source = file_data_source(p);
   
   Archive archive;
   archive.read(source);
   
   cli::printArchiveInformation(p, archive);
-  cli::listArchiveContent({}, archive);
+  
+  cli::ListArchiveOptions options;
+
+  options.showCRC32 = true;
+  options.showMD5andSHA1 = true;
+  cli::listArchiveContent(options, archive);
   
   return 0;
 }

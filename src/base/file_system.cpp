@@ -12,6 +12,36 @@ const FileSystem* FileSystem::i()
 #include <sys/stat.h>
 #include <unistd.h>
 
+void scanFolder(const path& root, const std::function<void(const path& path)>& lambda, bool recursive = true)
+{
+  TRACE_FS("%p: scanning folder %s", this, root.c_str());
+  
+  DIR *d;
+  struct dirent *dir;
+  d = opendir(root.c_str());
+  
+  if (d)
+  {
+    while ((dir = readdir(d)) != NULL)
+    {
+      path name = path(dir->d_name);
+      
+      if (name == "." || name == ".." || name == ".DS_Store")
+        continue;
+      else if (dir->d_type == DT_DIR && recursive)
+      {
+        scanFolder(root, lambda, recursive);
+      }
+      else if (dir->d_type == DT_REG)
+        lambda(root.append(name));
+    }
+    
+    closedir(d);
+  }
+  else
+    throw exceptions::file_not_found(root);
+}
+
 std::vector<path> FileSystem::contentsOfFolder(const path& base, bool recursive, predicate<path> excludePredicate) const
 {
   std::vector<path> files;

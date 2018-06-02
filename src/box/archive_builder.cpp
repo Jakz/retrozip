@@ -119,6 +119,25 @@ Archive ArchiveBuilder::buildSingleStreamBaseWithDeltasArchive(const data_source
   return Archive::ofData(data);
 }
 
+Archive ArchiveBuilder::buildSolidArchivePerFolderOfDirectoryTree(const path& root)
+{
+  TRACE_AB("%p: builder::solidArchiveOfDirectoryTree(): %s", this, root.c_str());
+  
+  const auto* fs = FileSystem::i();
+  
+  std::unordered_multimap<path, path, path::hash> entries;
+  
+  auto files = fs->contentsOfFolder(root);
+  
+  for (const auto& file : files)
+    entries.insert(std::make_pair(file.parent(), file));
+  
+  ArchiveFactory::Data data;
+  
+  
+  return Archive::ofData(data);
+}
+
 Archive ArchiveBuilder::buildBestSingleStreamDeltaArchive(const data_source_vector& sources)
 {
   TRACE_AB("%p: builder::bestDeltaArchive()", this, sources.size());
@@ -145,7 +164,6 @@ Archive ArchiveBuilder::buildBestSingleStreamDeltaArchive(const data_source_vect
   
   return buildSingleStreamBaseWithDeltasArchive(sources, index);
 }
-
 
 void ArchiveBuilder::extractWholeArchiveIntoFolder(const class path& path, const class path& destination)
 {
@@ -175,3 +193,5 @@ void ArchiveBuilder::extractWholeArchiveIntoFolder(const class path& path, const
     pipe.process(entry.binary().digest.size);
   }
 }
+
+

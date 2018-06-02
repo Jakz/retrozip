@@ -177,17 +177,18 @@ int main(int argc, const char * argv[])
   
   //return 0;
   
-  builder.extractWholeArchiveIntoFolder("/Volumes/RAMDisk/large/Innocent Life.box", "/Volumes/RAMDisk/large/verify");
+  builder.extractWholeArchiveIntoFolder("/Users/jack/Desktop/XNB To PNG Converter/patapon-solid.box", "/Users/jack/Desktop/XNB To PNG Converter/verify");
   return 0;
   
-  /*auto sources = builder.buildSourcesFromFolder("/Volumes/RAMDisk/large/base");
-  Archive archive = builder.buildSingleStreamBaseWithDeltasArchive(sources, 0);
+  auto sources = builder.buildSourcesFromFolder("/Users/jack/Desktop/XNB To PNG Converter/patapon");
+  //Archive archive = builder.buildSingleStreamBaseWithDeltasArchive(sources, 0);
+  Archive archive = builder.buildSingleStreamSolidArchive(sources);
   memory_buffer sink;
   archive.options().bufferSize = MB32;
   archive.write(sink);
-  sink.serialize(file_handle("/Volumes/RAMDisk/large/Innocent Life.box", file_mode::WRITING));
+  sink.serialize(file_handle("/Users/jack/Desktop/XNB To PNG Converter/patapon.box", file_mode::WRITING));
   
-  return 0;*/
+  return 0;
   
   std::vector<path> paths = {
     "/Volumes/RAMDisk/test/Pocket Monsters - Crystal Version (Japan).gbc",
@@ -201,7 +202,7 @@ int main(int argc, const char * argv[])
   
   size_t baseIndex = 2;
   
-  auto sources = builder.buildSources(paths);
+  //auto sources = builder.buildSources(paths);
 
   {
     Archive archive = builder.buildSingleStreamBaseWithDeltasArchive(sources, baseIndex);

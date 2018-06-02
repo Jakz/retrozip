@@ -21,7 +21,7 @@ void debugnnprintf(const char* str, ...)
 }
 
 
-std::string strings::humanReadableSize(size_t bytes, bool si) {
+std::string strings::humanReadableSize(size_t bytes, bool si, u32 p) {
   static constexpr char pre[][7] = { "kMGTPE", "KMGTPE"};
   
   
@@ -29,7 +29,7 @@ std::string strings::humanReadableSize(size_t bytes, bool si) {
   if (bytes < unit) return std::to_string(bytes) + "B";
   int exp = std::log(bytes) / std::log(unit);
   
-  return fmt::sprintf("%.1f%c%sB", bytes / std::pow(unit, exp), pre[si ? 1 : 0][exp-1], si ? "" : "i");
+  return fmt::sprintf("%.*f%c%sB", p, bytes / std::pow(unit, exp), pre[si ? 1 : 0][exp-1], si ? "" : "i");
 }
 
 bool strings::isPrefixOf(const std::string& string, const std::string& prefix)

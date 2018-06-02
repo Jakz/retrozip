@@ -120,6 +120,7 @@ public:
   Archive buildBestSingleStreamDeltaArchive(const data_source_vector& sources);
   Archive buildSingleStreamBaseWithDeltasArchive(const data_source_vector& sources, size_t baseIndex);
   Archive buildSingleStreamSolidArchive(const data_source_vector& sources);
+  Archive buildSolidArchivePerFolderOfDirectoryTree(const path& root);
   
   
   void extractWholeArchiveIntoFolder(const class path& path, const class path& destination);

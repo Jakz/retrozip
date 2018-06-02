@@ -208,7 +208,7 @@ using u32de = std::conditional<IS_LITTLE_ENDIAN_, u32be, u32le>::type;
 
 namespace strings
 {
-  std::string humanReadableSize(size_t bytes, bool si);
+  std::string humanReadableSize(size_t bytes, bool si, u32 p = 1);
   bool isPrefixOf(const std::string& string, const std::string& prefix);
   
   std::vector<byte> toByteArray(const std::string& string);
