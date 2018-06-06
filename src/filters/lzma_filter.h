@@ -36,7 +36,7 @@ namespace compression
     void process() override;
     void finalize() override;
     
-    std::string name() override { return "lzma_encoder"; }
+    std::string name() override { return IS_ENCODER ? "lzma_encoder" : "lzma_decoder"; }
   };
   
   using lzma_encoder = lzma_filter<true>;
