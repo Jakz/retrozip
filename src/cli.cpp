@@ -54,7 +54,7 @@ TEST_CASE("archive names and files list")
   }
 }*/
 
-#include "base/common.h"
+#include "tbx/base/common.h"
 
 #include <cassert>
 #include <vector>
@@ -374,7 +374,7 @@ public:
   }
 };
 
-#include "streams/file_data_source.h"
+#include "tbx/streams/file_data_source.h"
 #include "box/archive.h"
 
 class cli

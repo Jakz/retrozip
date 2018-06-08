@@ -1,8 +1,8 @@
 #pragma once
 
-#include "base/common.h"
+#include "tbx/base/common.h"
 
-#include "streams/data_source.h"
+#include "tbx/streams/data_source.h"
 
 #include "filter_queue.h"
 #include "header.h"

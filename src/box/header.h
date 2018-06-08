@@ -1,7 +1,7 @@
 #pragma once
 
-#include "base/common.h"
-#include "hash/hash.h"
+#include "tbx/base/common.h"
+#include "tbx/hash/hash.h"
 
 namespace box
 {

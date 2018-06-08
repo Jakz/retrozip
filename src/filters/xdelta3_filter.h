@@ -1,7 +1,7 @@
 #pragma once
 
-#include "streams/data_filter.h"
-#include "formats/patch/xdelta3/xdelta3.h"
+#include "tbx/streams/data_filter.h"
+#include "tbx/formats/patch/xdelta3/xdelta3.h"
 
 namespace options
 {

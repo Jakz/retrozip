@@ -1,7 +1,7 @@
 #pragma once
 
-#include "hash/hash.h"
-#include "streams/data_filter.h"
+#include "tbx/hash/hash.h"
+#include "tbx/streams/data_filter.h"
 
 namespace filters
 {

@@ -2,7 +2,7 @@
 
 #include "header.h"
 
-#include "streams/memory_buffer.h"
+#include "tbx/streams/memory_buffer.h"
 
 class filter_options
 {

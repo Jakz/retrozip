@@ -1,8 +1,8 @@
 #pragma once
 
-#include "base/path.h"
+#include "tbx/base/path.h"
 
-#include "streams/file_data_source.h"
+#include "tbx/streams/file_data_source.h"
 
 #include "archive.h"
 

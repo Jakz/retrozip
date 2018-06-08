@@ -4,16 +4,16 @@
 
 #include "test/catch.h"
 
-#include "base/file_system.h"
+#include "tbx/base/file_system.h"
 
-#include "streams/memory_buffer.h"
-#include "streams/data_source.h"
-#include "streams/file_data_source.h"
+#include "tbx/streams/memory_buffer.h"
+#include "tbx/streams/data_source.h"
+#include "tbx/streams/file_data_source.h"
 
 #include "filters/filters.h"
 #include "filters/deflate_filter.h"
 
-#include "hash/hash.h"
+#include "tbx/hash/hash.h"
 #include "crypto/crypto.h"
 
 #include "box/archive.h"

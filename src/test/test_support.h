@@ -1,7 +1,7 @@
 #pragma once
 
-#include "base/common.h"
-#include "streams/memory_buffer.h"
+#include "tbx/base/common.h"
+#include "tbx/streams/memory_buffer.h"
 
 #include "box/archive.h"
 
