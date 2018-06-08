@@ -48,7 +48,7 @@ public:
   size_t size() const override
   {
     assert(_handle);
-    return _handle.length();
+    return _length;
   }
 };
 
