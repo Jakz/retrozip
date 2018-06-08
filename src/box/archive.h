@@ -2,7 +2,7 @@
 
 #include "base/common.h"
 
-#include "core/data_source.h"
+#include "streams/data_source.h"
 
 #include "filter_queue.h"
 #include "header.h"

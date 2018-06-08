@@ -1,7 +1,7 @@
 #include "archive.h"
 
-#include "core/memory_buffer.h"
-#include "core/data_pipe.h"
+#include "streams/memory_buffer.h"
+#include "streams/data_pipe.h"
 
 using uexc = exceptions::unserialization_exception;
 

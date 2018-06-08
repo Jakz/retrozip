@@ -6,9 +6,9 @@
 
 #include "base/file_system.h"
 
-#include "core/memory_buffer.h"
-#include "core/data_source.h"
-#include "core/file_data_source.h"
+#include "streams/memory_buffer.h"
+#include "streams/data_source.h"
+#include "streams/file_data_source.h"
 
 #include "filters/filters.h"
 #include "filters/deflate_filter.h"

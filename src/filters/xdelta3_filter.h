@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/data_filter.h"
+#include "streams/data_filter.h"
 #include "patch/xdelta3/xdelta3.h"
 
 namespace options

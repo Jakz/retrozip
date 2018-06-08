@@ -1,6 +1,6 @@
-#include "core/data_source.h"
-#include "core/data_pipe.h"
-#include "core/data_filter.h"
+#include "streams/data_source.h"
+#include "streams/data_pipe.h"
+#include "streams/data_filter.h"
 
 #include "lzma_filter.h"
 

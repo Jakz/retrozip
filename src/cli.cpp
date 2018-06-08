@@ -374,7 +374,7 @@ public:
   }
 };
 
-#include "core/file_data_source.h"
+#include "streams/file_data_source.h"
 #include "box/archive.h"
 
 class cli

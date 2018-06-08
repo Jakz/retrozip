@@ -2,7 +2,7 @@
 
 #include "base/path.h"
 
-#include "core/file_data_source.h"
+#include "streams/file_data_source.h"
 
 #include "archive.h"
 
