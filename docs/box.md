@@ -22,8 +22,8 @@ Type alias | C++ type | Description
 
 This is the main file header:
 
-Size | Type | Description 
----: | :---: | :---: | ---
+Offset | Type | Description 
+---: | :---: | ---
 4b | `char[]` | file signature `"box!"`
 4b | `u32` | version (1 for now)
 8b | `u64` | flags
@@ -57,6 +57,23 @@ Size | Type | Description
 8b | `offset_t` | absolute offset in file of payload data
 4b | `length_t` | length in bytes of payload data
 8b | `offset_t` | absolute offset in file of NUL-terminated entry name
+
+## DigestInfo
+
+This struct stores all the hash related informations of an entry. This could change in the future
+
+Size | Type | Description 
+---: | :---: | ---
+8b | `length_t` | length in bytes of the entry
+8b | `crc32_t` | CRC32 hash of the entry
+16b | `byte[16]` | MD5 hash of the entry
+20b | `byte[20]` | SHA-1 hash of the entry
+
+## Stream Header
+
+A stream is a single stream of bytes which are altogher filtered with its chain of filters. This means that in the standard situation a box archive will have a stream for each entry but it's possible to concatenate multiple entries and store them as a single stream.
+
+
 
 
 
