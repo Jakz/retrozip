@@ -171,7 +171,7 @@ int mainzzzz(int argc, const char * argv[])
 #include <numeric>
 #include "box/archive_builder.h"
 
-int main(int argc, const char * argv[])
+int disabled(int argc, const char * argv[])
 {  
   ArchiveBuilder builder(CachePolicy(CachePolicy::Mode::ALWAYS, 0), MB16, MB16);
   

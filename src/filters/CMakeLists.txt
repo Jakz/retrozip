@@ -1,2 +1,2 @@
-file(GLOB SRC_Filters *.cpp *.cc)
-add_library(LIB_Filters ${SRC_Filters})
+file(GLOB SRC_Testing *.cpp *.cc)
+add_library(LIB_Testing ${SRC_Testing})

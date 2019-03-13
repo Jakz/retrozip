@@ -1,32 +1,33 @@
-set(srcs ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
+set(srcs ${CMAKE_CURRENT_SOURCE_DIR}/cli.cpp)
 
 find_package(ZLIB REQUIRED)
 
 include_directories(
   .
-  base
   box
-  core
   crypto
   filters
   hash
   libs
-  libs/fmt
-  patch/xdelta3
+  ../toolbox/src
   ${ZLIB_INCLUDE_DIRS}
 )
 
 
-add_subdirectory(base)
 add_subdirectory(box)
-add_subdirectory(core)
 add_subdirectory(crypto)
 add_subdirectory(filters)
-add_subdirectory(hash)
 add_subdirectory(libs)
-add_subdirectory(patch)
+add_subdirectory(test)
 
-add_executable(tests tests.cpp)
+add_subdirectory(../toolbox/src/tbx/base ./tbx/base)
+add_subdirectory(../toolbox/src/tbx/extra/fmt ./tbx/extra/fmt)
+add_subdirectory(../toolbox/src/tbx/hash ./tbx/hash)
+add_subdirectory(../toolbox/src/tbx/streams ./tbx/streams)
+add_subdirectory(../toolbox/src/tbx/formats/patch/xdelta3 ./tbx/formats/patch/xdelta3)
+
+# add_executable(tests tests.cpp)
+add_executable(retrozip ${srcs})
 
 set(LIBRARIES
   LIB_Base
@@ -36,7 +37,21 @@ set(LIBRARIES
   LIB_Hash
   LIB_Libs_Fmt
   LIB_Patch_Xdelta3
+  LIB_Testing
   ${ZLIB_LIBRARIES}
 )
 
-target_link_libraries(tests ${LIBRARIES})
+set_target_properties(retrozip
+  PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+)
+
+if (APPLE)
+  target_link_libraries(retrozip ${CMAKE_SOURCE_DIR}/toolbox/libs/lzma/lib/macOS/liblzma.a)
+elseif (UNIX)
+  add_library(lzma SHARED IMPORTED)
+  set_target_properties(lzma PROPERTIES IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/toolbox/libs/lzma/lib/linux/x64/liblzma.so)
+  target_link_libraries(retrozip lzma)
+endif()
+
+target_link_libraries(retrozip ${LIBRARIES})

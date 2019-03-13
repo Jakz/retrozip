@@ -542,7 +542,7 @@ void cli::listArchiveContent(const ListArchiveOptions& options, const Archive& a
   table.printTable();
 }
 
-int main(int argc, const char* argv[])
+int disabled(int argc, const char* argv[])
 {
   path p = "/Users/jack/Desktop/XNB To PNG Converter/patapon-lzma+delta.box"; //"/Volumes/OSX SSD Data/large/Innocent Life.box";
   auto source = file_data_source(p);
@@ -555,6 +555,44 @@ int main(int argc, const char* argv[])
   cli::ListArchiveOptions options;
 
   options.showCRC32 = true;
+  options.showMD5andSHA1 = true;
+  cli::listArchiveContent(options, archive);
+  
+  return 0;
+}
+
+#include "box/archive_builder.h"
+int main(int argc, const char* argv[])
+{
+  if (argc != 2)
+  {
+    std::cout << "Usage: retrozip <path-containing-roms>" << std::endl;
+    return -1;
+  }
+  
+  path path = argv[1];
+  
+  if (!path.exists())
+  {
+    std::cerr << "Path specified doesn't exist!" << std::endl;
+    return -1;
+  }
+  
+  ArchiveBuilder builder(CachePolicy(CachePolicy::Mode::ALWAYS, 0), MB16, MB16);
+  
+  auto sources = builder.buildSourcesFromFolder(path);
+  std::cout << "Found " << sources.size() << " files to archive." << std::endl;
+  
+  Archive archive = builder.buildSingleStreamBaseWithDeltasArchive(sources, 0);
+  memory_buffer sink;
+  archive.options().bufferSize = MB32;
+  archive.write(sink);
+  sink.serialize(file_handle("output.box", file_mode::WRITING));
+  
+  cli::printArchiveInformation("output.box", archive);
+  
+  cli::ListArchiveOptions options;
+  
   options.showMD5andSHA1 = true;
   cli::listArchiveContent(options, archive);
   
