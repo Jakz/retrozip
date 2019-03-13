@@ -30,7 +30,9 @@ namespace box
     STREAM_PAYLOAD,
     STREAM_DATA,
     FILE_NAME_TABLE,
-    GROUP_TABLE
+    GROUP_TABLE,
+    
+    FIRST_FREE_SECTION_IDENT = 1U << 31
   };
   
   enum class HeaderFlag : u64
@@ -74,13 +76,13 @@ namespace box
 
   struct DigestInfo
   {
-    size_t size;
+    length_t size;
     hash::crc32_t crc32;
     hash::md5_t md5;
     hash::sha1_t sha1;
     
     DigestInfo() : size(0), crc32(0), md5(), sha1() { }
-    DigestInfo(size_t size, hash::crc32_t crc32, const hash::md5_t& md5, const hash::sha1_t& sha1) : size(size), crc32(crc32), md5(md5), sha1(sha1) { }
+    DigestInfo(length_t size, hash::crc32_t crc32, const hash::md5_t& md5, const hash::sha1_t& sha1) : size(size), crc32(crc32), md5(md5), sha1(sha1) { }
     
     bool operator==(const DigestInfo& other) const { return size == other.size && crc32 == other.crc32 && md5 == other.md5 && sha1 == other.sha1; }
     

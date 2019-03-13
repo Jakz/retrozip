@@ -230,6 +230,10 @@ bool Archive::willSectionBeSerialized(box::Section section) const
     case box::Section::STREAM_DATA: return !_streams.empty();
       
     case box::Section::GROUP_TABLE: return !_groups.empty();
+      
+    case box::Section::FIRST_FREE_SECTION_IDENT:
+      //TODO: custom section serialization management
+      assert(false);
   }
 }
 

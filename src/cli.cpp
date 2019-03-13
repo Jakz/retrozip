@@ -55,6 +55,7 @@ TEST_CASE("archive names and files list")
 }*/
 
 #include "tbx/base/common.h"
+#include "tbx/base/file_system.h"
 
 #include <cassert>
 #include <vector>
@@ -386,14 +387,25 @@ public:
     READABLE
   };
   
-  struct ListArchiveOptions
+  struct CommonOptions
+  {
+    bool verbose = true;
+    bool debug = false;
+  };
+  
+  struct ListArchiveOptions : public CommonOptions
   {
     bool showCRC32 = false;
     bool showMD5andSHA1 = false;
     bool showFilteredSize = true;
     bool showFilterChain = true;
     SizeMode sizeMode = SizeMode::READABLE;
-    
+  };
+  
+  struct CreateArchiveOptions : public CommonOptions
+  {
+    path_filter filter = [] (const path& p) { return true; };
+    bool recursiveScan = true;
   };
   
   static std::string size_to_string(SizeMode mode, u64 size)
@@ -415,6 +427,7 @@ public:
 public:
   static void printArchiveInformation(const class path& path, const Archive& archive);
   static void listArchiveContent(const ListArchiveOptions& options, const Archive& archive);
+  static void createArchive(const std::vector<path>& sources, const class path& dest, const CreateArchiveOptions& options);
 };
 
 
@@ -430,12 +443,31 @@ void cli::printArchiveInformation(const class path& path, const Archive& archive
   cout << "Path : " << path << endl;
   cout << "Size on disk : " << size_to_string(mode, info.totalSize) << endl;
   cout << "Uncompressed data size : " << size_to_string(mode, info.uncompressedEntriesData) << endl;
-  cout << "Compression ratio: " << fmt::sprintf("%1.2f", (float)info.uncompressedEntriesData / info.totalSize) << endl;
+  cout << "Compression ratio: " << fmt::sprintf("%1.2f (%d%%)", (float)info.uncompressedEntriesData / info.totalSize, (int) ((info.totalSize / (float)info.uncompressedEntriesData) * 100)) << endl;
   cout << "Bytes used for data : " << size_to_string(SizeMode::BYTES, info.streamsData) << endl;
   cout << "Bytes used for structure : " << size_to_string(SizeMode::BYTES, (info.totalSize - info.streamsData)) << endl;
   cout << "Content : " << archive.entries().size() << " entries in " << archive.streams().size() << " streams" << endl;
 
   cout << endl;
+}
+
+void cli::createArchive(const std::vector<path>& sources, const path& dest, const cli::CreateArchiveOptions& options)
+{
+  using namespace std;
+
+  vector<path> files;
+  
+  for (const path& source : sources)
+  {
+    if (source.isFolder())
+    {
+      auto sfiles = FileSystem::i()->contentsOfFolder(source, options.recursiveScan, [&options] (const path& p) { return !options.filter(p); });
+      files.insert(begin(sfiles), end(sfiles), end(files));
+    }
+  }
+  
+  if (options.verbose)
+    cout << files.size() << " entries are going to be archived." << endl;
 }
 
 void cli::listArchiveContent(const ListArchiveOptions& options, const Archive& archive)
@@ -544,7 +576,7 @@ void cli::listArchiveContent(const ListArchiveOptions& options, const Archive& a
 
 int disabled(int argc, const char* argv[])
 {
-  path p = "/Users/jack/Desktop/XNB To PNG Converter/patapon-lzma+delta.box"; //"/Volumes/OSX SSD Data/large/Innocent Life.box";
+  path p = "/Volumes/OSX SSD Data/test/test-lzma+delta.box"; //"/Volumes/OSX SSD Data/large/Innocent Life.box";
   auto source = file_data_source(p);
   
   Archive archive;
