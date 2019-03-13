@@ -1,3 +1,4 @@
 [submodule "toolbox"]
 	path = toolbox
 	url = git@github.com:Jakz/toolbox.git
+	branch = master
