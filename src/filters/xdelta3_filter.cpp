@@ -155,7 +155,7 @@ void xdelta3_filter<FUNCTION>::process()
       assert(_sourceBuffer.capacity() >= _sourceBlockSize);
       
       const xoff_t blockNumber = _xsource.getblkno;
-      const off_t offset = _sourceBlockSize * blockNumber;
+      const roff_t offset = _sourceBlockSize * blockNumber;
       const usize_t size = std::min(_sourceBlockSize, (usize_t)(_source->size() - offset));
       
       _source->seek(offset);

@@ -310,8 +310,8 @@ void Archive::write(W& w)
         
       case box::Section::ENTRY_PAYLOAD:
       {
-        off_t base = w.tell();
-        off_t length = 0;
+        roff_t base = w.tell();
+        roff_t length = 0;
         
         /* for each entry we get the payload length to compute each payload 
            offset inside the file, we also compute the total entry payload 
@@ -339,8 +339,8 @@ void Archive::write(W& w)
         
       case box::Section::STREAM_PAYLOAD:
       {
-        off_t base = w.tell();
-        off_t length = 0;
+        roff_t base = w.tell();
+        roff_t length = 0;
         
         /* for each entry we get the payload length to compute each payload
          offset inside the file, we also compute the total entry payload
@@ -368,8 +368,8 @@ void Archive::write(W& w)
         
       case box::Section::FILE_NAME_TABLE:
       {
-        off_t base = w.tell();
-        off_t offset = w.tell();
+        roff_t base = w.tell();
+        roff_t offset = w.tell();
         
         sectionHeader.offset = w.tell();
         
@@ -393,8 +393,8 @@ void Archive::write(W& w)
         
       case box::Section::GROUP_TABLE:
       {
-        off_t base = w.tell();
-        off_t offset = w.tell();
+        roff_t base = w.tell();
+        roff_t offset = w.tell();
         
         sectionHeader.offset = base;
         sectionHeader.count = static_cast<box::count_t>(_groups.size());

@@ -68,7 +68,7 @@ int xdelta3_filter<FUNCTION>::getBlockCallback(xd3_stream *stream, xd3_source *s
   assert(filter->_sourceBuffer.capacity() >= filter->_sourceBlockSize);
   
   const xoff_t blockNumber = filter->_xsource.getblkno;
-  const off_t offset = filter->_sourceBlockSize * blockNumber;
+  const roff_t offset = filter->_sourceBlockSize * blockNumber;
   const usize_t size = filter->_source->size() < offset ? 0 : std::min(filter->_sourceBlockSize, (usize_t)(filter->_source->size() - offset));
   
   filter->_source->seek(offset);
