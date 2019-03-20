@@ -10,6 +10,7 @@ include_directories(
   hash
   libs
   ../toolbox/src
+  ../toolbox/libs/lzma/include
   ${ZLIB_INCLUDE_DIRS}
 )
 

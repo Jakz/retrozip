@@ -484,20 +484,20 @@ void cli::listArchiveContent(const ListArchiveOptions& options, const Archive& a
   table.setFlag(f::DRAW_BETWEEN_COLS_EDGE, false);
 
   
-  table.addColumn({ { "SIZE", p::RIGHT, p::RIGHT } });
+  table.addColumn({ std::make_tuple("SIZE", p::RIGHT, p::RIGHT) });
 
   if (options.showFilteredSize)
-    table.addColumn({ { "FILTERED", p::RIGHT, p::RIGHT } });
+    table.addColumn({ std::make_tuple("FILTERED", p::RIGHT, p::RIGHT) });
 
   if (options.showCRC32)
-    table.addColumn({ { "CRC", p::CENTER, p::CENTER } });
+    table.addColumn({ std::make_tuple("CRC", p::CENTER, p::CENTER) });
   if (options.showMD5andSHA1)
     table.addColumnSimple({ "MD5", "SHA1" });
   
   if (options.showFilterChain)
     table.addColumnSimple({"FILTERS"});
   
-  table.addColumn({ { "S:I", p::RIGHT, p::RIGHT }, { "NAME", p::LEFT, p::LEFT } });
+  table.addColumn({ std::make_tuple("S:I", p::RIGHT, p::RIGHT), std::make_tuple("NAME", p::LEFT, p::LEFT) });
   
   for (const auto& entry : archive.entries())
   {
