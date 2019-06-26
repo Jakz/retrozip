@@ -574,9 +574,9 @@ void cli::listArchiveContent(const ListArchiveOptions& options, const Archive& a
   table.printTable();
 }
 
-int disabled(int argc, const char* argv[])
+int main(int argc, const char* argv[])
 {
-  path p = "/Volumes/OSX SSD Data/test/test-lzma+delta.box"; //"/Volumes/OSX SSD Data/large/Innocent Life.box";
+  path p = "C:\\Users\\Jack\\Desktop\\gold\\output.box"; //"/Volumes/OSX SSD Data/large/Innocent Life.box";
   auto source = file_data_source(p);
   
   Archive archive;
@@ -594,7 +594,7 @@ int disabled(int argc, const char* argv[])
 }
 
 #include "box/archive_builder.h"
-int main(int argc, const char* argv[])
+int disabled(int argc, const char* argv[])
 {
   if (argc != 2)
   {

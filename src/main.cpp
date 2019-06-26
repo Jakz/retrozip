@@ -171,6 +171,26 @@ int mainzzzz(int argc, const char * argv[])
 #include <numeric>
 #include "box/archive_builder.h"
 
+int main(int argc, const char* argv[])
+{
+  path path = "C:\\Users\\Jack\\Desktop\\gold";
+
+  ArchiveBuilder builder(CachePolicy(CachePolicy::Mode::ALWAYS, 0), MB16, MB16);
+
+  auto sources = builder.buildSourcesFromFolder(path);
+  Archive archive = builder.buildSingleStreamSolidArchive(sources);
+
+  memory_buffer sink;
+  archive.options().bufferSize = MB32;
+  archive.write(sink);
+
+  cli::li
+
+  sink.serialize(file_handle(path.append("box-solid.box"), file_mode::WRITING, false));
+
+  return 0;
+}
+
 int disabled(int argc, const char * argv[])
 {  
   ArchiveBuilder builder(CachePolicy(CachePolicy::Mode::ALWAYS, 0), MB16, MB16);

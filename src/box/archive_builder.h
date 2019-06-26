@@ -97,10 +97,10 @@ private:
   filter_builder* buildLZMA(const data_source_vector& sources);
   filter_builder* buildDeflater(const data_source_vector& sources);
   
-  enum class Log { INFO, ERROR };
+  enum class Log { LOG_INFO, LOG_ERROR };
   
   template<typename... Args> void log(Log log, const std::string& format, Args... args);
-  template<typename... Args> void error(const std::string& format, Args... args) { log(Log::ERROR, format, args...); }
+  template<typename... Args> void error(const std::string& format, Args... args) { log(Log::LOG_ERROR, format, args...); }
 
   
 public:

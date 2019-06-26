@@ -1,5 +1,9 @@
 set(srcs ${CMAKE_CURRENT_SOURCE_DIR}/cli.cpp)
 
+if (WIN32)
+set(ZLIB_ROOT ${CMAKE_SOURCE_DIR}/toolbox/libs/zlib)
+endif()
+
 find_package(ZLIB REQUIRED)
 
 include_directories(
@@ -10,6 +14,7 @@ include_directories(
   hash
   libs
   ../toolbox/src
+  ../toolbox/libs/lzma/include
   ${ZLIB_INCLUDE_DIRS}
 )
 
@@ -46,12 +51,19 @@ set_target_properties(retrozip
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
 )
 
-if (APPLE)
+if (WIN32)
+  add_library(lzmalib STATIC IMPORTED)
+  set_target_properties(lzmalib PROPERTIES
+    IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/toolbox/libs/lzma/lib/win/x64/liblzma.lib
+  )
+  target_link_libraries(retrozip lzmalib)
+elseif (APPLE)
   target_link_libraries(retrozip ${CMAKE_SOURCE_DIR}/toolbox/libs/lzma/lib/macOS/liblzma.a)
 elseif (UNIX)
   add_library(lzma SHARED IMPORTED)
   set_target_properties(lzma PROPERTIES IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/toolbox/libs/lzma/lib/linux/x64/liblzma.so)
   target_link_libraries(retrozip lzma)
 endif()
+
 
 target_link_libraries(retrozip ${LIBRARIES})

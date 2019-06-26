@@ -1,0 +1,258 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{1d85a6f9-55f8-4d03-80f9-2c4b04399e3e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\box">
+      <UniqueIdentifier>{838368ed-7993-46b6-b8fb-4123bb4a242c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\cli">
+      <UniqueIdentifier>{2fe96798-318a-4186-9163-77b8b52e7bfe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\crypto">
+      <UniqueIdentifier>{b0e64262-9a24-4dfb-ab33-a79c4dba3389}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\filters">
+      <UniqueIdentifier>{fb15d1d5-8998-4871-ac52-c53490b9dd6c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\libs">
+      <UniqueIdentifier>{f5bca5a5-8f9d-49aa-aa1c-b2b113d481b8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\tbx">
+      <UniqueIdentifier>{e509e71c-0457-47b4-a009-aaf56065ebfd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\tbx\base">
+      <UniqueIdentifier>{a4290260-b179-4352-9cde-6fa93f338da7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\tbx\extra">
+      <UniqueIdentifier>{af40687e-04d1-4d8f-9344-b1a42590fec9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\tbx\extra\fmt">
+      <UniqueIdentifier>{249c5392-dc6d-4b80-afdb-552b88341442}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\tbx\formats">
+      <UniqueIdentifier>{26a006ec-770a-4d67-a9f8-bba974f3cccb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\tbx\formats\patch">
+      <UniqueIdentifier>{5d082b3b-8f98-42d6-bd89-91877a1b5770}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\tbx\formats\patch\xdelta3">
+      <UniqueIdentifier>{be8f8880-bc2a-4bab-befe-1be2cbdd401a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\tbx\hash">
+      <UniqueIdentifier>{1b2de200-1944-4ea3-8a89-4809e7d6b313}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\tbx\platforms">
+      <UniqueIdentifier>{fbe7d80a-75a6-496f-9728-720e58bbeaf2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\tbx\platforms\windows">
+      <UniqueIdentifier>{7fccf372-4286-4e7e-a3b8-afbee600f7e1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\tbx\streams">
+      <UniqueIdentifier>{20781c38-19d9-4b78-8ef1-d7b5815e759a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\test">
+      <UniqueIdentifier>{df13c9c6-d733-4ebc-9937-bda49052c634}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\box\archive.cpp">
+      <Filter>src\box</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\box\archive_builder.cpp">
+      <Filter>src\box</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\box\filter_options.cpp">
+      <Filter>src\box</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\box\filter_queue.cpp">
+      <Filter>src\box</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\cli\args.cpp">
+      <Filter>src\cli</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\crypto\aes.cpp">
+      <Filter>src\crypto</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\filters\deflate_filter.cpp">
+      <Filter>src\filters</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\filters\lzma_filter.cpp">
+      <Filter>src\filters</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\filters\xdelta3_filter.cpp">
+      <Filter>src\filters</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\base\common.cpp">
+      <Filter>src\tbx\base</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\base\file_system.cpp">
+      <Filter>src\tbx\base</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\base\path.cpp">
+      <Filter>src\tbx\base</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\extra\fmt\format.cc">
+      <Filter>src\tbx\extra\fmt</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\extra\fmt\ostream.cc">
+      <Filter>src\tbx\extra\fmt</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\extra\fmt\posix.cc">
+      <Filter>src\tbx\extra\fmt</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\extra\fmt\printf.cc">
+      <Filter>src\tbx\extra\fmt</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\formats\patch\xdelta3\xdelta3.cpp">
+      <Filter>src\tbx\formats\patch\xdelta3</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\hash\crc32.cpp">
+      <Filter>src\tbx\hash</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\hash\md5.cpp">
+      <Filter>src\tbx\hash</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\hash\sha1.cpp">
+      <Filter>src\tbx\hash</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\test\test_support.cpp">
+      <Filter>src\test</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\box\archive.h">
+      <Filter>src\box</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\box\archive_builder.h">
+      <Filter>src\box</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\box\filter_options.h">
+      <Filter>src\box</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\box\filter_queue.h">
+      <Filter>src\box</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\box\header.h">
+      <Filter>src\box</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\cli\args.h">
+      <Filter>src\cli</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\crypto\crypto.h">
+      <Filter>src\crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\filters\deflate_filter.h">
+      <Filter>src\filters</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\filters\filters.h">
+      <Filter>src\filters</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\filters\lzma_filter.h">
+      <Filter>src\filters</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\filters\xdelta3_filter.h">
+      <Filter>src\filters</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\base\arguments.h">
+      <Filter>src\tbx\base</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\base\common.h">
+      <Filter>src\tbx\base</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\base\exceptions.h">
+      <Filter>src\tbx\base</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\base\file_system.h">
+      <Filter>src\tbx\base</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\base\path.h">
+      <Filter>src\tbx\base</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\extra\fmt\fmt_container.h">
+      <Filter>src\tbx\extra\fmt</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\extra\fmt\fmt_ostream.h">
+      <Filter>src\tbx\extra\fmt</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\extra\fmt\fmt_string.h">
+      <Filter>src\tbx\extra\fmt</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\extra\fmt\fmt_time.h">
+      <Filter>src\tbx\extra\fmt</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\extra\fmt\format.h">
+      <Filter>src\tbx\extra\fmt</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\extra\fmt\posix.h">
+      <Filter>src\tbx\extra\fmt</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\extra\fmt\printf.h">
+      <Filter>src\tbx\extra\fmt</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\formats\patch\xdelta3\xdelta3-blkcache.h">
+      <Filter>src\tbx\formats\patch\xdelta3</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\formats\patch\xdelta3\xdelta3-cfgs.h">
+      <Filter>src\tbx\formats\patch\xdelta3</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\formats\patch\xdelta3\xdelta3-decode.h">
+      <Filter>src\tbx\formats\patch\xdelta3</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\formats\patch\xdelta3\xdelta3-djw.h">
+      <Filter>src\tbx\formats\patch\xdelta3</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\formats\patch\xdelta3\xdelta3-fgk.h">
+      <Filter>src\tbx\formats\patch\xdelta3</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\formats\patch\xdelta3\xdelta3-hash.h">
+      <Filter>src\tbx\formats\patch\xdelta3</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\formats\patch\xdelta3\xdelta3-internal.h">
+      <Filter>src\tbx\formats\patch\xdelta3</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\formats\patch\xdelta3\xdelta3-list.h">
+      <Filter>src\tbx\formats\patch\xdelta3</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\formats\patch\xdelta3\xdelta3-lzma.h">
+      <Filter>src\tbx\formats\patch\xdelta3</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\formats\patch\xdelta3\xdelta3-merge.h">
+      <Filter>src\tbx\formats\patch\xdelta3</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\formats\patch\xdelta3\xdelta3-second.h">
+      <Filter>src\tbx\formats\patch\xdelta3</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\formats\patch\xdelta3\xdelta3.h">
+      <Filter>src\tbx\formats\patch\xdelta3</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\hash\hash.h">
+      <Filter>src\tbx\hash</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\platforms\windows\dirent.h">
+      <Filter>src\tbx\platforms\windows</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\streams\data_filter.h">
+      <Filter>src\tbx\streams</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\streams\data_pipe.h">
+      <Filter>src\tbx\streams</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\streams\data_source.h">
+      <Filter>src\tbx\streams</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\streams\file_data_source.h">
+      <Filter>src\tbx\streams</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\streams\memory_buffer.h">
+      <Filter>src\tbx\streams</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\test\catch.h">
+      <Filter>src\test</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\test\test_support.h">
+      <Filter>src\test</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

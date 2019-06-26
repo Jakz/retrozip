@@ -15,11 +15,11 @@ namespace box
   using checksum_t = hash::crc32_t;
   using digester_t = hash::crc32_digester;
   using payload_uid = u32;
-  
+
   static constexpr index_t INVALID_INDEX = -1;
-  
+
   static constexpr version_t CURRENT_VERSION = 0x00000001;
-  
+
   enum class Section : u32
   {
     HEADER = 1,
@@ -31,21 +31,23 @@ namespace box
     STREAM_DATA,
     FILE_NAME_TABLE,
     GROUP_TABLE,
-    
+
     FIRST_FREE_SECTION_IDENT = 1U << 31
   };
-  
+
   enum class HeaderFlag : u64
   {
     INTEGRITY_CHECKSUM_ENABLED = 0x01LLU
   };
-  
+
   enum class StreamFlag : u64
   {
     SEEKABLE,
     HAS_CHECKSUM
   };
-  
+
+  STRUCT_PACKING_PUSH
+
   struct SectionHeader
   {
     offset_t offset;
@@ -53,7 +55,7 @@ namespace box
     Section type;
     count_t count;
     
-  } __attribute__((packed));
+  } PACKED_ATTRIBUTE;
   
   struct Header
   {
@@ -71,7 +73,7 @@ namespace box
     
     bool hasFlag(HeaderFlag flag) const { return flags && flag; }
     
-  } __attribute__((packed));
+  } PACKED_ATTRIBUTE;
   
 
   struct DigestInfo
@@ -91,7 +93,7 @@ namespace box
       size_t operator()(const DigestInfo& digest) const { return std::hash<size_t>()(digest.crc32); }
     };
     
-  } __attribute__((packed));
+  } PACKED_ATTRIBUTE;
   
   enum class StorageMode : u32;
   enum class StorageSubmode : u32;
@@ -114,7 +116,7 @@ namespace box
     Entry() :
       filteredSize(0), digest(),
       stream(INVALID_INDEX), indexInStream(INVALID_INDEX) { }
-  } __attribute__((packed));
+  } PACKED_ATTRIBUTE;
   
   struct Stream
   {
@@ -127,17 +129,19 @@ namespace box
     offset_t payload;
     count_t payloadLength;
     
-  } __attribute__((packed));
+  } PACKED_ATTRIBUTE;
   
   struct Payload
   {
     payload_uid identifier;
     length_t length;
     u32 hasNext; /* to pad to 16 bytes */
-  } __attribute__((packed));
+  } PACKED_ATTRIBUTE;
   
   struct Group
   {
     count_t size;
-  } __attribute__((packed));
+  } PACKED_ATTRIBUTE;
+
+  STRUCT_PACKING_POP
 }
