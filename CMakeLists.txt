@@ -5,10 +5,11 @@ if ("${CMAKE_BUILD_TYPE}" STREQUAL "")
 endif()
 
 if(APPLE)
-  set(CMAKE_CXX_COMPILER "/usr/bin/clang++")
-  set(CMAKE_C_COMPILER "/usr/bin/clang")
+  set(CMAKE_CXX_COMPILER "/usr/bin/clang++" CACHE STRING "" FORCE)
+  set(CMAKE_C_COMPILER "/usr/bin/clang" CACHE STRING "" FORCE)
 elseif(UNIX)
-
+  set(CMAKE_CXX_COMPILER "/usr/bin/clang++" CACHE STRING "" FORCE)
+  set(CMAKE_C_COMPILER "/usr/bin/clang" CACHE STRING "" FORCE)
 elseif(WIN32)
 
 endif()
@@ -46,6 +47,7 @@ set(CMAKE_C_FLAGS_RELWITHDEBINFO "-O3 -flto -g" CACHE STRING "" FORCE)
 endif()
 
 message("Build Type is ${CMAKE_BUILD_TYPE}")
+message("Compiler is ${CMAKE_CXX_COMPILER}")
 message("C flags are ${CMAKE_C_FLAGS}")
 message("CXX flags are ${CMAKE_CXX_FLAGS}")
 message("CMAKE_SOURCE_DIR is ${CMAKE_SOURCE_DIR}")
