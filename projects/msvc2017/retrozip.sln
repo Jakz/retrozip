@@ -9,11 +9,14 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "code", "code\code.vcxitems"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cli", "cli\cli.vcxproj", "{21D4541E-B4EE-4EC1-9726-D759C069D442}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tests", "tests\tests.vcxproj", "{F1103489-50B3-4FE2-AFAC-00B2CF4F3D4E}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		code\code.vcxitems*{0dd9d07d-18fe-44ad-8252-ea044eb98746}*SharedItemsImports = 9
 		code\code.vcxitems*{21d4541e-b4ee-4ec1-9726-d759c069d442}*SharedItemsImports = 4
 		code\code.vcxitems*{cccd9a5b-51ae-4a78-b016-a595b5554581}*SharedItemsImports = 4
+		code\code.vcxitems*{f1103489-50b3-4fe2-afac-00b2cf4f3d4e}*SharedItemsImports = 4
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -34,6 +37,12 @@ Global
 		{21D4541E-B4EE-4EC1-9726-D759C069D442}.Release|x64.ActiveCfg = Release|x64
 		{21D4541E-B4EE-4EC1-9726-D759C069D442}.Release|x64.Build.0 = Release|x64
 		{21D4541E-B4EE-4EC1-9726-D759C069D442}.Release|x86.ActiveCfg = Release|x64
+		{F1103489-50B3-4FE2-AFAC-00B2CF4F3D4E}.Debug|x64.ActiveCfg = Debug|x64
+		{F1103489-50B3-4FE2-AFAC-00B2CF4F3D4E}.Debug|x64.Build.0 = Debug|x64
+		{F1103489-50B3-4FE2-AFAC-00B2CF4F3D4E}.Debug|x86.ActiveCfg = Debug|x64
+		{F1103489-50B3-4FE2-AFAC-00B2CF4F3D4E}.Release|x64.ActiveCfg = Release|x64
+		{F1103489-50B3-4FE2-AFAC-00B2CF4F3D4E}.Release|x64.Build.0 = Release|x64
+		{F1103489-50B3-4FE2-AFAC-00B2CF4F3D4E}.Release|x86.ActiveCfg = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

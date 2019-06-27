@@ -25,6 +25,7 @@ namespace box
     HEADER = 1,
     SECTION_TABLE,
     ENTRY_TABLE,
+    COMMENTS_TABLE,
     ENTRY_PAYLOAD,
     STREAM_TABLE,
     STREAM_PAYLOAD,

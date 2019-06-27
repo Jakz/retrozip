@@ -221,6 +221,7 @@ bool Archive::willSectionBeSerialized(box::Section section) const
     case box::Section::HEADER: assert(false); return false;
     case box::Section::SECTION_TABLE: assert(false); return false;
     case box::Section::ENTRY_TABLE: return !_entries.empty();
+    case box::Section::COMMENTS_TABLE: return std::any_of(_entries.begin(), _entries.end(), [] (const ArchiveEntry& entry) { return entry.hasComment(); });
     case box::Section::ENTRY_PAYLOAD: return std::any_of(_entries.begin(), _entries.end(), [] (const ArchiveEntry& entry) { return entry.payloadLength() > 0; });
     
     case box::Section::STREAM_TABLE: return !_streams.empty();
@@ -414,6 +415,13 @@ void Archive::write(W& w)
           TRACE_A("%p: archive::write() written group table of %lu bytes at %Xh (%lu)", this, sectionHeader.count, sectionHeader.offset, sectionHeader.offset);
         break;
       }
+
+      case box::Section::COMMENTS_TABLE:
+      {
+        //TODO: implement
+        assert(false);
+        break;
+      }
         
       case box::Section::STREAM_DATA:
       {
@@ -576,6 +584,13 @@ void Archive::readSection(R& r, const box::SectionHeader& header)
         _groups.emplace_back(name, indices);
       }
       
+      break;
+    }
+
+    case S::COMMENTS_TABLE:
+    {
+      //TODO: implement
+      assert(false);
       break;
     }
       

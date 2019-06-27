@@ -178,7 +178,7 @@ private:
   
 public:
   
-  ascii_table(std::ostream& out) : out(out), style(unixStyle())
+  ascii_table(std::ostream& out) : out(out), style(asciiStyle())
   {
     setFlag(flag::DRAW_LEFT_EDGE, true);
     setFlag(flag::DRAW_RIGHT_EDGE, true);
@@ -576,7 +576,7 @@ void cli::listArchiveContent(const ListArchiveOptions& options, const Archive& a
 
 int main(int argc, const char* argv[])
 {
-  path p = "C:\\Users\\Jack\\Desktop\\gold\\output.box"; //"/Volumes/OSX SSD Data/large/Innocent Life.box";
+  path p = "C:\\Users\\Jack\\Desktop\\gold\\box-xdelta.box"; //"/Volumes/OSX SSD Data/large/Innocent Life.box";
   auto source = file_data_source(p);
   
   Archive archive;
@@ -587,7 +587,7 @@ int main(int argc, const char* argv[])
   cli::ListArchiveOptions options;
 
   options.showCRC32 = true;
-  options.showMD5andSHA1 = true;
+  options.showMD5andSHA1 = false;
   cli::listArchiveContent(options, archive);
   
   return 0;

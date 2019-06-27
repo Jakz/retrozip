@@ -1,6 +1,8 @@
-#define CATCH_CONFIG_MAIN
+#define CATCH_CONFIG_RUNNER
 
 #define CATCH_CONFIG_FAST_COMPILE
+
+#define NOMINMAX
 
 #include "test/catch.h"
 
@@ -66,7 +68,7 @@ TEST_CASE("path", "[base]") {
 
 TEST_CASE("file system operations", "[base]") {
   const FileSystem* fs = FileSystem::i();
-  path base = "folder";
+  path base = "./folder";
   path sub = base + "subfolder";
   
   fs->deleteFile(base);
@@ -1253,7 +1255,7 @@ TEST_CASE("sha1", "[checksums]") {
     hash::sha1_digester digester;
     while (available > 0)
     {
-      size_t current = testing::random((u32)std::min(available+1, 64UL));
+      size_t current = testing::random((u32)std::min(available+1, (size_t)64UL));
       digester.update(testString.data() + (length - available), current);
       available -= current;
     }
@@ -1695,4 +1697,13 @@ TEST_CASE("archive (single entry archive with filters)", "[box archive]") {
   testing::ArchiveTester::verify(data, verify, output);
  
   testing::ArchiveTester::release(data);
+}
+
+int main(int argc, const char* argv[])
+{
+  int result = Catch::Session().run(argc, argv);
+
+  getchar();
+
+  return result;
 }

@@ -63,6 +63,7 @@ private:
   /* TODO: manage data ownership */
   data_source* _source;
   std::string _name;
+  std::string _comment;
 
 public:
   ArchiveEntry(const std::string& name, const box::Entry& binary, const std::vector<byte>& payload) : FilteredEntry<archive_environment>(payload),
@@ -76,6 +77,10 @@ public:
   
   void setName(const std::string& name) { this->_name = name; }
   const std::string& name() const { return _name; }
+
+  void setComment(const std::string& comment) { this->_comment = comment; }
+  const std::string& comment() const { return _comment; }
+  bool hasComment() const { return !_comment.empty(); }
   
   const decltype(_source)& source() { return _source; }
 

@@ -178,15 +178,13 @@ int main(int argc, const char* argv[])
   ArchiveBuilder builder(CachePolicy(CachePolicy::Mode::ALWAYS, 0), MB16, MB16);
 
   auto sources = builder.buildSourcesFromFolder(path);
-  Archive archive = builder.buildSingleStreamSolidArchive(sources);
+  Archive archive = builder.buildBestSingleStreamDeltaArchive(sources);
 
   memory_buffer sink;
   archive.options().bufferSize = MB32;
   archive.write(sink);
 
-  cli::li
-
-  sink.serialize(file_handle(path.append("box-solid.box"), file_mode::WRITING, false));
+  sink.serialize(file_handle(path.append("box-xdelta.box"), file_mode::WRITING, false));
 
   return 0;
 }
