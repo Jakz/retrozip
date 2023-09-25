@@ -2,8 +2,6 @@
 
 #include "tbx/base/path.h"
 
-#include "tbx/extra/fmt/printf.h"
-
 namespace cli
 {
   enum class Command

@@ -574,21 +574,42 @@ void cli::listArchiveContent(const ListArchiveOptions& options, const Archive& a
   table.printTable();
 }
 
+#include "box/archive_builder.h"
 int main(int argc, const char* argv[])
 {
-  path p = "C:\\Users\\Jack\\Desktop\\gold\\box-xdelta.box"; //"/Volumes/OSX SSD Data/large/Innocent Life.box";
-  auto source = file_data_source(p);
-  
   Archive archive;
-  archive.read(source);
   
-  cli::printArchiveInformation(p, archive);
-  
+  bool build = true;
+  if (build)
+  {
+    path path = "F:\\Misc\\retrozip";
+
+    ArchiveBuilder builder(CachePolicy(CachePolicy::Mode::ALWAYS, 0), MB16, MB16);
+
+    auto sources = builder.buildSourcesFromFolder(path);
+    std::cout << "Found " << sources.size() << " files to archive." << std::endl;
+
+    archive = builder.buildSingleStreamSolidArchive(sources);
+    memory_buffer sink;
+    archive.options().bufferSize = MB32;
+    archive.write(sink);
+    sink.serialize(file_handle("output.box", file_mode::WRITING));
+  }
+  else
+  {    
+    file_data_source source("output.box");
+    archive.options().bufferSize = MB64;
+    archive.read(source);
+  }
+
+  cli::printArchiveInformation("output.box", archive);
+
   cli::ListArchiveOptions options;
 
-  options.showCRC32 = true;
-  options.showMD5andSHA1 = false;
   cli::listArchiveContent(options, archive);
+
+  ArchiveBuilder builder(CachePolicy(CachePolicy::Mode::ALWAYS, 0), MB16, MB16);
+  builder.extractSpecificFilesFromArchive("output.box", ".", 0);
   
   return 0;
 }

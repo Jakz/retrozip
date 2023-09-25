@@ -96,15 +96,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\extra\fmt\format.cc">
       <Filter>src\tbx\extra\fmt</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\extra\fmt\ostream.cc">
-      <Filter>src\tbx\extra\fmt</Filter>
-    </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\extra\fmt\posix.cc">
-      <Filter>src\tbx\extra\fmt</Filter>
-    </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\extra\fmt\printf.cc">
-      <Filter>src\tbx\extra\fmt</Filter>
-    </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\formats\patch\xdelta3\xdelta3.cpp">
       <Filter>src\tbx\formats\patch\xdelta3</Filter>
     </ClCompile>
@@ -170,25 +161,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\base\path.h">
       <Filter>src\tbx\base</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\extra\fmt\fmt_container.h">
-      <Filter>src\tbx\extra\fmt</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\extra\fmt\fmt_ostream.h">
-      <Filter>src\tbx\extra\fmt</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\extra\fmt\fmt_string.h">
-      <Filter>src\tbx\extra\fmt</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\extra\fmt\fmt_time.h">
-      <Filter>src\tbx\extra\fmt</Filter>
-    </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\extra\fmt\format.h">
-      <Filter>src\tbx\extra\fmt</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\extra\fmt\posix.h">
-      <Filter>src\tbx\extra\fmt</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\extra\fmt\printf.h">
       <Filter>src\tbx\extra\fmt</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\formats\patch\xdelta3\xdelta3-blkcache.h">
@@ -253,6 +226,9 @@
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\test\test_support.h">
       <Filter>src\test</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\cli\box.h">
+      <Filter>src\cli</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

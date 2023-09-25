@@ -17,19 +17,19 @@
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{21D4541E-B4EE-4EC1-9726-D759C069D442}</ProjectGuid>
     <RootNamespace>cli</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -55,15 +55,10 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>
-        $(RetroZipRoot)\toolbox\src;
-        $(RetroZipRoot)\src;
-        $(RetroZipRoot)\toolbox\libs\zlib\include;
-        $(RetroZipRoot)\toolbox\libs\lzma\include_win;
-        %(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(RetroZipRoot)\toolbox\src;$(RetroZipRoot)\src;$(RetroZipRoot)\toolbox\libs\zlib\include;$(RetroZipRoot)\toolbox\libs\lzma\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>$(RetroZipRoot)\toolbox\libs\zlib\lib\zlib.lib;$(RetroZipRoot)\toolbox\libs\lzma\lib\win\x64\lzma.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(RetroZipRoot)\toolbox\libs\zlib\lib\win_x64\zlib.lib;$(RetroZipRoot)\toolbox\libs\lzma\lib\win\x64\lzma.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -72,10 +67,13 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;NOMINMAX</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <DisableSpecificWarnings>4068</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -90,10 +88,13 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;NOMINMAX</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <DisableSpecificWarnings>4068</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

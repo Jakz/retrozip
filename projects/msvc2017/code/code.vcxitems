@@ -28,9 +28,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\base\file_system.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\base\path.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\extra\fmt\format.cc" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\extra\fmt\ostream.cc" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\extra\fmt\posix.cc" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\extra\fmt\printf.cc" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\formats\patch\xdelta3\xdelta3.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\hash\crc32.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\hash\md5.cpp" />
@@ -43,6 +40,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\box\filter_queue.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\box\header.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\cli\args.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\cli\box.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\crypto\crypto.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\filters\deflate_filter.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\filters\filters.h" />
@@ -55,13 +53,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\base\exceptions.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\base\file_system.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\base\path.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\extra\fmt\fmt_container.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\extra\fmt\fmt_ostream.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\extra\fmt\fmt_string.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\extra\fmt\fmt_time.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\extra\fmt\format.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\extra\fmt\posix.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\extra\fmt\printf.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\formats\patch\xdelta3\xdelta3-blkcache.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\formats\patch\xdelta3\xdelta3-cfgs.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\formats\patch\xdelta3\xdelta3-decode.h" />
