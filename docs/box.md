@@ -56,6 +56,7 @@ Size | Type | Description
 4b | `index_t` | index in stream of this entry
 8b | `offset_t` | absolute offset in file of payload data
 4b | `length_t` | length in bytes of payload data
+8b | `timestamp_t ` | timestamp in seconds since 1 January 1970
 8b | `offset_t` | absolute offset in file of NUL-terminated entry name
 
 ## DigestInfo
