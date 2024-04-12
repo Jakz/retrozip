@@ -717,6 +717,12 @@ void Archive::writeStream(W& w, ArchiveStream& stream)
   {
     ArchiveEntry& entry = _entries[index];
     data_source* source = entry.source();
+
+    /* if source is nullptr we need to prepare it from the existing archive */
+    if (!source)
+    {
+
+    }
     
     /* first we wrap with a counter filter to calculate the original input size */
     auto* inputCounter = new counter_t(source);

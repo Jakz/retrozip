@@ -1,5 +1,3 @@
-#define CATCH_CONFIG_RUNNER
-
 #define CATCH_CONFIG_FAST_COMPILE
 
 #define NOMINMAX
@@ -1697,13 +1695,4 @@ TEST_CASE("archive (single entry archive with filters)", "[box archive]") {
   testing::ArchiveTester::verify(data, verify, output);
  
   testing::ArchiveTester::release(data);
-}
-
-int main(int argc, const char* argv[])
-{
-  int result = Catch::Session().run(argc, argv);
-
-  getchar();
-
-  return result;
 }

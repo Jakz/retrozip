@@ -24,14 +24,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\filters\lzma_filter.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\filters\xdelta3_filter.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\test\test_support.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\base\common.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\base\file_system.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\base\path.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\extra\fmt\format.cc" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\formats\patch\xdelta3\xdelta3.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\hash\crc32.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\hash\md5.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\hash\sha1.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\box\archive.h" />
@@ -41,6 +33,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\box\header.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\cli\args.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\cli\box.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\cli\cxxopts.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\crypto\crypto.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\filters\deflate_filter.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\filters\filters.h" />
@@ -48,30 +41,5 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\filters\xdelta3_filter.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\test\catch.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\test\test_support.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\base\arguments.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\base\common.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\base\exceptions.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\base\file_system.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\base\path.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\extra\fmt\format.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\formats\patch\xdelta3\xdelta3-blkcache.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\formats\patch\xdelta3\xdelta3-cfgs.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\formats\patch\xdelta3\xdelta3-decode.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\formats\patch\xdelta3\xdelta3-djw.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\formats\patch\xdelta3\xdelta3-fgk.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\formats\patch\xdelta3\xdelta3-hash.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\formats\patch\xdelta3\xdelta3-internal.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\formats\patch\xdelta3\xdelta3-list.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\formats\patch\xdelta3\xdelta3-lzma.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\formats\patch\xdelta3\xdelta3-merge.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\formats\patch\xdelta3\xdelta3-second.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\formats\patch\xdelta3\xdelta3.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\hash\hash.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\platforms\windows\dirent.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\streams\data_filter.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\streams\data_pipe.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\streams\data_source.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\streams\file_data_source.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\toolbox\src\tbx\streams\memory_buffer.h" />
   </ItemGroup>
 </Project>

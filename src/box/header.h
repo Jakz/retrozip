@@ -11,6 +11,7 @@ namespace box
   using length_t = u64;
   using slength_t = u32;
   using tlength_t = u16;
+  using timestamp_t = s64;
   using index_t = s32;
   using checksum_t = hash::crc32_t;
   using digester_t = hash::crc32_digester;
@@ -112,10 +113,11 @@ namespace box
     offset_t payload;
     count_t payloadLength;
     
+    timestamp_t timestamp;
     offset_t entryNameOffset;
     
     Entry() :
-      filteredSize(0), digest(),
+      filteredSize(0), digest(), timestamp(0),
       stream(INVALID_INDEX), indexInStream(INVALID_INDEX) { }
   } PACKED_ATTRIBUTE;
   

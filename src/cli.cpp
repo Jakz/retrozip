@@ -574,32 +574,73 @@ void cli::listArchiveContent(const ListArchiveOptions& options, const Archive& a
   table.printTable();
 }
 
+#include "cli/box.h"
+int disabled3(int argc, const char* argv[])
+{
+  auto* handle = boxOpenArchive("output.box");
+  
+  EntryInfo info;
+  boxFillEntryInfo(handle, 0, &info);
+
+  printf("%s\n", info.name);
+  return 0;
+}
+
+#define CATCH_CONFIG_MAIN
+//#include "test/catch.h"
+
+#include "cli/cxxopts.hpp"
+
+int mainzzz(int argc, const char* argv[])
+{
+  cxxopts::Options options("box", "box archive cli interface");
+
+  options.add_options()
+    ("i,input", "input file name", cxxopts::value<std::vector<std::string>>())
+    ("output", "output file name", cxxopts::value<std::string>())
+  ;
+
+  options.parse_positional("output");
+
+  printf("%s\n", options.help().c_str());
+
+  options.parse(argc, argv);
+  return 0;
+}
+
 #include "box/archive_builder.h"
 int main(int argc, const char* argv[])
 {
+  //auto session = Catch::Session();
+  //return session.run(argc, argv);
+ 
   Archive archive;
   
-  bool build = true;
+  bool build = false;
   if (build)
   {
-    path path = "F:\\Misc\\retrozip";
+    path path = "F:\\Misc\\retrozip\\layton\\uncompressed";
 
     ArchiveBuilder builder(CachePolicy(CachePolicy::Mode::ALWAYS, 0), MB16, MB16);
 
     auto sources = builder.buildSourcesFromFolder(path);
     std::cout << "Found " << sources.size() << " files to archive." << std::endl;
 
-    archive = builder.buildSingleStreamSolidArchive(sources);
+    archive = builder.buildSingleStreamBaseWithDeltasArchive(sources, 0);// builder.buildSingleStreamSolidArchive(sources);
     memory_buffer sink;
     archive.options().bufferSize = MB32;
     archive.write(sink);
-    sink.serialize(file_handle("output.box", file_mode::WRITING));
+    sink.serialize(file_handle("F:\\Misc\\retrozip\\layton\\output.box", file_mode::WRITING));
   }
-  else
+  else if (false)
   {    
     file_data_source source("output.box");
     archive.options().bufferSize = MB64;
     archive.read(source);
+
+    memory_buffer sink;
+    archive.write(sink);
+    sink.serialize(file_handle("output2.box", file_mode::WRITING));
   }
 
   cli::printArchiveInformation("output.box", archive);
@@ -609,7 +650,7 @@ int main(int argc, const char* argv[])
   cli::listArchiveContent(options, archive);
 
   ArchiveBuilder builder(CachePolicy(CachePolicy::Mode::ALWAYS, 0), MB16, MB16);
-  builder.extractSpecificFilesFromArchive("output.box", ".", 0);
+  builder.extractSpecificFilesFromArchive("F:\\Misc\\retrozip\\layton\\output.box", ".", 0);
   
   return 0;
 }

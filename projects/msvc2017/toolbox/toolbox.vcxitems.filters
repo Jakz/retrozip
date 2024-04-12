@@ -1,0 +1,132 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="tbx">
+      <UniqueIdentifier>{4f6e3470-b044-43d7-b1b9-173f30b38546}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="tbx\base">
+      <UniqueIdentifier>{5e749224-8329-4142-8aaa-054080d71c1a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="tbx\extra">
+      <UniqueIdentifier>{57d797e0-8a5c-40b8-9a59-271f7a0d0b28}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="tbx\formats">
+      <UniqueIdentifier>{3a1f37a7-16e7-4dca-b7ca-08e681ed5eb1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="tbx\hash">
+      <UniqueIdentifier>{bf843d86-a3eb-43d8-b40d-f630dd8aad98}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="tbx\streams">
+      <UniqueIdentifier>{f412110f-45f0-4a6a-89b5-8a2d0cb8b44b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="tbx\formats\patch">
+      <UniqueIdentifier>{ca2ffe57-edb0-4a5f-a5fa-2b0c0430a735}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="tbx\formats\patch\xdelta3">
+      <UniqueIdentifier>{a253af49-4c2d-4872-8349-a46171e7dd9b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="tbx\extra\format">
+      <UniqueIdentifier>{3e19a44b-35a6-4cfc-8627-cdec2bd8cd99}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\streams\file_data_source.h">
+      <Filter>tbx\streams</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\streams\memory_buffer.h">
+      <Filter>tbx\streams</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\streams\data_filter.h">
+      <Filter>tbx\streams</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\streams\data_pipe.h">
+      <Filter>tbx\streams</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\streams\data_source.h">
+      <Filter>tbx\streams</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\hash\hash.h">
+      <Filter>tbx\hash</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\patch\xdelta3\xdelta3-list.h">
+      <Filter>tbx\formats\patch\xdelta3</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\patch\xdelta3\xdelta3-lzma.h">
+      <Filter>tbx\formats\patch\xdelta3</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\patch\xdelta3\xdelta3-merge.h">
+      <Filter>tbx\formats\patch\xdelta3</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\patch\xdelta3\xdelta3-second.h">
+      <Filter>tbx\formats\patch\xdelta3</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\patch\xdelta3\xdelta3.h">
+      <Filter>tbx\formats\patch\xdelta3</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\patch\xdelta3\xdelta3-blkcache.h">
+      <Filter>tbx\formats\patch\xdelta3</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\patch\xdelta3\xdelta3-cfgs.h">
+      <Filter>tbx\formats\patch\xdelta3</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\patch\xdelta3\xdelta3-decode.h">
+      <Filter>tbx\formats\patch\xdelta3</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\patch\xdelta3\xdelta3-djw.h">
+      <Filter>tbx\formats\patch\xdelta3</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\patch\xdelta3\xdelta3-fgk.h">
+      <Filter>tbx\formats\patch\xdelta3</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\patch\xdelta3\xdelta3-hash.h">
+      <Filter>tbx\formats\patch\xdelta3</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\patch\xdelta3\xdelta3-internal.h">
+      <Filter>tbx\formats\patch\xdelta3</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\extra\fmt\format.h">
+      <Filter>tbx\extra\format</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\base\common.h">
+      <Filter>tbx\base</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\base\exceptions.h">
+      <Filter>tbx\base</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\base\file_system.h">
+      <Filter>tbx\base</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\base\path.h">
+      <Filter>tbx\base</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\base\arguments.h">
+      <Filter>tbx\base</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\hash\md5.cpp">
+      <Filter>tbx\hash</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\hash\sha1.cpp">
+      <Filter>tbx\hash</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\hash\crc32.cpp">
+      <Filter>tbx\hash</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\patch\xdelta3\xdelta3.cpp">
+      <Filter>tbx\formats\patch\xdelta3</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\extra\fmt\format.cc">
+      <Filter>tbx\extra\format</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\base\file_system.cpp">
+      <Filter>tbx\base</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\base\path.cpp">
+      <Filter>tbx\base</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\base\common.cpp">
+      <Filter>tbx\base</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

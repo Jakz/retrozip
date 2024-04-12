@@ -224,7 +224,7 @@ namespace builders
 {
   enum identifier : box::payload_uid
   {
-    MIS_FILTERS_BASE = 1ULL,
+    MISC_FILTERS_BASE = 1ULL,
     XOR_FILTER,
     
     COMPRESSION_FILTERS_BASE = 1024ULL,
