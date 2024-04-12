@@ -1,0 +1,48 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{1e3b9373-14cb-4122-a7ba-cc42a6f5d88a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\parsers">
+      <UniqueIdentifier>{cf7b6524-0865-4764-bb7c-83504b9d5757}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\libs">
+      <UniqueIdentifier>{f4820c78-a9fd-4192-813a-c816b3c27527}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\libs\pugixml">
+      <UniqueIdentifier>{e0a2536e-aedd-42db-a27e-607af30fa1db}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\data">
+      <UniqueIdentifier>{c2fcb502-d31f-4089-bba3-484990886f26}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\src\cellar.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\parsers\logiqx.cpp">
+      <Filter>src\parsers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\parsers\clrmamepro.cpp">
+      <Filter>src\parsers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\libs\pugixml\pugixml.cpp">
+      <Filter>src\libs\pugixml</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\src\parsers\parser.h">
+      <Filter>src\parsers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\data\entry.h">
+      <Filter>src\data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\libs\pugixml\pugixml.hpp">
+      <Filter>src\libs\pugixml</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\libs\pugixml\pugiconfig.hpp">
+      <Filter>src\libs\pugixml</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

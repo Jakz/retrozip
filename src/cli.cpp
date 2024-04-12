@@ -616,26 +616,26 @@ int main(int argc, const char* argv[])
  
   Archive archive;
   
-  bool build = false;
+  bool build = true;
   if (build)
   {
-    path path = "F:\\Misc\\retrozip\\layton\\uncompressed";
+    path path = "F:\\Misc\\retrozip\\smash\\single";
 
-    ArchiveBuilder builder(CachePolicy(CachePolicy::Mode::ALWAYS, 0), MB16, MB16);
+    ArchiveBuilder builder(CachePolicy(CachePolicy::Mode::NEVER, 0), MB128, MB128);
 
     auto sources = builder.buildSourcesFromFolder(path);
     std::cout << "Found " << sources.size() << " files to archive." << std::endl;
 
     archive = builder.buildSingleStreamBaseWithDeltasArchive(sources, 0);// builder.buildSingleStreamSolidArchive(sources);
     memory_buffer sink;
-    archive.options().bufferSize = MB32;
+    archive.options().bufferSize = MB256;
     archive.write(sink);
     sink.serialize(file_handle("F:\\Misc\\retrozip\\layton\\output.box", file_mode::WRITING));
   }
   else if (false)
   {    
     file_data_source source("output.box");
-    archive.options().bufferSize = MB64;
+    archive.options().bufferSize = MB256;
     archive.read(source);
 
     memory_buffer sink;
@@ -649,8 +649,8 @@ int main(int argc, const char* argv[])
 
   cli::listArchiveContent(options, archive);
 
-  ArchiveBuilder builder(CachePolicy(CachePolicy::Mode::ALWAYS, 0), MB16, MB16);
-  builder.extractSpecificFilesFromArchive("F:\\Misc\\retrozip\\layton\\output.box", ".", 0);
+  ArchiveBuilder builder(CachePolicy(CachePolicy::Mode::ALWAYS, 0), MB256, MB256);
+  builder.extractSpecificFilesFromArchive("F:\\Misc\\retrozip\\smash\\output.box", ".", 0);
   
   return 0;
 }

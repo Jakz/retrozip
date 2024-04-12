@@ -84,7 +84,7 @@ extern void debugnnprintf(const char* str, ...);
 
 #define TRACE_MEMORY_BUFFERS 0
 #define TRACE_PIPES 0
-#define TRACE_ARCHIVE 1
+#define TRACE_ARCHIVE 0
 #define TRACE_ARCHIVE_BUILDER 0
 #define TRACE_ENABLED 0
 #define TRACE_FILES 0
@@ -334,6 +334,14 @@ public:
   bool operator!=(const wrapped_array<LENGTH>& other) const { return _data != other._data; }
 
   std::ostream& operator<<(std::ostream& o) const { o << operator std::string(); return o; }
+
+  struct hasher
+  {
+    size_t operator()(const wrapped_array<LENGTH>& array) const
+    {
+      return std::hash<std::string_view>()(std::string_view((const char*)array._data.data(), LENGTH));
+    }
+  };
 };
 
 template<typename T>

@@ -45,9 +45,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\streams\data_source.h">
       <Filter>tbx\streams</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\hash\hash.h">
-      <Filter>tbx\hash</Filter>
-    </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\patch\xdelta3\xdelta3-list.h">
       <Filter>tbx\formats\patch\xdelta3</Filter>
     </ClInclude>
@@ -102,17 +99,11 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\base\arguments.h">
       <Filter>tbx\base</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\hash\hash.h">
+      <Filter>tbx\hash</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\hash\md5.cpp">
-      <Filter>tbx\hash</Filter>
-    </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\hash\sha1.cpp">
-      <Filter>tbx\hash</Filter>
-    </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\hash\crc32.cpp">
-      <Filter>tbx\hash</Filter>
-    </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\patch\xdelta3\xdelta3.cpp">
       <Filter>tbx\formats\patch\xdelta3</Filter>
     </ClCompile>
@@ -127,6 +118,15 @@
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\base\common.cpp">
       <Filter>tbx\base</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\hash\md5.cpp">
+      <Filter>tbx\hash</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\hash\sha1.cpp">
+      <Filter>tbx\hash</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\hash\crc32.cpp">
+      <Filter>tbx\hash</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

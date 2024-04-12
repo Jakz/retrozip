@@ -1,6 +1,6 @@
 #include "common.h"
 
-#include <zlib.h>
+#include "zlib.h"
 
 void debugprintf(const char* str, ...)
 {
