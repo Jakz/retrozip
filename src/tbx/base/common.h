@@ -26,7 +26,7 @@ using s64 = int64_t;
 
 using roff_t = int64_t;
 
-constexpr bool IS_LITTLE_ENDIAN_ = std::endian::native == std::endian::little;
+static constexpr bool IS_LITTLE_ENDIAN_ = true;//std::endian::native == std::endian::little;
 
 /*
 #if defined(__BYTE_ORDER) && __BYTE_ORDER == __BIG_ENDIAN || \
@@ -58,8 +58,7 @@ constexpr bool IS_LITTLE_ENDIAN_ = true;
 */
 
 
-#define PACKED_ATTRIBUTE 
-//__attribute__((packed, aligned(1)))
+#define PACKED_ATTRIBUTE __attribute__((packed, aligned(1)))
 
 #if defined(_WIN32) || defined(_WIN64)
 

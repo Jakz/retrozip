@@ -1,4 +1,5 @@
 #include <string>
+#include <vector>
 
 #include "tbx/base/path.h"
 

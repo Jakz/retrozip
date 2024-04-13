@@ -1,11 +1,20 @@
 #pragma once
 
 #include <cstdint>
+#include <cstdlib>
+
+#ifdef _WIN32
 
 #ifdef BOXLIB_EXPORTS
 #define BOXLIB_API __declspec(dllexport)
 #else
 #define BOXLIB_API __declspec(dllimport)
+#endif
+
+#else
+
+#define BOXLIB_API
+
 #endif
 
 using archive_handle = void*;

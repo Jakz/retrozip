@@ -6,7 +6,7 @@ const FileSystem* FileSystem::i()
   return &instance;
 }
 
-#if defined(__APPLE__)
+#if false && defined(__APPLE__)
 
 #include <dirent.h>
 #include <sys/stat.h>
@@ -206,7 +206,7 @@ bool FileSystem::fallocate(const path &path, size_t aLength) const
   return false;
 }
 
-#elif defined(_WIN32)
+#else
 
 #include <filesystem>
 
@@ -235,6 +235,9 @@ void scanFolder(const path& root, const std::function<void(bool, const path& pat
 std::vector<path> FileSystem::contentsOfFolder(const path& folder, bool recursive, predicate<path> exclude) const
 {
   std::vector<path> result;
+  
+  if (!fs::is_directory(fs::path(folder.data())))
+    throw exceptions::file_not_found(folder);
 
   if (recursive)
   {
@@ -298,6 +301,6 @@ bool FileSystem::fallocate(const path& path, size_t size) const
   return false;
 }
 
-#else
-#error unimplemented FileSystem for platform
+//#else
+//#error unimplemented FileSystem for platform
 #endif
