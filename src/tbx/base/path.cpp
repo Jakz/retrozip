@@ -18,10 +18,8 @@ path::path(const char* data) : _data(data)
 
 path::path(const std::string& data) : _data(data)
 {
-  if (_data.back() == SEPARATOR && _data.length() > 1)
+  if (!_data.empty() && _data.back() == SEPARATOR && _data.length() > 1)
     _data.pop_back();
-
-  
 }
 
 bool path::isAbsolute() const

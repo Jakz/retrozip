@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\src\cli.cpp" />
+    <ClCompile Include="..\..\..\src\cli\cli.cpp" />
     <ClCompile Include="..\..\..\src\cli\dll.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

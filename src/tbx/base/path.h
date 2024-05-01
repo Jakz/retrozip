@@ -5,6 +5,7 @@
 #include <unordered_set>
 #include <functional>
 #include <memory>
+#include <filesystem>
 
 #if _WIN32
 #include <codecvt>
@@ -183,11 +184,7 @@ public:
   size_t length() const
   {
     assert(_file != nullptr);
-    long c = ftell(_file);
-    fseek(_file, 0, SEEK_END);
-    long s = ftell(_file);
-    fseek(_file, c, SEEK_SET);
-    return s;
+    return std::filesystem::file_size(_path.data());
   }
   
   std::string toString()

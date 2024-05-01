@@ -781,10 +781,10 @@ void Archive::writeStream(W& w, ArchiveStream& stream)
   passthrough_pipe pipe(finalStream, &w, _options.bufferSize);
   pipe.process([this, &wholeCounter, &sources]() {
     //TODO: performance costly
-    size_t inputSum = std::accumulate(sources.begin(), sources.end(), 0, [] (size_t v, const data_source_helper& helper) {
-      return v + helper.inputCounter->filter().count();
-    });
-    
+    size_t inputSum = 0;
+    for (const data_source_helper& helper : sources)
+      inputSum += helper.inputCounter->filter().count();
+ 
     TRACE_A("%p: archive::write() processed %s into %s bytes", this, strings::humanReadableSize(inputSum, true).c_str(), strings::humanReadableSize(wholeCounter.filter().count(), true).c_str());
   });
   

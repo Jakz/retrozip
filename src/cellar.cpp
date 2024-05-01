@@ -6,118 +6,12 @@
 //  Copyright © 2018 Jack. All rights reserved.
 //
 
-#define FUSE_USE_VERSION 26
-#include <cstring>
-#include <cerrno>
-#include "fuse/fuse.h"
+
 
 #include <iostream>
 #include <iomanip>
 
 #include "tbx/base/path.h"
-
-static const char* hello_str = "Hello World!\n";
-static const char* hello_path = "/hello";
-
-using fs_ret = int;
-using fs_path = path;
-
-using fsblkcnt_t = uint64_t;
-using fsfilcnt_t = uint64_t;
-
-using fuse_offset = long long;
-
-#if !defined(O_ACCMODE)
-#define O_ACCMODE     (O_RDONLY | O_WRONLY | O_RDWR)
-#endif
-
-class MatrixFS
-{
-private:
-  static MatrixFS* instance;
-  struct fuse_operations ops;
-  fuse* fs;
-  
-  static int statsfs(const char* foo, struct statvfs* stats)
-  {
-    stats->f_bsize = 2048;
-    stats->f_blocks = 2;
-    stats->f_bfree = std::numeric_limits<fsblkcnt_t>::max();
-    stats->f_bavail = std::numeric_limits<fsblkcnt_t>::max();
-    stats->f_files = 3;
-    stats->f_ffree = std::numeric_limits<fsfilcnt_t>::max();
-    stats->f_namemax = 256;
-    return 0;
-  }
-
-  static int access(const char* path, int) { return 0; }
-  
-  static int sgetattr(const char *path, FUSE_STAT* stbuf) { return instance->getattr(path, stbuf); }
-  static int sreaddir(const char *path, void *buf, fuse_fill_dir_t filler, fuse_offset offset, fuse_file_info *fi) { return instance->readdir(path, buf, filler, offset, fi); }
-  static int sopendir(const char* path, fuse_file_info* fi) { return instance->opendir(path, fi); }
-  
-  static int open(const char *path, struct fuse_file_info *fi)
-  {
-    //std::cout << "open" << std::endl;
-    
-    if (strcmp(path, hello_path) != 0)
-      return -ENOENT;
-    if ((fi->flags & O_ACCMODE) != O_RDONLY)
-      return -EACCES;
-    return 0;
-  }
-  
-  static int read(const char *path, char *buf, size_t size, fuse_offset offset, struct fuse_file_info *fi)
-  {
-    //std::cout << "read" << std::endl;
-    
-    size_t len;
-    (void) fi;
-    if(strcmp(path, hello_path) != 0)
-      return -ENOENT;
-    len = strlen(hello_str);
-    if (offset < len) {
-      if (offset + size > len)
-        size = len - offset;
-      memcpy(buf, hello_str + offset, size);
-    } else
-      size = 0;
-    return (int)size;
-  }
-  
-  fs_ret getattr(const fs_path& path, FUSE_STAT* stbuf);
-  
-  fs_ret opendir(const fs_path& path, fuse_file_info* fi);
-  fs_ret readdir(const fs_path& path, void* buf, fuse_fill_dir_t filler, fuse_offset offset, fuse_file_info* fi);
-
-  
-public:
-  MatrixFS() : fs(nullptr)
-  {
-    instance = this;
-    
-    memset(&ops, 0, sizeof(fuse_operations));
-    
-    ops.statfs = statsfs;
-    ops.access = access;
-    ops.getattr = sgetattr;
-    
-    ops.opendir = sopendir;
-    ops.readdir = sreaddir;
-    
-    
-    ops.open = open;
-    ops.read = read;
-  }
-  
-  void createHandle()
-  {
-    char* argv[] = { (char*)"fuse", (char*)"-d", (char*)R"(C:\Users\Jack\Documents\dev\romatrix\mount)" };
-    int i =  fuse_main(3, argv, &ops, nullptr);
-  }
-};
-
-MatrixFS* MatrixFS::instance;
 
 #include <iostream>
 
@@ -138,6 +32,10 @@ MatrixFS* MatrixFS::instance;
 #include <io.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+
+#include "cellar/fs/cellar_fs.h"
+
+CellarFS cellar;
 
 class Hasher
 {
@@ -489,7 +387,7 @@ int main(int argc, const char* argv[])
 
   return 0;*/
   
-  auto datFiles = FileSystem::i()->contentsOfFolder("dats");
+  auto datFiles = std::vector<path>();// FileSystem::i()->contentsOfFolder("dats");
   
   parsing::LogiqxParser parser;
   
@@ -597,122 +495,8 @@ int main(int argc, const char* argv[])
 
   //database->shutdown();
   
-  //MatrixFS fs;
-  //fs.createHandle();
+  CellarFS fs;
+  fs.createHandle();
   
   return 0;
-}
-
-#define ATTR_AS_FILE(x) x->st_mode = S_IFREG | 0444
-#define ATTR_AS_DIR(x) x->st_mode = S_IFDIR | 0755
-
-fs_ret MatrixFS::getattr(const fs_path& path, FUSE_STAT* stbuf)
-{
-    int res = 0;
-    memset(stbuf, 0, sizeof(FUSE_STAT));
-    stbuf->st_nlink = 1;
-    
-    if (path == "/")
-    {
-      ATTR_AS_DIR(stbuf);
-    }
-    else if (path.isAbsolute())
-    {
-      auto tpath = ::path(path.c_str()+1);
-      
-      const DatFile* dat = data.datForName(tpath.str());
-      
-      if (dat)
-        ATTR_AS_DIR(stbuf);
-      else
-      {
-        auto ppath = tpath.parent();
-        
-        const DatFile* dat = data.datForName(ppath.str());
-
-        if (dat)
-        {
-          auto fileName = tpath.filename();
-          
-          const DatGame* game = dat->gameByName(fileName);
-          
-          if (game)
-          {
-            ATTR_AS_FILE(stbuf);
-            stbuf->st_size = data.hashes()[game->roms[0].ref].size();
-          }
-        }
-      }
-      
-      /*stbuf->st_mode = S_IFREG | 0444;
-      stbuf->st_nlink = 1;
-      stbuf->st_size = strlen(hello_str);*/
-    }
-    else
-      res = -ENOENT;
-    
-    return res;
-}
-    
-using fuse_opaque_handle = uint64_t;
-constexpr static fuse_opaque_handle DAT_LIST_FH_HANDLE = 0xFFFFFFFFFFFFFFFFULL;
-    
-fs_ret MatrixFS::opendir(const fs_path& path, fuse_file_info* fi)
-{
-  /* opendir is called before readdir, we can store in fi->fh values used
-     later by readdir */
-  
-  fs_ret ret = 0;
-  fi->fh = 0ULL;
-  
-  /* if path is root use special value to signal it */
-  if (path == "/")
-    fi->fh = DAT_LIST_FH_HANDLE;
-  else if (path.isAbsolute())
-  {
-    /* path is made as "/some_nice_text", find a corresponding DAT */
-    const DatFile* dat = data.datForName(path.makeRelative().str());
-
-    if (dat)
-      fi->fh = reinterpret_cast<u64>(dat);
-    else
-      fi->fh = -ENOENT;
-  }
-
-  return ret;
-}
-
-fs_ret MatrixFS::readdir(const fs_path& path, void* buf, fuse_fill_dir_t filler, fuse_offset offset, struct fuse_file_info* fi)
-{
-  /* special case, all the DATs folders */
-  if (fi->fh == DAT_LIST_FH_HANDLE)
-  {
-    filler(buf, ".", nullptr, 0);
-    filler(buf, "..", nullptr, 0);
-    
-    filler(buf, "ToSort", nullptr, 0);
-    
-    //for (const auto& dat : data.dats())
-    //  filler(buf, dat.second.folderName.c_str(), nullptr, 0);
-    
-    return 0;
-  }
-  else if (fi->fh)
-  {
-    const DatFile* dat = reinterpret_cast<const DatFile*>(fi->fh);
-    
-    if (dat)
-    {
-      filler(buf, ".", nullptr, 0);
-      filler(buf, "..", nullptr, 0);
-      
-      /* fill with all entry from DAT */
-      for (const auto& entry : dat->games)
-        filler(buf, entry.name.c_str(), nullptr, 0);
-        
-      return 0;
-    }
-  }
-  
-  return -ENOENT;
 }

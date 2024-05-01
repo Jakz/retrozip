@@ -16,6 +16,12 @@
     <Filter Include="src\data">
       <UniqueIdentifier>{c2fcb502-d31f-4089-bba3-484990886f26}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\cellar">
+      <UniqueIdentifier>{178b4612-9388-4137-8171-1fe8a58e5b01}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\cellar\fs">
+      <UniqueIdentifier>{5e509d5a-24be-4327-8dcc-624a4e41a936}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\cellar.cpp">
@@ -30,6 +36,9 @@
     <ClCompile Include="..\..\..\src\libs\pugixml\pugixml.cpp">
       <Filter>src\libs\pugixml</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\cellar\fs\cellar_fs.cpp">
+      <Filter>src\cellar\fs</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\parsers\parser.h">
@@ -43,6 +52,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\src\libs\pugixml\pugiconfig.hpp">
       <Filter>src\libs\pugixml</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\cellar\fs\cellar_fs.h">
+      <Filter>src\cellar\fs</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

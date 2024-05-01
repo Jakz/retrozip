@@ -164,6 +164,8 @@ public:
       ensure_capacity(_capacity + delta);
     }
 
+    TRACE_MB("%p: memory_buffer::write(%lu, %lu)", this, size, count);
+
     std::copy((const byte*)data, (const byte*)data + (size*count), _data+_position);
     _position += count*size;
     _size = std::max(_size, (size_t)_position);
@@ -173,6 +175,8 @@ public:
   template<typename T> size_t read(T& dest) { return read(&dest, sizeof(T), 1); }
   size_t read(void* data, size_t size, size_t count)
   {
+    TRACE_MB("%p: memory_buffer::read(%lu, %lu)", this, size, count);
+
     size_t available = std::min(_size - _position, (roff_t)size*count);
     std::copy(_data + _position, _data + _position + available, (byte*)data);
     _position += available;

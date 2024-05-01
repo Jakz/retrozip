@@ -58,17 +58,18 @@ constexpr bool IS_LITTLE_ENDIAN_ = true;
 */
 
 
-#define PACKED_ATTRIBUTE __attribute__((packed, aligned(1)))
 
 #if defined(_WIN32) || defined(_WIN64)
 
 #define STRUCT_PACKING_PUSH __pragma(pack(push,1))
 #define STRUCT_PACKING_POP __pragma(pack(pop))
+#define PACKED_ATTRIBUTE
 
 #else
 
 #define STRUCT_PACKING_PUSH
 #define STRUCT_PACKING_POP
+#define PACKED_ATTRIBUTE __attribute__((packed, aligned(1)))
 
 #endif
 
@@ -83,7 +84,7 @@ extern void debugnnprintf(const char* str, ...);
 
 #define TRACE_MEMORY_BUFFERS 0
 #define TRACE_PIPES 0
-#define TRACE_ARCHIVE 0
+#define TRACE_ARCHIVE 1
 #define TRACE_ARCHIVE_BUILDER 0
 #define TRACE_ENABLED 0
 #define TRACE_FILES 0

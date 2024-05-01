@@ -66,7 +66,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(RetroZipRoot)\libs\zlib\lib\win_x64\zlib.lib;$(RetroZipRoot)\libs\lzma\lib\win\x64\lzma.lib;$(RetroZipRoot)\libs\leveldb\lib\win_x64\leveldbD.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(RetroZipRoot)\libs\zlib\lib\win_x64\zlib.lib;$(RetroZipRoot)\libs\lzma\lib\win\x64\lzma.lib;$(RetroZipRoot)\libs\leveldb\lib\win_x64\leveldbD.lib;$(RetroZipRoot)\libs\dokan\lib\win_x64\dokanfuse2.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -83,16 +83,18 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(RetroZipRoot)\libs\zlib\lib\win_x64\zlib.lib;$(RetroZipRoot)\libs\lzma\lib\win\x64\lzma.lib;$(RetroZipRoot)\libs\leveldb\lib\win_x64\leveldbD.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(RetroZipRoot)\libs\zlib\lib\win_x64\zlib.lib;$(RetroZipRoot)\libs\lzma\lib\win\x64\lzma.lib;$(RetroZipRoot)\libs\leveldb\lib\win_x64\leveldbD.lib;$(RetroZipRoot)\libs\dokan\lib\win_x64\dokanfuse2.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\cellar.cpp" />
+    <ClCompile Include="..\..\..\src\cellar\fs\cellar_fs.cpp" />
     <ClCompile Include="..\..\..\src\libs\pugixml\pugixml.cpp" />
     <ClCompile Include="..\..\..\src\parsers\clrmamepro.cpp" />
     <ClCompile Include="..\..\..\src\parsers\logiqx.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\src\cellar\fs\cellar_fs.h" />
     <ClInclude Include="..\..\..\src\data\entry.h" />
     <ClInclude Include="..\..\..\src\libs\pugixml\pugiconfig.hpp" />
     <ClInclude Include="..\..\..\src\libs\pugixml\pugixml.hpp" />

@@ -26,14 +26,29 @@ const char* compression::lzma_filter<E>::printableErrorCode(lzma_ret r)
 
 template<bool IS_ENCODER>
 void compression::lzma_filter<IS_ENCODER>::init()
-{
-  //lzma_mt options;
-  //lzma_ret r = lzma_stream_encoder_mt(&_stream, const lzma_mt *options)
-  
+{ 
   //TODO: checks disabled since checksum are computed by archive itself, but they should be adjustable on filter
 
   if (IS_ENCODER)
-    _r = lzma_easy_encoder(&_stream, _options.level | (_options.extreme ? LZMA_PRESET_EXTREME : 0), /*LZMA_CHECK_CRC64*/LZMA_CHECK_NONE);
+  {
+    lzma_mt options = {
+      .flags = 0,
+      .block_size = 0,
+      .timeout = 0,
+      
+      .preset = _options.level | (_options.extreme ? LZMA_PRESET_EXTREME : 0),
+      .filters = NULL,
+      
+
+      .check = LZMA_CHECK_NONE,
+    };
+
+    options.preset = LZMA_PRESET_DEFAULT;
+    options.threads = lzma_cputhreads() - 2;
+
+    _r = lzma_stream_encoder_mt(&_stream, &options);
+    //lzma_easy_encoder(&_stream, _options.level | (_options.extreme ? LZMA_PRESET_EXTREME : 0), /*LZMA_CHECK_CRC64*/LZMA_CHECK_NONE);
+  }
   else
     _r = lzma_stream_decoder(&_stream, UINT64_MAX, /*LZMA_TELL_ANY_CHECK*/LZMA_TELL_NO_CHECK);
   
@@ -51,10 +66,10 @@ void compression::lzma_filter<E>::finalize()
 template<bool IS_ENCODER>
 void compression::lzma_filter<IS_ENCODER>::process()
 {
-  _stream.avail_in = static_cast<size_t>(_in.used());
+  _stream.avail_in = _in.used();
   _stream.next_in = _in.head();
   
-  _stream.avail_out = static_cast<size_t>(_out.available());
+  _stream.avail_out = _out.available();
   _stream.next_out = _out.tail();
   
   _r = lzma_code(&_stream, ended() ? LZMA_FINISH : LZMA_RUN);

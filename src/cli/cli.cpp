@@ -613,13 +613,15 @@ int main(int argc, const char* argv[])
 {
   //auto session = Catch::Session();
   //return session.run(argc, argv);
+
+  path output = R"(F:\Misc\retrozip\smas\output.box)";
  
   Archive archive;
   
   bool build = true;
   if (build)
   {
-    path path = "F:\\Misc\\retrozip\\smash\\single";
+    path path = R"(F:\Misc\retrozip\smash\supermono)";
 
     ArchiveBuilder builder(CachePolicy(CachePolicy::Mode::NEVER, 0), MB128, MB128);
 
@@ -628,9 +630,9 @@ int main(int argc, const char* argv[])
 
     archive = builder.buildSingleStreamBaseWithDeltasArchive(sources, 0);// builder.buildSingleStreamSolidArchive(sources);
     memory_buffer sink;
-    archive.options().bufferSize = MB256;
+    archive.options().bufferSize = MB1;
     archive.write(sink);
-    sink.serialize(file_handle("F:\\Misc\\retrozip\\layton\\output.box", file_mode::WRITING));
+    sink.serialize(file_handle(output, file_mode::WRITING));
   }
   else if (false)
   {    
@@ -643,14 +645,14 @@ int main(int argc, const char* argv[])
     sink.serialize(file_handle("output2.box", file_mode::WRITING));
   }
 
-  cli::printArchiveInformation("output.box", archive);
+  cli::printArchiveInformation(output, archive);
 
   cli::ListArchiveOptions options;
 
   cli::listArchiveContent(options, archive);
 
-  ArchiveBuilder builder(CachePolicy(CachePolicy::Mode::ALWAYS, 0), MB256, MB256);
-  builder.extractSpecificFilesFromArchive("F:\\Misc\\retrozip\\smash\\output.box", ".", 0);
+  //ArchiveBuilder builder(CachePolicy(CachePolicy::Mode::ALWAYS, 0), MB256, MB256);
+  //builder.extractSpecificFilesFromArchive(R"(F:\\Misc\\retrozip\\output.box)", "", 0);
   
   return 0;
 }
