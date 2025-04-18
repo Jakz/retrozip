@@ -19,9 +19,9 @@ public:
   const dat_list& dats() const { return _dats; }
 
   DatFile* addDatFile(const DatFile& dat) { return &(*_dats.insert(std::make_pair(dat.name, dat)).first).second; }
-  data_ref addHashData(const HashData& hash)
+  data_ref addHashData(RomRef rom, const HashData& hash)
   {
-    return _hashes.add(hash);
+    return _hashes.add(rom, hash);
   }
 
   const DatFile* datForName(const std::string& name) const

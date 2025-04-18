@@ -28,91 +28,9 @@
 #include <unordered_map>
 #include <numeric>
 
-
-#include <cstdio>
-
-#include <io.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-
 #include "cellar/fs/cellar_fs.h"
 
 CellarFS cellar;
-
-class Hasher
-{
-  using fd_t = int;
-  
-  hash::crc32_digester crc;
-  hash::sha1_digester sha1;
-  hash::md5_digester md5;
-  
-  size_t sizeOfFile(fd_t fd)
-  {
-    struct stat statbuf;
-    fstat(fd, &statbuf);
-    return statbuf.st_size;
-  }
-  
-public:
-  
-  HashData compute(const path& path)
-  {
-    fd_t fd = _open(path.c_str(), O_RDONLY);
-    size_t size = sizeOfFile(fd);
-
-    byte* buffer = new byte[size];
-    _read(fd, buffer, size);
-        
-    //byte* buffer = reinterpret_cast<byte*>(mmap(nullptr, size, PROT_READ, MAP_SHARED, fd, 0));
-    crc.update(buffer, size);
-    md5.update(buffer, size);
-    sha1.update(buffer, size);
-    
-    //munmap(buffer, size);
-    delete [] buffer;
-    
-    _close(fd);
-    
-    return get(size);
-  }
-
-  HashData compute(const void* data, size_t length)
-  {
-    crc.update(data, length);
-    md5.update(data, length);
-    sha1.update(data, length);
-    return get(length);
-  }
-  
-  HashData get(size_t length = 0)
-  {
-    HashData hashData;
-    
-    hashData.size = length;
-    hashData.crc32 = crc.get();
-    hashData.md5 = md5.get();
-    hashData.sha1 = sha1.get();
-    
-    return hashData;
-  }
-  
-  void update(const void* data, size_t length)
-  {
-    crc.update(data, length);
-    md5.update(data, length);
-    sha1.update(data, length);
-  }
-  
-  void reset()
-  {
-    crc.reset();
-    md5.reset();
-    sha1.reset();
-  }
-};
-
-
 
 class DatabaseStore
 {
@@ -239,25 +157,35 @@ int main(int argc, const char* argv[])
     tresult.count += result.count;
     
     DatFile* datFile = data.addDatFile({ dat.filename(), dat.filename() });
-    
-    for (const auto& dgame : result.games)
+
+    /* preallocate data to be able to get address to Game instances */
+    datFile->games.resize(result.games.size());
+
+    /* for each game */
+    for (size_t i = 0; i < result.games.size(); ++i)
     {
+      const auto& dgame = result.games[i];
+      Game& game = datFile->games[i];
+      game = Game(dgame.name);
+
       //const byte* key = entry.hash.sha1.inner();
       //const byte* value = (const byte*) &entry.hash;
       
       //if (!database->contains(std::string((const char*)key)))
       //  database->write(key, sizeof(hash::sha1_t), value, sizeof(HashData));
-
-      datFile->games.push_back(DatGame(dgame.name));
-      auto& game = datFile->games.back();
-      auto cref = datFile->games.size() - 1;
       
-      for (const auto& rom : dgame.roms)
-      {
-        data_ref ref = data.addHashData(rom.hash);
+      /* preallocate to have valid size */
+      game.roms.resize(dgame.roms.size());
 
+      for (size_t j = 0; j < dgame.roms.size(); ++j)
+      {
+        /* save hash data into hash repository */
+        data_ref ref = data.addHashData(RomRef(&game, j), dgame.roms[j].hash);
+
+        /* this will be mapped later once hash depository have been prepared */
         if (ref != INVALID_DATA_REF)
-          game.roms.push_back({ rom.name, ref });
+          game.roms[j] = { dgame.roms[j].name, nullptr };
+
       }
 
       /* if game has parent we need to find or generate correct clone */
@@ -266,25 +194,27 @@ int main(int argc, const char* argv[])
         auto it = std::find_if(
           datFile->clones.begin(),
           datFile->clones.end(),
-          [parent = dgame.parent](const GameClone& clone) {
-            return std::any_of(clone.clones.begin(), clone.clones.end(), [parent](data_ref ref) { return ref == parent; });
+          [parent = &datFile->games[dgame.parent]](const GameClone& clone) {
+            return std::any_of(clone.clones.begin(), clone.clones.end(), [parent](Game* game) { return game == parent; });
         });
 
+        /* add game to existing clone */
         if (it != datFile->clones.end())
-          it->clones.push_back(cref);
+          it->clones.push_back(&game);
         else
         {
-          GameClone clone;
-          clone.clones.push_back(cref);
-          clone.clones.push_back(dgame.parent);
-          datFile->clones.push_back(clone);
+          assert(dgame.parent <= datFile->games.size());
+
+          /* create new clone */
+          GameClone& clone = datFile->clones.emplace_back();
+          clone.clones.push_back(&game);
+          clone.clones.push_back(&datFile->games[dgame.parent]);
         }
       }
       else
       {
-        GameClone clone;
-        clone.clones.push_back(cref);
-        datFile->clones.push_back(clone);
+        /* clone with single entry */
+        datFile->clones.emplace_back().clones.push_back(&game);
       }
     }
 
@@ -309,10 +239,20 @@ int main(int argc, const char* argv[])
       });
     if (it != datFile->clones.end())
     {
-      for (const auto& game : it->clones)
-        std::cout << "    " << datFile->games[game].name << std::endl;
+      for (const Game* game : it->clones)
+        std::cout << "    " << game->name << std::endl;
     }
   }
+
+  /* now it's time to finalize hash repository and map everything 
+    rom hash data to its corresponding element in hash repository */
+  for (const auto& entry : data.hashes())
+  {
+    for (auto& ref : entry.roms)
+      ref.game->roms[ref.index].hash = &entry;
+  }
+
+  auto* lol = &data;
 
   initVFS();
   
@@ -320,7 +260,7 @@ int main(int argc, const char* argv[])
   std::cout << tresult.count << " entries in " << strings::humanReadableSize(tresult.sizeInBytes, true, 2) << std::endl;
   std::cout << data.hashes().size() << " unique entries in " << strings::humanReadableSize(data.hashes().sizeInBytes(), true, 2) << std::endl;
   
-  std::cout << "database memory footprint: " << strings::humanReadableSize(data.aproximateSize(), true, 2) << std::endl;
+  //std::cout << "database memory footprint: " << strings::humanReadableSize(data.aproximateSize(), true, 2) << std::endl;
 
   //database->shutdown();
   

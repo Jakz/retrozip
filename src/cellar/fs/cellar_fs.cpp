@@ -23,6 +23,11 @@
 #else
 #define FUSE_DEBUG(...) do { } while(false)
 #endif
+
+#define LOG_DEBUG(__format__, ...) \
+  do { \
+    std::cout << fmt::format(__format__, __VA_ARGS__) << std::endl << std::flush; \
+  } while(false)
 /*
     lock.lock(); \
     buffer.push_back(fmt::format(__format__, __VA_ARGS__)); \
@@ -112,13 +117,19 @@ struct VirtualDirectory : public VirtualEntry
 {
 protected:
   std::vector<VirtualEntry*> _content;
+  std::unordered_map<fs_path, VirtualEntry*, fs_path::hash> _flatMapping;
 
 public:
-  VirtualDirectory(const ::path& path) : VirtualEntry(path) { }
+  VirtualDirectory(const fs_path& path) : VirtualEntry(path) { }
 
-  void add(VirtualEntry* entry) { _content.push_back(entry); }
+  void add(VirtualEntry* entry)
+  { 
+    _content.push_back(entry);
+    _flatMapping[entry->filename()] = entry;
+  }
+
   VirtualEntry* get(size_t index) { return _content[index]; }
-  VirtualFile* get(const ::path& filename);
+  VirtualFile* get(const fs_path& filename);
 
   bool isWritable() const { return true; }
   bool isFile() const override { return false; }
@@ -128,13 +139,18 @@ public:
 };
 
 
-VirtualFile* VirtualDirectory::get(const ::path& filename)
+VirtualFile* VirtualDirectory::get(const fs_path& filename)
 {
-  auto it = std::find_if(_content.begin(), _content.end(), [&filename](const VirtualEntry* entry) {
-    return entry->filename() == filename.filename() && entry->isFile();
-  });
+  auto it = _flatMapping.find(filename);
+  VirtualEntry* entry = nullptr;
 
-  return it != _content.end() ? static_cast<VirtualFile*>(*it) : nullptr;
+  if (it != _flatMapping.end())
+    entry = it->second;
+
+  if (entry && entry->isFile())
+    return static_cast<VirtualFile*>(entry);
+  else
+    return nullptr;
 }
 
 
@@ -214,7 +230,7 @@ void VirtualFileSystem::initDats()
     _flatMapping[folderPath] = folder;
     dats->add(folder);
 
-    for (const DatGame& game : dat.second.games)
+    /*for (const DatGame& game : dat.second.games)
     {
       if (!game.roms.empty())
       {
@@ -222,11 +238,11 @@ void VirtualFileSystem::initDats()
 
         VirtualFile* file = new VirtualFile(folderPath + rom.name);
         initStat(file, true);
-        file->setSize(1024 * 1024);
+        file->setSize(data.hashes()[rom.ref].size());
 
         folder->add(file);
       }
-    }
+    }*/
   }
 }
 
@@ -316,6 +332,11 @@ int CellarFS::create(const char* cpath, mode_t mode, struct fuse_file_info* fi)
       VirtualFile* file = new VirtualFile(path);
       directory->add(file);
       vfs.initStat(file, false);
+
+      /* if file is created in to sort folder it needs to be organized */
+      if (directory == vfs.sortFolder())
+        file->_type = VirtualFileType::ToBeOrganized;
+
       fi->fh = reinterpret_cast<uintptr_t>(file);
       return SUCCESS;
     }
@@ -475,7 +496,19 @@ fs_ret CellarFS::release(const char* path, struct fuse_file_info* fi)
 
     if (file->type() == VirtualFileType::ToBeOrganized)
     {
-      //_files.erase(path);
+      LOG_DEBUG("  file must be organized");
+
+      Hasher hasher;
+      auto hash = hasher.compute(file->_content.data(), file->_content.size());
+
+      auto result = data.hashes().find(hash);
+
+      if (result)
+      {
+        LOG_DEBUG("  found valid entry: {}", result->roms[0].game->name);
+      }
+      else
+        LOG_DEBUG("  not valid entry");
     }
   }
   else

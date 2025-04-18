@@ -96,28 +96,29 @@ struct HashData
 #include <unordered_map>
 
 using data_ref = s64;
+struct RomHashData;
 
 /* represents a rom entry inside a specific dat */
 struct DatRom
 {
   std::string name;
-  data_ref ref;
+  const RomHashData* hash;
 };
 
-struct DatGame
+struct Game
 {
   std::string name;
   std::vector<DatRom> roms;
 
-  DatGame() = default;
-  DatGame(const std::string& name) : name(name) { }
+  Game() = default;
+  Game(const std::string& name) : name(name) { }
 
   const DatRom& operator[](size_t index) const { return roms[index]; }
 };
 
 struct GameClone
 {
-  std::vector<data_ref> clones;
+  std::vector<Game*> clones;
 };
 
 struct DatFile
@@ -125,12 +126,12 @@ struct DatFile
   std::string name;
   std::string folderName;
   
-  std::vector<DatGame> games;
+  std::vector<Game> games;
   std::vector<GameClone> clones;
 
-  std::unordered_map<std::string, DatGame*> gameMap;
+  std::unordered_map<std::string, Game*> gameMap;
 
-  DatGame* gameByName(const std::string& name) const
+  Game* gameByName(const std::string& name) const
   {
     auto it = gameMap.find(name);
     return it != gameMap.end() ? it->second : nullptr;
