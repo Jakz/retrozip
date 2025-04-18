@@ -55,6 +55,7 @@ public:
   path makeRelative() const;
   
   std::string filename() const;
+  std::string filenameWithoutExtension() const;
 
   const std::string& data() const { return _data; }
   const std::string& str() const { return _data; }

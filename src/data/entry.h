@@ -111,6 +111,8 @@ struct DatGame
 
   DatGame() = default;
   DatGame(const std::string& name) : name(name) { }
+
+  const DatRom& operator[](size_t index) const { return roms[index]; }
 };
 
 struct GameClone

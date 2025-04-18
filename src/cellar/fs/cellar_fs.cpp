@@ -13,13 +13,16 @@
 
 #define SUCCESS 0
 
-#define FUSE_DEBUG_FLAG true
+#define FUSE_DEBUG_FLAG false
 
+#if FUSE_DEBUG_FLAG
 #define FUSE_DEBUG(__format__, ...) \
   do { \
     std::cout << fmt::format(__format__, __VA_ARGS__) << std::endl << std::flush; \
   } while(false)
-
+#else
+#define FUSE_DEBUG(...) do { } while(false)
+#endif
 /*
     lock.lock(); \
     buffer.push_back(fmt::format(__format__, __VA_ARGS__)); \
@@ -74,6 +77,8 @@ struct VirtualFile : public VirtualEntry
 
   auto type() const { return _type; }
   bool isFile() const override { return true; }
+
+  void setSize(size_t length) { stbuf.st_size = length; }
 
   size_t write(const char* buf, size_t length, FUSE_OFF_T offset)
   {
@@ -172,8 +177,14 @@ public:
   VirtualDirectory* sortFolder() const { return _toSortFolder; }
   VirtualDirectory* root() const { return _root.get(); }
 
+  void initDats();
+
   void initStat(VirtualFile* file, bool readonly) { initStat(&file->stbuf, false, readonly); }
 };
+
+#include "data/database.h"
+
+extern DatabaseData data;
 
 VirtualFileSystem::VirtualFileSystem()
 {
@@ -184,8 +195,39 @@ VirtualFileSystem::VirtualFileSystem()
 
   _flatMapping["/"] = _root.get();
   _flatMapping["/ToSort"] = _toSortFolder;
-  
+
   initStat(&_defaultDirectoryStat, true, true);
+}
+
+void VirtualFileSystem::initDats()
+{
+  VirtualDirectory* dats = new VirtualDirectory("/Dats");
+  _root->add(dats);
+  _flatMapping["/Dats"] = dats;
+  
+  for (const auto& dat : data.dats())
+  {
+    path name = dat.second.name;
+    path folderName = name.filenameWithoutExtension();
+    path folderPath = path("/Dats/") + folderName;
+    auto* folder = new VirtualDirectory(folderPath);
+    _flatMapping[folderPath] = folder;
+    dats->add(folder);
+
+    for (const DatGame& game : dat.second.games)
+    {
+      if (!game.roms.empty())
+      {
+        const DatRom& rom = game[0];
+
+        VirtualFile* file = new VirtualFile(folderPath + rom.name);
+        initStat(file, true);
+        file->setSize(1024 * 1024);
+
+        folder->add(file);
+      }
+    }
+  }
 }
 
 VirtualDirectory* VirtualFileSystem::findDirectory(const path& path)
@@ -224,6 +266,10 @@ void VirtualFileSystem::initStat(FUSE_STAT* stbuf, bool dir = false, bool readon
 
 VirtualFileSystem vfs;
 
+void initVFS()
+{
+  vfs.initDats();
+}
 
 CellarFS* CellarFS::instance = nullptr;
 
@@ -468,7 +514,7 @@ fs_ret CellarFS::getattr(const fs_path& path, FUSE_STAT* stbuf)
 
   if (directory)
   {
-    FUSE_DEBUG("getaddr({}, success)", path);
+    //FUSE_DEBUG("getaddr({}, success)", path);
     *stbuf = *vfs.defaultDirectoryStat();
     return SUCCESS;
   }
@@ -481,7 +527,7 @@ fs_ret CellarFS::getattr(const fs_path& path, FUSE_STAT* stbuf)
 
     if (file)
     {
-      FUSE_DEBUG("getaddr({}, success)", path);
+      //FUSE_DEBUG("getaddr({}, success)", path);
       *stbuf = file->stbuf;
       return SUCCESS;
     }

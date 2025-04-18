@@ -184,7 +184,8 @@ public:
 };
     
 DatabaseData data;
-    
+extern void initVFS();
+
 
 using cataloguer_t = std::function<path(const HashData&)>;
     
@@ -312,6 +313,8 @@ int main(int argc, const char* argv[])
         std::cout << "    " << datFile->games[game].name << std::endl;
     }
   }
+
+  initVFS();
   
   std::cout << std::dec;
   std::cout << tresult.count << " entries in " << strings::humanReadableSize(tresult.sizeInBytes, true, 2) << std::endl;

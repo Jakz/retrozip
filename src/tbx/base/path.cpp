@@ -57,6 +57,13 @@ std::string path::filename() const
   return index != std::string::npos ? _data.substr(index+1) : _data;
 }
 
+std::string path::filenameWithoutExtension() const
+{
+  auto filename = this->filename();
+  size_t index = filename.find_last_of('.');
+  return index != std::string::npos ? filename.substr(0, index) : filename;
+}
+
 bool endsWith(const std::string& str, char c) { return str.back() == c; }
 bool startsWith(const std::string& str, char c) { return str.front() == c; }
 path path::append(const path& other) const
