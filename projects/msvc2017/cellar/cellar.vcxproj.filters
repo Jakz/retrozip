@@ -56,5 +56,11 @@
     <ClInclude Include="..\..\..\src\cellar\fs\cellar_fs.h">
       <Filter>src\cellar\fs</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\data\database.h">
+      <Filter>src\data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\data\hash_map.h">
+      <Filter>src\data</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

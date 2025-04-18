@@ -21,6 +21,8 @@
 #include "tbx/base/file_system.h"
 
 #include "data/entry.h"
+#include "data/database.h"
+#include "data/hash_map.h"
 
 #include <unordered_set>
 #include <unordered_map>
@@ -72,21 +74,22 @@ public:
     
     _close(fd);
     
-    HashData hashData;
-    
-    hashData.size = size;
-    hashData.crc32 = crc.get();
-    hashData.md5 = md5.get();
-    hashData.sha1 = sha1.get();
-    
-    return hashData;
+    return get(size);
+  }
+
+  HashData compute(const void* data, size_t length)
+  {
+    crc.update(data, length);
+    md5.update(data, length);
+    sha1.update(data, length);
+    return get(length);
   }
   
-  HashData get()
+  HashData get(size_t length = 0)
   {
     HashData hashData;
     
-    hashData.size = 0;
+    hashData.size = length;
     hashData.crc32 = crc.get();
     hashData.md5 = md5.get();
     hashData.sha1 = sha1.get();
@@ -179,185 +182,7 @@ public:
     return status.ok();
   }
 };
-
-
-using data_ref = s64;
-static constexpr data_ref INVALID_DATA_REF = -1;
-
-struct RomData
-{
-  HashData hash;
-  size_t references;
-
-  RomData() : references(0UL)
-  {
-
-  }
-
-  size_t size() const { return hash.size; }
-
-  RomData& operator+=(const HashData& hash)
-  {
-    this->hash += hash;
-    ++this->references;
-
-    return *this;
-  }
-};
-
-struct hash_map
-{
-private:
-  std::vector<RomData> _data;
-  std::unordered_map<hash::crc32_t, data_ref> _crc32map;
-  std::unordered_map<hash::md5_t, data_ref, hash::md5_t::hasher> _md5map;
-  std::unordered_map<hash::sha1_t, data_ref, hash::sha1_t::hasher> _sha1map;
-  
-public:
-  hash_map()
-  {
-
-  }
-
-  const RomData& operator[](size_t index) const { return _data[index]; }
-
-  bool isCollision(const HashData& entry, data_ref ref)
-  {
-    return entry != _data[ref].hash;
-  }
-
-  data_ref add(const HashData& entry)
-  {
-    data_ref ref = INVALID_DATA_REF;
     
-    /* first we search is an entry with same crc32 is found */
-    if (entry.crc32enabled)
-    {
-      auto it = _crc32map.find(entry.crc32);
-
-      if (it == _crc32map.end())
-        ;
-      /* we expect that hash data is matching otherwise it's a problem */
-      else if (!isCollision(entry, it->second))
-      {
-        ref = it->second;
-      }
-      else
-        return INVALID_DATA_REF;
-    }
-
-    /* we search is an entry with same md5 is found */
-    if (entry.md5enabled)
-    {
-      auto it = _md5map.find(entry.md5);
-
-      if (it == _md5map.end())
-        ;
-      /* we expect that hash data is matching otherwise it's a problem */
-      else if (!isCollision(entry, it->second))
-      {
-        ref = it->second;
-      }
-      else
-        return INVALID_DATA_REF;
-    }
-
-    /* we search is an entry with same sha1 is found */
-    if (entry.sha1enabled)
-    {
-      auto it = _sha1map.find(entry.sha1);
-
-      if (it == _sha1map.end())
-        ;
-      /* we expect that hash data is matching otherwise it's a problem */
-      else if (!isCollision(entry, it->second))
-      {
-        ref = it->second;
-      }
-      else
-        return INVALID_DATA_REF;
-    }
-
-    if (ref == INVALID_DATA_REF)
-    {
-      _data.push_back(RomData());
-      ref = _data.size() - 1;
-    }
-
-    if (ref != INVALID_DATA_REF)
-    {
-      _data[ref] += entry;
-
-      if (entry.crc32enabled)
-        _crc32map[entry.crc32] = ref;
-
-      if (entry.md5enabled)
-        _md5map[entry.md5] = ref;
-
-      if (entry.sha1enabled)
-        _sha1map[entry.sha1] = ref;
-
-      return ref;
-    }
-
-    return INVALID_DATA_REF;
-  }
-
-  size_t size() const { return _data.size(); }
-  
-  size_t sizeInBytes() const
-  {
-    size_t total = 0;
-    for (const auto& entry : _data)
-      total += entry.size();
-    return total;
-  }
-};
-    
-class DatabaseData
-{
-public:
-  using dat_list = std::unordered_map<std::string, DatFile>;
-  
-private:
-  dat_list _dats;
-  hash_map _hashes;
-  
-public:
-  //dat_list& dats() { return _dats; }
-  const hash_map& hashes() const { return _hashes; }
-  const dat_list& dats() const { return _dats; }
-  
-  DatFile* addDatFile(const DatFile& dat) { return &(*_dats.insert(std::make_pair(dat.name, dat)).first).second; }
-  data_ref addHashData(const HashData& hash)
-  { 
-    return _hashes.add(hash);
-  }
-  
-  const DatFile* datForName(const std::string& name) const
-  {
-    auto it = _dats.find(name);
-    return it != _dats.end() ? &it->second : nullptr;
-  }
-  
-  size_t hashesCount() const { return _hashes.size(); }
-  
-  
-  size_t aproximateSize() const
-  {
-    /*size_t sizeForHashes = sizeof(HashData) * _hashes.size();
-    size_t sizeForDats = std::accumulate(_dats.begin(), _dats.end(), 0UL, [] (size_t v, const dat_list::value_type& pair) {
-      return v + std::accumulate(pair.second.entries.begin(), pair.second.entries.end(), 0UL, [] (size_t v, const decltype(DatFile::entries)::value_type& value) {
-        return v + value.first.length() + sizeof(HashData*);
-      });
-    });
-
-    // round up by a 20% to take into account memory used for data structure internals
-    return (sizeForHashes + sizeForDats) * 1.20f;*/
-    return 0;
-  }
-};
-
 DatabaseData data;
     
 
@@ -388,7 +213,7 @@ int main(int argc, const char* argv[])
   return 0;*/
   
   std::vector<path> datFiles;
-  // datFiles = FileSystem::i()->contentsOfFolder("dats");
+  datFiles = FileSystem::i()->contentsOfFolder("dats");
   
   parsing::LogiqxParser parser;
   

@@ -95,7 +95,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\cellar\fs\cellar_fs.h" />
+    <ClInclude Include="..\..\..\src\data\database.h" />
     <ClInclude Include="..\..\..\src\data\entry.h" />
+    <ClInclude Include="..\..\..\src\data\hash_map.h" />
     <ClInclude Include="..\..\..\src\libs\pugixml\pugiconfig.hpp" />
     <ClInclude Include="..\..\..\src\libs\pugixml\pugixml.hpp" />
     <ClInclude Include="..\..\..\src\parsers\parser.h" />

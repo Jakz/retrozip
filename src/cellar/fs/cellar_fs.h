@@ -24,9 +24,9 @@ private:
 
   static int statsfs(const char* foo, struct statvfs* stats);
 
-  static int access(const char* path, int);
-
   static int sgetattr(const char* path, FUSE_STAT* stbuf);
+  static int sgetxattr(const char* path, const char* name, char* value, size_t size);
+
   static int sreaddir(const char* path, void* buf, fuse_fill_dir_t filler, fuse_offset offset, fuse_file_info* fi);
   static int sopendir(const char* path, fuse_file_info* fi);
 
@@ -37,6 +37,14 @@ private:
   static int open(const char* path, struct fuse_file_info* fi);
   static int read(const char* path, char* buf, size_t size, fuse_offset offset, struct fuse_file_info* fi);
   static int write(const char* path, const char* buf, size_t size, fuse_offset offset, struct fuse_file_info* fi);
+
+  static int flush(const char* path, struct fuse_file_info* fi);
+  static int release(const char* path, struct fuse_file_info* fi);
+
+  static int releasedir(const char* path, struct fuse_file_info* fi);
+
+  static int utimens(const char* path, const struct timespec tv[2]);
+  static int access(const char* path, int mask);
 
   fs_ret getattr(const fs_path& path, FUSE_STAT* stbuf);
 
