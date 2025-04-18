@@ -12,7 +12,7 @@ static constexpr const char SEPARATOR = '/';
 
 path::path(const char* data) : _data(data)
 {
-  if (_data.back() == SEPARATOR && _data.length() > 1)
+  if (_data.length() > 1 && _data.back() == SEPARATOR)
     _data.pop_back();
 }
 

@@ -337,7 +337,11 @@ namespace builders
     size_t _sourceBlockSize;
     
   public:
-    xdelta3_builder(size_t bufferSize, seekable_data_source* source, size_t xdeltaWindowSize, size_t sourceBlockSize) : filter_builder(bufferSize), _source(source), _xdeltaWindowSize(xdeltaWindowSize), _sourceBlockSize(sourceBlockSize) { }
+    xdelta3_builder(size_t bufferSize, seekable_data_source* source, size_t xdeltaWindowSize, size_t sourceBlockSize) : filter_builder(bufferSize), _source(source), _xdeltaWindowSize(xdeltaWindowSize), _sourceBlockSize(sourceBlockSize)
+    { 
+      if (sourceBlockSize > MB1 * 4096)
+        printf("sticanzi");
+    }
     xdelta3_builder(size_t bufferSize, const byte* payload) : filter_builder(bufferSize), _source(nullptr)
     {
       payload += sizeof(box::Payload);

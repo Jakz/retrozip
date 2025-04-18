@@ -387,7 +387,8 @@ int main(int argc, const char* argv[])
 
   return 0;*/
   
-  auto datFiles = std::vector<path>();// FileSystem::i()->contentsOfFolder("dats");
+  std::vector<path> datFiles;
+  // datFiles = FileSystem::i()->contentsOfFolder("dats");
   
   parsing::LogiqxParser parser;
   

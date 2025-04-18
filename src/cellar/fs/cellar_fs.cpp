@@ -14,9 +14,11 @@ static const std::string PATH_TO_SORT = "/ToSort";
 #define O_ACCMODE     (O_RDONLY | O_WRONLY | O_RDWR)
 #endif
 
+#define FUSE_DEBUG_FLAG true
+
 #define FUSE_DEBUG(__format__, ...) \
   do { \
-    std::cout << fmt::format(__format__, __VA_ARGS__) << std::endl; \
+    std::cout << fmt::format(__format__, __VA_ARGS__) << std::endl << std::flush; \
   } while(false)
 
 /*
@@ -25,6 +27,44 @@ static const std::string PATH_TO_SORT = "/ToSort";
     lock.unlock(); \ 
   } while(false)
   */
+
+static void initStat(FUSE_STAT * stbuf, bool dir = false)
+{
+  memset(stbuf, 0, sizeof(FUSE_STAT));
+  stbuf->st_nlink = 1;
+
+  stbuf->st_uid = 1000;
+  stbuf->st_gid = 1000;
+
+  auto now = std::time(nullptr);
+  stbuf->st_mtim.tv_sec = now;
+  stbuf->st_mtim.tv_nsec = 0;
+  stbuf->st_atim = stbuf->st_mtim;
+  stbuf->st_ctim = stbuf->st_mtim;
+
+  if (dir)
+    stbuf->st_mode = S_IFDIR | 0777;
+  else
+    stbuf->st_mode = S_IFREG | 0666;
+}
+
+
+struct VirtualFile
+{
+  path _path;
+  std::vector<uint8_t> _content;
+  FUSE_STAT stbuf;
+
+  VirtualFile(const path& p) : _path(p) { }
+  VirtualFile() : VirtualFile("")
+  { 
+    initStat(&stbuf);
+  }
+};
+
+std::unordered_map<path, VirtualFile, path::hash> _files;
+
+
 
 CellarFS* CellarFS::instance = nullptr;
 
@@ -40,16 +80,24 @@ int CellarFS::statsfs(const char* foo, struct statvfs* stats)
   return 0;
 }
 
-int CellarFS::access(const char* path, int) { return 0; }
+int CellarFS::access(const char* cpath, int)
+{
+  FUSE_DEBUG("access({})", cpath);
+  return 0;
+}
 
-int CellarFS::sgetattr(const char* path, FUSE_STAT* stbuf) { return instance->getattr(path, stbuf); }
+int CellarFS::sgetattr(const char* path, FUSE_STAT* stbuf)
+{ 
+  return instance->getattr(path, stbuf);
+}
+
 int CellarFS::sreaddir(const char* path, void* buf, fuse_fill_dir_t filler, fuse_offset offset, fuse_file_info* fi) { return instance->readdir(path, buf, filler, offset, fi); }
 int CellarFS::sopendir(const char* path, fuse_file_info* fi) { return instance->opendir(path, fi); }
 
 int CellarFS::create(const char* cpath, mode_t mode, struct fuse_file_info* fi)
 {
   FUSE_DEBUG("create({})", cpath);
-
+  _files[cpath] = VirtualFile(cpath);
   return 0;
 }
 
@@ -61,21 +109,36 @@ int CellarFS::mknod(const char* path, mode_t mode, dev_t device)
 
 int CellarFS::open(const char* cpath, struct fuse_file_info* fi)
 {
-  FUSE_DEBUG("open({})", cpath);
-
   path path = cpath;
   if (path.parent() == PATH_TO_SORT)
   {
     if (path.filename() != "desktop.ini")
-    {
-      fi->fh = 12345ULL;
+    {      
+      if (FUSE_DEBUG_FLAG)
+      {
+        std::string flags = "";
+        if (fi->flags & O_RDONLY) flags += "O_RDONLY ";
+        if (fi->flags & O_WRONLY) flags += "O_WRONLY ";
+        if (fi->flags & O_RDWR) flags += "O_RDWR "; 
+        if (fi->flags & O_APPEND) flags += "O_APPEND ";
+        if (fi->flags & O_CREAT) flags += "O_CREAT ";
+        if (fi->flags & O_EXCL) flags += "O_EXCL ";
+        if (fi->flags & O_TRUNC) flags += "O_TRUNC ";
+
+        FUSE_DEBUG("open({}, success, {}, {})", cpath, fi->fh, flags);
+      }
+
+
       return 0;
     }
     
     
   }
   else
+  {
+    FUSE_DEBUG("open({}, failed)", cpath);
     return -ENOENT;
+  }
 }
 
 int CellarFS::read(const char* path, char* buf, size_t size, fuse_offset offset, struct fuse_file_info* fi)
@@ -102,8 +165,26 @@ int CellarFS::read(const char* path, char* buf, size_t size, fuse_offset offset,
 
 int CellarFS::write(const char* path, const char* buf, size_t length, FUSE_OFF_T offset, struct fuse_file_info* fi)
 {
-  FUSE_DEBUG("write({})", path);
-  return length;
+  auto it = _files.find(path);
+
+  if (it == _files.end())
+  {
+    FUSE_DEBUG("write({}, failed)", path);
+    return -ENOENT;
+  }
+  else
+  {
+    FUSE_DEBUG("write({}, length: {}, offset: {})", path, length, offset);
+
+    auto& file = it->second;
+    file._content.resize(length);
+    memcpy(file._content.data(), buf, length);
+
+    file.stbuf.st_size = length;
+    file.stbuf.st_mtim.tv_sec = std::time(nullptr);
+    file.stbuf.st_mtim.tv_nsec = 0;
+    return length;
+  }
 }
 
 CellarFS::CellarFS() : fs(nullptr)
@@ -138,12 +219,19 @@ void CellarFS::createHandle()
 #define ATTR_AS_DIR(x) x->st_mode = S_IFDIR | 0777
 
 fs_ret CellarFS::getattr(const fs_path& path, FUSE_STAT* stbuf)
-{
-  //FUSE_DEBUG("getattr({})", path);
-  
+{  
   int res = 0;
   memset(stbuf, 0, sizeof(FUSE_STAT));
   stbuf->st_nlink = 1;
+
+  stbuf->st_uid = 1000;
+  stbuf->st_gid = 1000;
+
+  auto now = std::time(nullptr);
+  stbuf->st_mtim.tv_sec = now;
+  stbuf->st_mtim.tv_nsec = 0;
+  stbuf->st_atim = stbuf->st_mtim;
+  stbuf->st_ctim = stbuf->st_mtim;
 
   if (path == PATH_ROOT)
   {
@@ -155,7 +243,17 @@ fs_ret CellarFS::getattr(const fs_path& path, FUSE_STAT* stbuf)
   }
   else if (path.parent() == PATH_TO_SORT)
   {
-    ATTR_AS_FILE(stbuf);
+    auto filename = path.filename();
+    auto it = _files.find(path);
+    FUSE_DEBUG("getattr({}, existing: {})", path, it != _files.end());
+
+    if (it != _files.end())
+    {
+      *stbuf = it->second.stbuf;
+      return 0;
+    }
+    else
+      return -ENOENT;
 
     /*auto tpath = ::path(path.c_str() + 1);
 
@@ -230,17 +328,21 @@ fs_ret CellarFS::opendir(const fs_path& path, fuse_file_info* fi)
   return ret;
 }
 
+FUSE_STAT sortStat;
+
 fs_ret CellarFS::readdir(const fs_path& path, void* buf, fuse_fill_dir_t filler, fuse_offset offset, struct fuse_file_info* fi)
 {
-  FUSE_DEBUG("readdir({})", path);
-
   /* special case, all the DATs folders */
   if (fi->fh == FUSE_HANDLE_ROOT)
   {
+    FUSE_DEBUG("readdir({})", path);
+
     filler(buf, ".", nullptr, 0);
     filler(buf, "..", nullptr, 0);
 
-    filler(buf, PATH_TO_SORT.substr(1).c_str(), nullptr, 0);
+    initStat(&sortStat, true);
+
+    filler(buf, PATH_TO_SORT.substr(1).c_str(), &sortStat, 0);
 
     //for (const auto& dat : data.dats())
     //  filler(buf, dat.second.folderName.c_str(), nullptr, 0);
@@ -249,8 +351,16 @@ fs_ret CellarFS::readdir(const fs_path& path, void* buf, fuse_fill_dir_t filler,
   }
   else if (fi->fh == FUSE_HANDLE_TO_SORT)
   {
+    FUSE_DEBUG("readdir({}, files: {})", path, _files.size());
+
     filler(buf, ".", nullptr, 0);
     filler(buf, "..", nullptr, 0);
+
+    for (const auto& file : _files)
+    {
+      FUSE_DEBUG("readdir[{}]  - filename: {} path: {}", path, file.first.filename(), file.first);
+      filler(buf, file.first.filename().c_str(), &file.second.stbuf, 0);
+    }
   }
   else if (fi->fh)
   {
