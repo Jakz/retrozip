@@ -4,12 +4,11 @@
 
 #include <iostream>
 
-static const char* hello_str = "Hello World!\n";
-static const char* hello_path = "/hello";
+//static const std::string PATH_ROOT = "/";
+//static const std::string PATH_TO_SORT = "/ToSort";
 
 static const std::string PATH_ROOT = "/";
 static const std::string PATH_TO_SORT = "/ToSort";
-
 #if !defined(O_ACCMODE)
 #define O_ACCMODE     (O_RDONLY | O_WRONLY | O_RDWR)
 #endif
@@ -48,19 +47,34 @@ static void initStat(FUSE_STAT * stbuf, bool dir = false)
     stbuf->st_mode = S_IFREG | 0666;
 }
 
+enum class VirtualFileType { ToBeOrganized };
 
-struct VirtualFile
+struct VirtualEntry
 {
+protected:
   path _path;
+
+public:
+  VirtualEntry(const path& path) : _path(path) { }
+  virtual bool isFile() const = 0;
+};
+
+
+struct VirtualFile : public VirtualEntry
+{
   std::vector<uint8_t> _content;
   FUSE_STAT stbuf;
+  VirtualFileType _type;
 
-  VirtualFile(const path& p) : _path(p)
+  VirtualFile(const path& p) : VirtualEntry(p)
   {
     initStat(&stbuf);
   }
   
   VirtualFile() : VirtualFile("") { }
+
+  auto type() const { return _type; }
+  bool isFile() const override { return true; }
 
   size_t write(const char* buf, size_t length, FUSE_OFF_T offset)
   {
@@ -89,8 +103,100 @@ struct VirtualFile
   }
 };
 
+
+struct VirtualDirectory : public VirtualEntry
+{
+protected:
+  std::vector<VirtualEntry*> _content;
+
+public:
+  VirtualDirectory(const path& path) : VirtualEntry(path) { }
+
+  void add(VirtualEntry* entry) { _content.push_back(entry); }
+  VirtualEntry* get(size_t index) { return _content[index]; }
+
+  bool isWritable() const { return true; }
+  bool isFile() const override { return false; }
+  virtual size_t count() const { return _content.size(); }
+};
+
+
+
+
+struct VirtualFileSystem
+{
+protected:
+  std::unique_ptr<VirtualDirectory> _root;
+  VirtualDirectory* _toSortFolder;
+
+  std::unordered_map<path, VirtualDirectory*, path::hash> _flatMapping;
+
+  FUSE_STAT _defaultDirectoryStat;
+
+  void initStat(FUSE_STAT* stat, bool dir, bool readonly);
+
+public:
+  VirtualFileSystem();
+
+  /* return a default directory stat which is used for all directories */
+  const FUSE_STAT* defaultDirectoryStat() const { return &_defaultDirectoryStat; }
+
+  VirtualDirectory* findDirectory(const path& path);
+
+  VirtualDirectory* sortFolder() const;
+};
+
+VirtualFileSystem::VirtualFileSystem()
+{
+  _root.reset(new VirtualDirectory("/"));
+
+  _toSortFolder = new VirtualDirectory("/ToSort");
+  _root->add(_toSortFolder);
+
+  _flatMapping["/"] = _root.get();
+  _flatMapping["/ToSort"] = _toSortFolder;
+  
+  initStat(&_defaultDirectoryStat, true, true);
+}
+
+VirtualDirectory* VirtualFileSystem::findDirectory(const path& path)
+{
+  auto it = _flatMapping.find(path);
+  return it != _flatMapping.end() ? it->second : nullptr;
+}
+
+void VirtualFileSystem::initStat(FUSE_STAT* stbuf, bool dir = false, bool readonly = false)
+{
+  memset(stbuf, 0, sizeof(FUSE_STAT));
+  stbuf->st_nlink = 1;
+
+  stbuf->st_uid = 1000;
+  stbuf->st_gid = 1000;
+
+  auto now = std::time(nullptr);
+  stbuf->st_mtim.tv_sec = now;
+  stbuf->st_mtim.tv_nsec = 0;
+  stbuf->st_atim = stbuf->st_mtim;
+  stbuf->st_ctim = stbuf->st_mtim;
+
+  if (dir)
+  {
+    stbuf->st_mode = S_IFDIR;
+    stbuf->st_mode |= 0111;
+  }
+  else
+    stbuf->st_mode = S_IFREG;
+
+  if (readonly)
+    stbuf->st_mode |= 0444;
+  else
+    stbuf->st_mode |= 0666;
+}
+
 std::unordered_map<path, VirtualFile, path::hash> _files;
 
+
+VirtualFileSystem vfs;
 
 
 CellarFS* CellarFS::instance = nullptr;
@@ -123,10 +229,25 @@ int CellarFS::sopendir(const char* path, fuse_file_info* fi) { return instance->
 
 int CellarFS::create(const char* cpath, mode_t mode, struct fuse_file_info* fi)
 {
-  FUSE_DEBUG("create({})", cpath);
-  _files[cpath] = VirtualFile(cpath);
-  fi->fh = reinterpret_cast<uintptr_t>(&_files[cpath]);
-  fi->keep_cache = 1;
+  path path = cpath;
+
+  //auto directory = vfs.findDirectory(path.parent());
+
+  if (path.parent() == PATH_TO_SORT)
+  {
+    FUSE_DEBUG("create({})", cpath);
+    auto it = _files.emplace(std::make_pair(cpath, VirtualFile(cpath)));
+    it.first->second._type = VirtualFileType::ToBeOrganized;
+
+    fi->fh = reinterpret_cast<uintptr_t>(&it.first->second);
+    fi->keep_cache = 1;
+  }
+  else
+  {
+    FUSE_DEBUG("create({}, failed)", cpath);
+    return -ENOENT;
+  }
+
   return 0;
 }
 
@@ -265,6 +386,22 @@ fs_ret CellarFS::flush(const char* path, struct fuse_file_info* fi)
 fs_ret CellarFS::release(const char* path, struct fuse_file_info* fi)
 {
   FUSE_DEBUG("release({})", path);
+
+  if (fi->fh)
+  {
+    auto* file = reinterpret_cast<VirtualFile*>(fi->fh);
+
+    if (file->type() == VirtualFileType::ToBeOrganized)
+    {
+      //_files.erase(path);
+    }
+  }
+  else
+  {
+    FUSE_DEBUG("release({}, failed)", path);
+    return -ENOENT;
+  }
+
   return 0;
 }
 
@@ -316,7 +453,7 @@ fs_ret CellarFS::getattr(const fs_path& path, FUSE_STAT* stbuf)
   {
     auto filename = path.filename();
     auto it = _files.find(path);
-    FUSE_DEBUG("getattr({}, existing: {})", path, it != _files.end());
+    //FUSE_DEBUG("getattr({}, existing: {})", path, it != _files.end());
 
     if (it != _files.end())
     {
