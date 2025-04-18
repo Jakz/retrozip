@@ -1,6 +1,7 @@
 #include "cellar_fs.h"
 
 #include "tbx/extra/fmt/format.h"
+#include "tbx/base/file_system.h"
 
 #include <iostream>
 
@@ -126,6 +127,22 @@ public:
   { 
     _content.push_back(entry);
     _flatMapping[entry->filename()] = entry;
+  }
+
+  bool remove(VirtualEntry* entry)
+  {
+    if (entry)
+    {
+      auto it = std::find(_content.begin(), _content.end(), entry);
+      if (it != _content.end())
+      {
+        _flatMapping.erase(entry->filename());
+        _content.erase(it);
+        return true;
+      }
+    }
+
+    return false;
   }
 
   VirtualEntry* get(size_t index) { return _content[index]; }
@@ -486,6 +503,30 @@ fs_ret CellarFS::flush(const char* path, struct fuse_file_info* fi)
   return 0;
 }
 
+bool organize(VirtualFile* file, const RomHashData* rom)
+{
+  /* organize by sha1 */
+  assert(rom->hash.sha1enabled);
+
+ 
+  path base = path("vault");
+  base = (base + rom->hash.sha1.literal().substr(0, 2)) + (rom->hash.sha1.literal() + ".bin");
+
+  LOG_DEBUG("organizing {} -> {}", file->filename(), base);
+  
+  FileSystem::i()->createFolder(base.parent(), true);
+  auto out = fopen(base.c_str(), "wb+");
+  if (out)
+  {
+    
+    size_t written = fwrite(file->_content.data(), file->_content.size(), 1, out);
+    fclose(out);
+    return true;
+  }
+
+  return false;
+}
+
 fs_ret CellarFS::release(const char* path, struct fuse_file_info* fi)
 {
   FUSE_DEBUG("release({})", path);
@@ -506,9 +547,13 @@ fs_ret CellarFS::release(const char* path, struct fuse_file_info* fi)
       if (result)
       {
         LOG_DEBUG("  found valid entry: {}", result->roms[0].game->name);
+        organize(file, result);
       }
       else
         LOG_DEBUG("  not valid entry");
+
+      vfs.sortFolder()->remove(file);
+      delete file;
     }
   }
   else

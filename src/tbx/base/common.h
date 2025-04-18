@@ -324,6 +324,7 @@ public:
   const byte& operator[](size_t index) const { return _data[index]; }
   byte& operator[](size_t index) { return _data[index]; }
   
+  std::string literal() const { return operator std::string(); }
   operator std::string() const
   {
     return strings::fromByteArray(_data.data(), LENGTH);
