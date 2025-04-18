@@ -7,11 +7,11 @@
 //static const std::string PATH_ROOT = "/";
 //static const std::string PATH_TO_SORT = "/ToSort";
 
-static const std::string PATH_ROOT = "/";
-static const std::string PATH_TO_SORT = "/ToSort";
 #if !defined(O_ACCMODE)
 #define O_ACCMODE     (O_RDONLY | O_WRONLY | O_RDWR)
 #endif
+
+#define SUCCESS 0
 
 #define FUSE_DEBUG_FLAG true
 
@@ -56,7 +56,10 @@ protected:
 
 public:
   VirtualEntry(const path& path) : _path(path) { }
+
   virtual bool isFile() const = 0;
+  const path& path() const { return _path; }
+  auto filename() const { return _path.filename(); }
 };
 
 
@@ -66,11 +69,7 @@ struct VirtualFile : public VirtualEntry
   FUSE_STAT stbuf;
   VirtualFileType _type;
 
-  VirtualFile(const path& p) : VirtualEntry(p)
-  {
-    initStat(&stbuf);
-  }
-  
+  VirtualFile(const ::path& p) : VirtualEntry(p) { }
   VirtualFile() : VirtualFile("") { }
 
   auto type() const { return _type; }
@@ -110,17 +109,45 @@ protected:
   std::vector<VirtualEntry*> _content;
 
 public:
-  VirtualDirectory(const path& path) : VirtualEntry(path) { }
+  VirtualDirectory(const ::path& path) : VirtualEntry(path) { }
 
   void add(VirtualEntry* entry) { _content.push_back(entry); }
   VirtualEntry* get(size_t index) { return _content[index]; }
+  VirtualFile* get(const ::path& filename);
 
   bool isWritable() const { return true; }
   bool isFile() const override { return false; }
   virtual size_t count() const { return _content.size(); }
+
+  void print(size_t indent = 0);
 };
 
 
+VirtualFile* VirtualDirectory::get(const ::path& filename)
+{
+  auto it = std::find_if(_content.begin(), _content.end(), [&filename](const VirtualEntry* entry) {
+    return entry->filename() == filename.filename() && entry->isFile();
+  });
+
+  return it != _content.end() ? static_cast<VirtualFile*>(*it) : nullptr;
+}
+
+
+void VirtualDirectory::print(size_t indent)
+{
+  std::string indentation(indent, ' ');
+  std::cout << indentation << _path << std::endl;
+
+  for (size_t i = 0; i < count(); ++i)
+  {
+    auto* entry = get(i);
+
+    if (entry->isFile())
+      std::cout << std::string(indent + 2, ' ') << entry->filename() << std::endl;
+    else
+      ((VirtualDirectory*)entry)->print(indent + 2);
+  }
+}
 
 
 struct VirtualFileSystem
@@ -142,8 +169,10 @@ public:
   const FUSE_STAT* defaultDirectoryStat() const { return &_defaultDirectoryStat; }
 
   VirtualDirectory* findDirectory(const path& path);
+  VirtualDirectory* sortFolder() const { return _toSortFolder; }
+  VirtualDirectory* root() const { return _root.get(); }
 
-  VirtualDirectory* sortFolder() const;
+  void initStat(VirtualFile* file, bool readonly) { initStat(&file->stbuf, false, readonly); }
 };
 
 VirtualFileSystem::VirtualFileSystem()
@@ -193,9 +222,6 @@ void VirtualFileSystem::initStat(FUSE_STAT* stbuf, bool dir = false, bool readon
     stbuf->st_mode |= 0666;
 }
 
-std::unordered_map<path, VirtualFile, path::hash> _files;
-
-
 VirtualFileSystem vfs;
 
 
@@ -231,24 +257,33 @@ int CellarFS::create(const char* cpath, mode_t mode, struct fuse_file_info* fi)
 {
   path path = cpath;
 
-  //auto directory = vfs.findDirectory(path.parent());
+  auto directory = vfs.findDirectory(path.parent());
 
-  if (path.parent() == PATH_TO_SORT)
+  /* directory exists */
+  if (directory)
   {
-    FUSE_DEBUG("create({})", cpath);
-    auto it = _files.emplace(std::make_pair(cpath, VirtualFile(cpath)));
-    it.first->second._type = VirtualFileType::ToBeOrganized;
+    if (directory->isWritable())
+    {
+      FUSE_DEBUG("create({})", cpath);
 
-    fi->fh = reinterpret_cast<uintptr_t>(&it.first->second);
-    fi->keep_cache = 1;
+      /* create new file, init and return */
+      VirtualFile* file = new VirtualFile(path);
+      directory->add(file);
+      vfs.initStat(file, false);
+      fi->fh = reinterpret_cast<uintptr_t>(file);
+      return SUCCESS;
+    }
+    else
+    {
+      FUSE_DEBUG("create({}, failed: not writable)", cpath);
+      return -EACCES;
+    }
   }
   else
   {
-    FUSE_DEBUG("create({}, failed)", cpath);
+    FUSE_DEBUG("create({}, failed: not exists)", cpath);
     return -ENOENT;
   }
-
-  return 0;
 }
 
 int CellarFS::mknod(const char* path, mode_t mode, dev_t device)
@@ -260,42 +295,45 @@ int CellarFS::mknod(const char* path, mode_t mode, dev_t device)
 int CellarFS::open(const char* cpath, struct fuse_file_info* fi)
 {
   path path = cpath;
-  if (path.parent() == PATH_TO_SORT)
+
+  auto directory = vfs.findDirectory(path.parent());
+
+  if (directory)
   {
-    if (path.filename() != "desktop.ini")
+    if (path.filename() == "desktop.ini")
+      return 0;
+    else
     {      
-      std::string flags = "";
-      if (fi->flags & O_RDONLY) flags += "O_RDONLY ";
-      if (fi->flags & O_WRONLY) flags += "O_WRONLY ";
-      if (fi->flags & O_RDWR) flags += "O_RDWR ";
-      if (fi->flags & O_APPEND) flags += "O_APPEND ";
-      if (fi->flags & O_CREAT) flags += "O_CREAT ";
-      if (fi->flags & O_EXCL) flags += "O_EXCL ";
-      if (fi->flags & O_TRUNC) flags += "O_TRUNC ";
-      
-      auto it = _files.find(path);
-      if (it != _files.end())
+      auto* file = directory->get(path.filename());
+
+      if (file)
       {
-        fi->fh = reinterpret_cast<uintptr_t>(&it->second);
-
-
-
-        FUSE_DEBUG("open({}, success, existing, {})", cpath, fi->fh, flags);
+        fi->fh = reinterpret_cast<uintptr_t>(file);
+        return SUCCESS;
       }
       else
       {
-        fi->fh = 0ULL;
-        FUSE_DEBUG("open({}, success, non-existing, {})", cpath, fi->fh, flags);
+        FUSE_DEBUG("open({}, failed: file not existing)", cpath);
+        return -ENOENT;
       }
-
-      return 0;
-    }   
+    }
   }
   else
   {
-    FUSE_DEBUG("open({}, failed)", cpath);
+    FUSE_DEBUG("open({}, failed: directory not existing)", cpath);
     return -ENOENT;
   }
+
+  /*
+  std::string flags = "";
+  if (fi->flags & O_RDONLY) flags += "O_RDONLY ";
+  if (fi->flags & O_WRONLY) flags += "O_WRONLY ";
+  if (fi->flags & O_RDWR) flags += "O_RDWR ";
+  if (fi->flags & O_APPEND) flags += "O_APPEND ";
+  if (fi->flags & O_CREAT) flags += "O_CREAT ";
+  if (fi->flags & O_EXCL) flags += "O_EXCL ";
+  if (fi->flags & O_TRUNC) flags += "O_TRUNC ";
+  */
 }
 
 int CellarFS::read(const char* path, char* buf, size_t size, fuse_offset offset, struct fuse_file_info* fi)
@@ -322,8 +360,6 @@ int CellarFS::read(const char* path, char* buf, size_t size, fuse_offset offset,
 
 int CellarFS::write(const char* path, const char* buf, size_t length, FUSE_OFF_T offset, struct fuse_file_info* fi)
 {
-  auto it = _files.find(path);
-
   if (!fi->fh)
   {
     FUSE_DEBUG("write({}, failed)", path);
@@ -359,7 +395,7 @@ CellarFS::CellarFS() : fs(nullptr)
 
   ops.create = &CellarFS::create;
   ops.mknod = &CellarFS::mknod;
-
+ 
   ops.open = &CellarFS::open;
   ops.read = &CellarFS::read;
   ops.write = &CellarFS::write;
@@ -428,81 +464,34 @@ fs_ret CellarFS::sgetxattr(const char* path, const char* name, char* value, size
 
 fs_ret CellarFS::getattr(const fs_path& path, FUSE_STAT* stbuf)
 {  
-  int res = 0;
-  memset(stbuf, 0, sizeof(FUSE_STAT));
-  stbuf->st_nlink = 1;
+  auto directory = vfs.findDirectory(path);
 
-  stbuf->st_uid = 1000;
-  stbuf->st_gid = 1000;
-
-  auto now = std::time(nullptr);
-  stbuf->st_mtim.tv_sec = now;
-  stbuf->st_mtim.tv_nsec = 0;
-  stbuf->st_atim = stbuf->st_mtim;
-  stbuf->st_ctim = stbuf->st_mtim;
-
-  if (path == PATH_ROOT)
+  if (directory)
   {
-    ATTR_AS_DIR(stbuf);
+    FUSE_DEBUG("getaddr({}, success)", path);
+    *stbuf = *vfs.defaultDirectoryStat();
+    return SUCCESS;
   }
-  else if (path == PATH_TO_SORT)
-  {
-    ATTR_AS_DIR(stbuf);
-  }
-  else if (path.parent() == PATH_TO_SORT)
-  {
-    auto filename = path.filename();
-    auto it = _files.find(path);
-    //FUSE_DEBUG("getattr({}, existing: {})", path, it != _files.end());
 
-    if (it != _files.end())
+  directory = vfs.findDirectory(path.parent());
+
+  if (directory)
+  {
+    auto* file = directory->get(path.filename());
+
+    if (file)
     {
-      *stbuf = it->second.stbuf;
-      return 0;
+      FUSE_DEBUG("getaddr({}, success)", path);
+      *stbuf = file->stbuf;
+      return SUCCESS;
     }
-    else
-      return -ENOENT;
-
-    /*auto tpath = ::path(path.c_str() + 1);
-
-    const DatFile* dat = data.datForName(tpath.str());
-
-    if (dat)
-      ATTR_AS_DIR(stbuf);
-    else
-    {
-      auto ppath = tpath.parent();
-
-      const DatFile* dat = data.datForName(ppath.str());
-
-      if (dat)
-      {
-        auto fileName = tpath.filename();
-
-        const DatGame* game = dat->gameByName(fileName);
-
-        if (game)
-        {
-          ATTR_AS_FILE(stbuf);
-          stbuf->st_size = data.hashes()[game->roms[0].ref].size();
-        }
-      }
-    }*/
-
-    /*stbuf->st_mode = S_IFREG | 0444;
-    stbuf->st_nlink = 1;
-    stbuf->st_size = strlen(hello_str);*/
   }
-  else
-    res = -ENOENT;
 
-  return res;
+  FUSE_DEBUG("getaddr({}, failed: path not found)", path);
+  return -ENOENT;
 }
 
 using fuse_opaque_handle = uintptr_t;
-
-constexpr static fuse_opaque_handle FUSE_HANDLE_ROOT = 0xFFFFFFFFFFFFFFFFULL;
-constexpr static fuse_opaque_handle FUSE_HANDLE_TO_SORT = 0xFFFFFFFFFFFFFFFEULL;
 
 fs_ret CellarFS::opendir(const fs_path& path, fuse_file_info* fi)
 {
@@ -514,80 +503,50 @@ fs_ret CellarFS::opendir(const fs_path& path, fuse_file_info* fi)
   fs_ret ret = 0;
   fi->fh = 0ULL;
 
-  /* if path is root use special value to signal it */
-  if (path == PATH_ROOT)
-    fi->fh = FUSE_HANDLE_ROOT;
-  else if (path == PATH_TO_SORT)
-    fi->fh = FUSE_HANDLE_TO_SORT;
-  else if (path.isAbsolute())
+  auto directory = vfs.findDirectory(path);
+
+  if (directory)
   {
-    //fi->fh = -ENOENT;
-    
-    /* path is made as "/some_nice_text", find a corresponding DAT */
-    /*const DatFile* dat = data.datForName(path.makeRelative().str());
-
-    if (dat)
-      fi->fh = reinterpret_cast<uintptr_t>(dat);
-    else
-      fi->fh = -ENOENT;
-    */
+    fi->fh = reinterpret_cast<uintptr_t>(directory);
+    return 0;
   }
-
-  return ret;
+  else
+    return -ENOENT;
 }
-
-FUSE_STAT sortStat;
 
 fs_ret CellarFS::readdir(const fs_path& path, void* buf, fuse_fill_dir_t filler, fuse_offset offset, struct fuse_file_info* fi)
 {
-  /* special case, all the DATs folders */
-  if (fi->fh == FUSE_HANDLE_ROOT)
+  if (!fi->fh)
   {
-    FUSE_DEBUG("readdir({})", path);
-
-    filler(buf, ".", nullptr, 0);
-    filler(buf, "..", nullptr, 0);
-
-    initStat(&sortStat, true);
-
-    filler(buf, PATH_TO_SORT.substr(1).c_str(), &sortStat, 0);
-
-    //for (const auto& dat : data.dats())
-    //  filler(buf, dat.second.folderName.c_str(), nullptr, 0);
-
-    return 0;
+    FUSE_DEBUG("readdir({}, failed: not existing)", path);
+    return -ENOENT;
   }
-  else if (fi->fh == FUSE_HANDLE_TO_SORT)
+  else
   {
-    FUSE_DEBUG("readdir({}, files: {})", path, _files.size());
+    VirtualDirectory* directory = reinterpret_cast<VirtualDirectory*>(fi->fh);
+
+    FUSE_DEBUG("readdir({}, files: {})", path, directory->count());
 
     filler(buf, ".", nullptr, 0);
     filler(buf, "..", nullptr, 0);
 
-    for (auto& file : _files)
+    for (size_t i = 0; i < directory->count(); ++i)
     {
-      FUSE_DEBUG("readdir[{}]  - filename: {}, path: {}, size: {}, mode: {:o}", path, file.first.filename(), file.first, file.second.stbuf.st_size, file.second.stbuf.st_mode);
-      filler(buf, file.first.filename().c_str(), &file.second.stbuf, 0);
+      auto* entry = directory->get(i);
+
+      if (entry->isFile())
+      {
+        VirtualFile* file = (VirtualFile*)entry;
+        FUSE_DEBUG("  - file: {}, size: {}, mode: {:o}", file->path(), file->stbuf.st_size, file->stbuf.st_mode);
+        filler(buf, entry->filename().c_str(), &((VirtualFile*)entry)->stbuf, 0);
+      }
+      else
+      {
+        FUSE_DEBUG("  - dir: {}", entry->filename());
+        filler(buf, entry->filename().c_str(), vfs.defaultDirectoryStat(), 0);
+      }
     }
 
-    return 0;
+    return SUCCESS;
   }
-  else if (fi->fh)
-  {
-    /*const DatFile* dat = reinterpret_cast<const DatFile*>(fi->fh);
-
-    if (dat)
-    {
-      filler(buf, ".", nullptr, 0);
-      filler(buf, "..", nullptr, 0);
-      */
-      /* fill with all entry from DAT */
-  /*    for (const auto& entry : dat->games)
-        filler(buf, entry.name.c_str(), nullptr, 0);
-
-      return 0;
-    }*/
-  }
-
-  return -ENOENT;
 }
