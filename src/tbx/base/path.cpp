@@ -8,6 +8,7 @@
 
 #include "file_system.h"
 
+namespace fs = std::filesystem;
 static constexpr const char SEPARATOR = '/';
 
 path::path(const char* data) : _data(data)
@@ -22,6 +23,11 @@ path::path(const std::string& data) : _data(data)
     _data.pop_back();
 }
 
+path::path(const std::filesystem::path& path) : path(path.string())
+{
+
+}
+
 bool path::isAbsolute() const
 {
   return !_data.empty() && _data[0] == SEPARATOR;
@@ -32,6 +38,11 @@ bool path::isFolder() const { return FileSystem::i()->existsAsFolder(*this); }
 bool path::exists() const
 {
   return FileSystem::i()->existsAsFile(*this) || FileSystem::i()->existsAsFolder(*this);
+}
+
+path path::absolute() const
+{
+  return path(fs::absolute(_data));
 }
 
 path path::relativizeToParent(const path& parent) const

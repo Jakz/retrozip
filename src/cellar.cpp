@@ -28,7 +28,7 @@
 #include <unordered_map>
 #include <numeric>
 
-#include "cellar/fs/cellar_fs.h"
+#include "cellar/fs/vfs.h"
 
 CellarFS cellar;
 
@@ -132,6 +132,7 @@ int main(int argc, const char* argv[])
   return 0;*/
   
   std::vector<path> datFiles;
+
   datFiles = FileSystem::i()->contentsOfFolder("dats");
   
   parsing::LogiqxParser parser;

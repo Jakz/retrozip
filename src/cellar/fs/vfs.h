@@ -56,3 +56,13 @@ public:
   void createHandle();
 };
 
+#include "cellar/kernel.h"
+
+namespace cellar
+{
+  class FileSystem : public KernelModule
+  {
+  protected:
+    FileSystem(Kernel* kernel) : KernelModule(kernel) { }
+  };
+}
