@@ -34,6 +34,7 @@ struct RomHashData
 
   }
 
+  const auto& sha1() const { return hash.sha1; }
   size_t size() const { return hash.size; }
 
   RomHashData& operator+=(const HashData& hash)

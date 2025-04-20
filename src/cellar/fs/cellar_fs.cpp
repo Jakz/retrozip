@@ -503,63 +503,9 @@ fs_ret CellarFS::flush(const char* path, struct fuse_file_info* fi)
   return 0;
 }
 
-#define RYML_SINGLE_HDR_DEFINE_NOW
-#include "libs/rapidyaml.hpp"
-
-/* this class manages the mapping between recognized files and how they're stored on physical disk */
-class VaultFile
-{
-protected:
-  path _path;
-
-public:
-  VaultFile() { }
-  VaultFile(const path& path) : _path(path) { }
-
-  auto path() const { return _path; }
-};
-
-class Vault
-{
-protected:
-  std::unordered_map<hash::sha1_t, VaultFile, hash::sha1_t::hasher> _files;
-
-public:
-
-  void map(const hash::sha1_t& sha1, const path& path)
-  {
-    _files[sha1] = VaultFile(path);
-  }
-
-  void save()
-  {
-    path vaultPath = path("vault/vault.yml");
-
-    ryml::Tree tree;
-    ryml::NodeRef node = tree.rootref();
-
-    node |= ryml::MAP;
-
-    for (const auto& file : _files)
-    {
-      std::string hash = std::string(file.first.literal());
-      LOG_DEBUG("hash: {}", hash);
-      c4::csubstr key = tree.copy_to_arena(ryml::to_csubstr(hash));
-      c4::csubstr value = tree.copy_to_arena(ryml::to_csubstr(file.second.path().c_str()));
-      node[key] = value;
-    }
-      
-
-    std::string output = ryml::emitrs_yaml<std::string>(tree);
-
-
-    FILE* out = fopen(vaultPath.c_str(), "wb+");
-    fwrite(output.c_str(), output.size(), 1, out);
-    fclose(out);
-  }
-};
-
-Vault vault;
+#include "cellar/kernel.h"
+#include "cellar/storage.h"
+cellar::Kernel kernel;
 
 bool organize(VirtualFile* file, const RomHashData* rom)
 {
@@ -579,8 +525,8 @@ bool organize(VirtualFile* file, const RomHashData* rom)
     size_t written = fwrite(file->_content.data(), file->_content.size(), 1, out);
     fclose(out);
 
-    vault.map(rom->hash.sha1, base);
-    vault.save();
+    kernel.storage()->map(rom->hash.sha1, base);
+    kernel.storage()->save();
 
     return true;
   }

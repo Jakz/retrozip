@@ -89,12 +89,16 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\src\cellar.cpp" />
     <ClCompile Include="..\..\..\src\cellar\fs\cellar_fs.cpp" />
+    <ClCompile Include="..\..\..\src\cellar\kernel.cpp" />
+    <ClCompile Include="..\..\..\src\cellar\storage.cpp" />
     <ClCompile Include="..\..\..\src\libs\pugixml\pugixml.cpp" />
     <ClCompile Include="..\..\..\src\parsers\clrmamepro.cpp" />
     <ClCompile Include="..\..\..\src\parsers\logiqx.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\cellar\fs\cellar_fs.h" />
+    <ClInclude Include="..\..\..\src\cellar\kernel.h" />
+    <ClInclude Include="..\..\..\src\cellar\storage.h" />
     <ClInclude Include="..\..\..\src\data\database.h" />
     <ClInclude Include="..\..\..\src\data\entry.h" />
     <ClInclude Include="..\..\..\src\data\hash_map.h" />

@@ -39,6 +39,12 @@
     <ClCompile Include="..\..\..\src\cellar\fs\cellar_fs.cpp">
       <Filter>src\cellar\fs</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\cellar\storage.cpp">
+      <Filter>src\cellar</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\cellar\kernel.cpp">
+      <Filter>src\cellar</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\parsers\parser.h">
@@ -61,6 +67,12 @@
     </ClInclude>
     <ClInclude Include="..\..\..\src\data\hash_map.h">
       <Filter>src\data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\cellar\storage.h">
+      <Filter>src\cellar</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\cellar\kernel.h">
+      <Filter>src\cellar</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
