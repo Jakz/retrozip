@@ -20,6 +20,8 @@ namespace cellar
   public:
     Database(Kernel* kernel, const std::string& name) : KernelModule(kernel, name) { }
 
+    void build();
+
     //dat_list& dats() { return _dats; }
     const hash_map& hashes() const { return _hashes; }
     const dat_list& dats() const { return _dats; }

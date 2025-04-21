@@ -24,3 +24,8 @@ void FileSystemBridge::createFolder(const path& path, bool intermediate)
 {
   FileSystem::i()->createFolder(path, intermediate);
 }
+
+std::vector<path> FileSystemBridge::contentsOfFolder(const path& path)
+{
+  return FileSystem::i()->contentsOfFolder(path);
+}

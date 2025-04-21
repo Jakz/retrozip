@@ -12,7 +12,7 @@ namespace parsing
     pugi::xml_document doc;
     pugi::xml_parse_result xmlResult = doc.load_file(path.c_str());
     
-    ParseResult result = { 0, 0 };
+    ParseResult result;
 
     /* map name/id to position in array */
     std::unordered_map<std::string, size_t> gameMap;

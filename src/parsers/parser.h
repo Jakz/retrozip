@@ -26,6 +26,8 @@ namespace parsing
     size_t count;
     size_t sizeInBytes;
     std::vector<ParseGame> games;
+
+    ParseResult() : count(0), sizeInBytes(0) { }
   };
 
   class Parser

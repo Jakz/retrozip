@@ -1,6 +1,7 @@
 #include "cellar_fs.h"
 
 #include "data/hash_map.h"
+#include "cellar/database.h"
 
 #include <iostream>
 
@@ -107,7 +108,7 @@ void VirtualFileSystem::generateFoldersForDATs()
   _root->add(dats);
   _flatMapping["/Dats"] = dats;
 
-  /*for (const auto& dat : data.dats())
+  for (const auto& dat : kernel()->db()->dats())
   {
     path name = dat.second.name;
     path folderName = name.filenameWithoutExtension();
@@ -128,8 +129,8 @@ void VirtualFileSystem::generateFoldersForDATs()
 
         folder->add(file);
       }
-    }
-  }*/
+    }*/
+  }
 }
 
 VirtualDirectory* VirtualFileSystem::findDirectory(const path& path)

@@ -51,6 +51,9 @@
     <ClCompile Include="..\..\..\src\cellar\logger.cpp">
       <Filter>src\cellar</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\cellar\database.cpp">
+      <Filter>src\cellar</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\parsers\parser.h">

@@ -41,6 +41,7 @@ namespace cellar
   struct FileSystemBridge
   {
     void createFolder(const path& path, bool intermediate);
+    std::vector<path> contentsOfFolder(const path& path);
   };
 
   class Kernel
