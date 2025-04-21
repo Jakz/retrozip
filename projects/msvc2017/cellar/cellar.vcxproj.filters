@@ -45,6 +45,12 @@
     <ClCompile Include="..\..\..\src\cellar\kernel.cpp">
       <Filter>src\cellar</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\cellar\fs\fuse_backend.cpp">
+      <Filter>src\cellar\fs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\cellar\logger.cpp">
+      <Filter>src\cellar</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\parsers\parser.h">
@@ -62,9 +68,6 @@
     <ClInclude Include="..\..\..\src\cellar\fs\cellar_fs.h">
       <Filter>src\cellar\fs</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\data\database.h">
-      <Filter>src\data</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\src\data\hash_map.h">
       <Filter>src\data</Filter>
     </ClInclude>
@@ -72,6 +75,15 @@
       <Filter>src\cellar</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\cellar\kernel.h">
+      <Filter>src\cellar</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\cellar\fs\fuse_backend.h">
+      <Filter>src\cellar\fs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\cellar\logger.h">
+      <Filter>src\cellar</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\cellar\database.h">
       <Filter>src\cellar</Filter>
     </ClInclude>
   </ItemGroup>
