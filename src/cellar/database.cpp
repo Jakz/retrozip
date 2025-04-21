@@ -1,6 +1,7 @@
 #include "database.h"
 
 #include "parsers/parser.h"
+#include "cataloguer.h"
 
 #include <set>
 
@@ -19,8 +20,6 @@ void Database::build()
   parsing::ParseResult tresult;
 
   Hasher hasher;
-
-  std::set<std::string> tags;
 
   for (const auto& dat : datFiles)
   {
@@ -47,24 +46,7 @@ void Database::build()
       Game& game = datFile->games[i];
       game = Game(dgame.name);
 
-      std::string_view name = dgame.name;
-      for (size_t k = 0; k < name.size(); ++k)
-      {
-        /* search for opening tag */
-        if (name[k] == '(')
-        {
-          auto it = name.find(')', k);
-
-          if (it == std::string_view::npos)
-            break;
-          else
-          {
-            std::string tag = std::string(name.substr(k + 1, it - k - 1));
-            tags.insert(tag);
-            k = it;          
-          }
-        }
-      }
+      kernel()->cataloguer()->catalogue(&game);
 
       //const byte* key = entry.hash.sha1.inner();
       //const byte* value = (const byte*) &entry.hash;
@@ -130,9 +112,9 @@ void Database::build()
     debug("  {}", ss.str());
     debug("  {} in {} games in {} clones", result.count, strings::humanReadableSize(result.sizeInBytes, true, 2), datFile->clones.size());
 
-    for (const auto& tag : tags)
+    for (const auto& [name, tag] : *kernel()->tags())
     {
-      debug("  {}", tag);
+      debug("  {}", name);
     }
 
     /*auto it = std::max_element(

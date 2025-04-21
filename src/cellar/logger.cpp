@@ -7,6 +7,9 @@
 
 void Logger::log(Logger::Level level, const std::string& message)
 {
+  if (level == Level::Trace)
+    return;
+  
   switch (level)
   {
     case Level::Error:
@@ -21,6 +24,9 @@ void Logger::log(Logger::Level level, const std::string& message)
       break;
     case Level::Debug:
       std::cout << termcolor::white;
+      break;
+    case Level::Trace:
+      std::cout << termcolor::cyan;
       break;
     default:
       assert(false);

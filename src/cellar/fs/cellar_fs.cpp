@@ -108,6 +108,9 @@ void VirtualFileSystem::generateFoldersForDATs()
   _root->add(dats);
   _flatMapping["/Dats"] = dats;
 
+  std::initializer_list<std::string> regions = { "Usa", "Europe", "Japan" };
+
+
   for (const auto& dat : kernel()->db()->dats())
   {
     path name = dat.second.name;
@@ -117,17 +120,25 @@ void VirtualFileSystem::generateFoldersForDATs()
     _flatMapping[folderPath] = folder;
     dats->add(folder);
 
-    /*for (const DatGame& game : dat.second.games)
+    /*
+    for (const auto& region : regions)
     {
-      if (!game.roms.empty())
+      VirtualDirectory* regionFolder = new VirtualDirectory(folderPath + region);
+      _flatMapping[folderPath + region] = regionFolder;
+      folder->add(regionFolder);
+
+      for (const Game& game : dat.second.games)
       {
-        const DatRom& rom = game[0];
+        if (!game.roms.empty() && game.tags.contains(region))
+        {
+          const DatRom& rom = game[0];
 
-        VirtualFile* file = new VirtualFile(folderPath + rom.name);
-        initStat(file, true);
-        file->setSize(data.hashes()[rom.ref].size());
+          VirtualFile* file = new VirtualFile(regionFolder->path() + rom.name);
+          initStat(file, true);
+          file->setSize(kernel()->db()->hashes().find(rom.hash->hash)->size());
 
-        folder->add(file);
+          regionFolder->add(file);
+        }
       }
     }*/
   }

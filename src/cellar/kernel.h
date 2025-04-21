@@ -6,6 +6,12 @@
 
 class path;
 
+namespace tags
+{
+  class Tag;
+  class TagPool;
+}
+
 namespace cellar
 {
   class Kernel;
@@ -23,6 +29,7 @@ namespace cellar
     Logger& log();
     void verify(bool condition, const std::string& message) { if (!condition) { log().error(_name, message); abort(); } }
 
+    template<typename... Args> void trace(const std::string& format, Args&&... args) { log().trace(_name, format, std::forward<Args>(args)...); }
     template<typename... Args> void debug(const std::string& format, Args&&... args) { log().debug(_name, format, std::forward<Args>(args)...); }
     template<typename... Args> void info(const std::string& format, Args&&... args) { log().info(_name, format, std::forward<Args>(args)...); }
     template<typename... Args> void warning(const std::string& format, Args&&... args) { log().warning(_name, format, std::forward<Args>(args)...); }
@@ -32,6 +39,7 @@ namespace cellar
 
   class Storage;
   class Database;
+  class Cataloguer;
   
   namespace vfs
   {
@@ -51,6 +59,8 @@ namespace cellar
     std::unique_ptr<Storage> _storage;
     std::unique_ptr<vfs::VirtualFileSystem> _vfs;
     std::unique_ptr<FileSystemBridge> _fs;
+    std::unique_ptr<tags::TagPool> _tags;
+    std::unique_ptr<Cataloguer> _cataloguer;
     Logger _logger;
   
   public:
@@ -62,6 +72,8 @@ namespace cellar
     vfs::VirtualFileSystem* vfs() const { return _vfs.get(); }
     Database* db() const { return _db.get(); }
     FileSystemBridge* fs() const { return _fs.get(); }
+    tags::TagPool* tags() const { return _tags.get(); }
+    Cataloguer* cataloguer() const { return _cataloguer.get(); }
 
     Logger& log() { return _logger; }
   };

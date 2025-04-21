@@ -2,6 +2,8 @@
 
 #include "storage.h"
 #include "database.h"
+#include "cataloguer.h"
+#include "data/tags.h"
 #include "fs/cellar_fs.h"
 
 using namespace cellar;
@@ -11,6 +13,8 @@ Kernel::Kernel()
   _storage = std::make_unique<Storage>(this, "storage");
   _vfs = std::make_unique<vfs::VirtualFileSystem>(this, "vfs");
   _db = std::make_unique<Database>(this, "database");
+  _cataloguer = std::make_unique<Cataloguer>(this, "cataloguer");
+  _tags = std::make_unique<tags::TagPool>();
 }
 
 Kernel::~Kernel()

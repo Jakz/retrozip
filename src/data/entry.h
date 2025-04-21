@@ -94,6 +94,7 @@ struct HashData
 };
 
 #include <unordered_map>
+#include "tags.h"
 
 using data_ref = s64;
 struct RomHashData;
@@ -109,7 +110,8 @@ struct Game
 {
   std::string name;
   std::vector<DatRom> roms;
-
+  tags::TagSet tags;
+ 
   Game() = default;
   Game(const std::string& name) : name(name) { }
 

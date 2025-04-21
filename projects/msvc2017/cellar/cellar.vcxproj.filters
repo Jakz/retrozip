@@ -54,6 +54,9 @@
     <ClCompile Include="..\..\..\src\cellar\database.cpp">
       <Filter>src\cellar</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\cellar\cataloguer.cpp">
+      <Filter>src\cellar</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\parsers\parser.h">
@@ -87,6 +90,12 @@
       <Filter>src\cellar</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\cellar\database.h">
+      <Filter>src\cellar</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\data\tags.h">
+      <Filter>src\data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\cellar\cataloguer.h">
       <Filter>src\cellar</Filter>
     </ClInclude>
   </ItemGroup>
