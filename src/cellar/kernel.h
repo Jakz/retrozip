@@ -2,34 +2,68 @@
 
 #include <memory>
 
+#include "logger.h"
+
+class path;
+
 namespace cellar
 {
   class Kernel;
   
-  class KernelComponent
+  class KernelModule
   {
   private:
     Kernel* _kernel;
+    std::string _name;
 
   public:
-    KernelComponent(Kernel* kernel) : _kernel(kernel) { }
+    KernelModule(Kernel* kernel, const std::string& name) : _kernel(kernel), _name(name) { }
     Kernel* kernel() const { return _kernel; }
+
+    Logger& log();
+    void verify(bool condition, const std::string& message) { if (!condition) { log().error(_name, message); abort(); } }
+
+    template<typename... Args> void debug(const std::string& format, Args&&... args) { log().debug(_name, format, std::forward<Args>(args)...); }
+    template<typename... Args> void info(const std::string& format, Args&&... args) { log().info(_name, format, std::forward<Args>(args)...); }
+    template<typename... Args> void warning(const std::string& format, Args&&... args) { log().warning(_name, format, std::forward<Args>(args)...); }
+    template<typename... Args> void error(const std::string& format, Args&&... args) { log().error(_name, format, std::forward<Args>(args)...); }
+    template<typename... Args> void fatal(const std::string& format, Args&&... args) { log().fatal(_name, format, std::forward<Args>(args)...); }
   };
 
   class Storage;
+  class Database;
+  
+  namespace vfs
+  {
+    class VirtualFileSystem;
+  }
 
+  struct FileSystemBridge
+  {
+    void createFolder(const path& path, bool intermediate);
+  };
 
   class Kernel
   {
   protected:
+    std::unique_ptr<Database> _db;
     std::unique_ptr<Storage> _storage;
-
+    std::unique_ptr<vfs::VirtualFileSystem> _vfs;
+    std::unique_ptr<FileSystemBridge> _fs;
+    Logger _logger;
+  
   public:
     Kernel();
     Kernel(const Kernel&) = delete;
+    ~Kernel();
 
     Storage* storage() const { return _storage.get(); }
+    vfs::VirtualFileSystem* vfs() const { return _vfs.get(); }
+    Database* db() const { return _db.get(); }
+    FileSystemBridge* fs() const { return _fs.get(); }
+
+    Logger& log() { return _logger; }
   };
 
-
+  inline Logger& KernelModule::log() { return _kernel->log(); }
 }

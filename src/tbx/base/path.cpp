@@ -10,16 +10,20 @@
 
 static constexpr const char SEPARATOR = '/';
 
-path::path(const char* data) : _data(data)
+path::path(const std::string& data) : _data(data)
 {
   if (_data.length() > 1 && _data.back() == SEPARATOR)
     _data.pop_back();
 }
 
-path::path(const std::string& data) : _data(data)
+path::path(const char* data) : path(std::string(data))
 {
-  if (!_data.empty() && _data.back() == SEPARATOR && _data.length() > 1)
-    _data.pop_back();
+
+}
+
+path::path(const std::filesystem::path& data) : path(data.string())
+{
+
 }
 
 bool path::isAbsolute() const
@@ -32,6 +36,11 @@ bool path::isFolder() const { return FileSystem::i()->existsAsFolder(*this); }
 bool path::exists() const
 {
   return FileSystem::i()->existsAsFile(*this) || FileSystem::i()->existsAsFolder(*this);
+}
+
+path path::absolute() const
+{
+  return std::filesystem::absolute(std::filesystem::path(_data));
 }
 
 path path::relativizeToParent(const path& parent) const

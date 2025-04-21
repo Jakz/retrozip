@@ -1,58 +1,98 @@
 #pragma once
 
-#define FUSE_USE_VERSION 26
-#include <cstring>
-#include <cerrno>
-#include "fuse/fuse.h"
-
+#include "cellar/kernel.h"
 #include "tbx/base/path.h"
 
-using fs_ret = int;
-using fs_path = path;
+#include "fuse.h"
 
-using fsblkcnt_t = uint64_t;
-using fsfilcnt_t = uint64_t;
-
-using fuse_offset = long long;
-
-class CellarFS
+namespace cellar::vfs
 {
-private:
-  static CellarFS* instance;
-  struct fuse_operations ops;
-  fuse* fs;
+  using fs_path = path;
+  enum class VirtualFileType { ToBeOrganized };
 
-  static int statsfs(const char* foo, struct statvfs* stats);
+  struct VirtualEntry
+  {
+  protected:
+    path _path;
 
-  static int sgetattr(const char* path, FUSE_STAT* stbuf);
-  static int sgetxattr(const char* path, const char* name, char* value, size_t size);
+  public:
+    VirtualEntry(const path& path) : _path(path) { }
 
-  static int sreaddir(const char* path, void* buf, fuse_fill_dir_t filler, fuse_offset offset, fuse_file_info* fi);
-  static int sopendir(const char* path, fuse_file_info* fi);
+    virtual bool isFile() const = 0;
+    const path& path() const { return _path; }
+    auto filename() const { return _path.filename(); }
+  };
 
-  static int create(const char* path, mode_t mode, struct fuse_file_info* fi);
-  static int mknod(const char* path, mode_t mode, dev_t device);
 
-  
-  static int open(const char* path, struct fuse_file_info* fi);
-  static int read(const char* path, char* buf, size_t size, fuse_offset offset, struct fuse_file_info* fi);
-  static int write(const char* path, const char* buf, size_t size, fuse_offset offset, struct fuse_file_info* fi);
+  struct VirtualFile : public VirtualEntry
+  {
+    std::vector<uint8_t> _content;
+    FUSE_STAT stbuf;
+    VirtualFileType _type;
 
-  static int flush(const char* path, struct fuse_file_info* fi);
-  static int release(const char* path, struct fuse_file_info* fi);
+    VirtualFile(const ::path& p) : VirtualEntry(p) { }
+    VirtualFile() : VirtualFile("") { }
 
-  static int releasedir(const char* path, struct fuse_file_info* fi);
+    auto type() const { return _type; }
+    bool isFile() const override { return true; }
 
-  static int utimens(const char* path, const struct timespec tv[2]);
-  static int access(const char* path, int mask);
+    void setSize(size_t length) { stbuf.st_size = length; }
 
-  fs_ret getattr(const fs_path& path, FUSE_STAT* stbuf);
+    size_t write(const char* buf, size_t length, FUSE_OFF_T offset);
+    size_t read(char* buf, size_t length, FUSE_OFF_T offset);
+  };
 
-  fs_ret opendir(const fs_path& path, fuse_file_info* fi);
-  fs_ret readdir(const fs_path& path, void* buf, fuse_fill_dir_t filler, fuse_offset offset, fuse_file_info* fi);
 
-public:
-  CellarFS();
-  void createHandle();
-};
+  struct VirtualDirectory : public VirtualEntry
+  {
+  protected:
+    std::vector<VirtualEntry*> _content;
+    std::unordered_map<fs_path, VirtualEntry*, path::hash> _flatMapping;
 
+  public:
+    VirtualDirectory(const fs_path& path) : VirtualEntry(path) { }
+
+    void add(VirtualEntry* entry);
+    /* remove virtual file from directory, return true if file was present */
+    bool remove(VirtualEntry* entry);
+
+    VirtualEntry* get(size_t index) { return _content[index]; }
+    VirtualFile* get(const fs_path& filename);
+
+    bool isWritable() const { return true; }
+    bool isFile() const override { return false; }
+    virtual size_t count() const { return _content.size(); }
+
+    void print(size_t indent = 0);
+  };
+
+  struct VirtualFileSystem : public KernelModule
+  {
+  protected:
+    std::unique_ptr<VirtualDirectory> _root;
+    VirtualDirectory* _toSortFolder;
+
+    std::unordered_map<path, VirtualDirectory*, path::hash> _flatMapping;
+
+    FUSE_STAT _defaultDirectoryStat;
+
+    void initStat(FUSE_STAT* stat, bool dir, bool readonly);
+
+  public:
+    VirtualFileSystem(Kernel* kernel, const std::string& name);
+
+    /* return a default directory stat which is used for all directories */
+    const FUSE_STAT* defaultDirectoryStat() const { return &_defaultDirectoryStat; }
+    void initStat(VirtualFile* file, bool readonly) { initStat(&file->stbuf, false, readonly); }
+
+    VirtualDirectory* findDirectory(const path& path);
+    VirtualDirectory* sortFolder() const { return _toSortFolder; }
+    VirtualDirectory* root() const { return _root.get(); }
+
+    void generateFoldersForDATs();
+
+    bool filesReadyToBeSorted(VirtualFile* file);
+
+    void mount();
+  };
+}

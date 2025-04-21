@@ -18,13 +18,13 @@ namespace cellar
   };
 
   /* this class manages the mapping between recognized files and how they're stored on physical disk */
-  class Storage : public KernelComponent
+  class Storage : public KernelModule
   {
   protected:
     std::unordered_map<hash::sha1_t, StorageFile, hash::sha1_t::hasher> _files;
 
   public:
-    Storage(Kernel* kernel) : KernelComponent(kernel) { }
+    Storage(Kernel* kernel, const std::string& name) : KernelModule(kernel, name) { }
 
     void save() const;
 

@@ -21,7 +21,6 @@
 #include "tbx/base/file_system.h"
 
 #include "data/entry.h"
-#include "data/database.h"
 #include "data/hash_map.h"
 
 #include <unordered_set>
@@ -29,8 +28,7 @@
 #include <numeric>
 
 #include "cellar/fs/cellar_fs.h"
-
-CellarFS cellar;
+#include "cellar/database.h"
 
 class DatabaseStore
 {
@@ -101,13 +99,11 @@ public:
   }
 };
     
-DatabaseData data;
-extern void initVFS();
-
-
 using cataloguer_t = std::function<path(const HashData&)>;
-    
-    
+
+cellar::Kernel kernel;
+
+        
 int main(int argc, const char* argv[])
 {  
   /*auto files = FileSystem::i()->contentsOfFolder("/Volumes/RAMDisk/input");
@@ -156,7 +152,7 @@ int main(int argc, const char* argv[])
     tresult.sizeInBytes += result.sizeInBytes;
     tresult.count += result.count;
     
-    DatFile* datFile = data.addDatFile({ dat.filename(), dat.filename() });
+    DatFile* datFile = kernel.db()->addDatFile({dat.filename(), dat.filename()});
 
     /* preallocate data to be able to get address to Game instances */
     datFile->games.resize(result.games.size());
@@ -180,7 +176,7 @@ int main(int argc, const char* argv[])
       for (size_t j = 0; j < dgame.roms.size(); ++j)
       {
         /* save hash data into hash repository */
-        data_ref ref = data.addHashData(RomRef(&game, j), dgame.roms[j].hash);
+        data_ref ref = kernel.db()->addHashData(RomRef(&game, j), dgame.roms[j].hash);
 
         /* this will be mapped later once hash depository have been prepared */
         if (ref != INVALID_DATA_REF)
@@ -246,26 +242,22 @@ int main(int argc, const char* argv[])
 
   /* now it's time to finalize hash repository and map everything 
     rom hash data to its corresponding element in hash repository */
-  for (const auto& entry : data.hashes())
+  for (const auto& entry : kernel.db()->hashes())
   {
     for (auto& ref : entry.roms)
       ref.game->roms[ref.index].hash = &entry;
   }
-
-  auto* lol = &data;
-
-  initVFS();
   
   std::cout << std::dec;
   std::cout << tresult.count << " entries in " << strings::humanReadableSize(tresult.sizeInBytes, true, 2) << std::endl;
-  std::cout << data.hashes().size() << " unique entries in " << strings::humanReadableSize(data.hashes().sizeInBytes(), true, 2) << std::endl;
+  std::cout << kernel.db()->hashes().size() << " unique entries in " << strings::humanReadableSize(kernel.db()->hashes().sizeInBytes(), true, 2) << std::endl;
   
   //std::cout << "database memory footprint: " << strings::humanReadableSize(data.aproximateSize(), true, 2) << std::endl;
 
   //database->shutdown();
-  
-  CellarFS fs;
-  fs.createHandle();
+
+
+  kernel.vfs()->mount();
   
   return 0;
 }

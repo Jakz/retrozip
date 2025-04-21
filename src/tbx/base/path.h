@@ -26,13 +26,15 @@ public:
   
   
   path() { }
-  path(const char* data);
   path(const std::string& data);
-  
+  path(const char* data);
+  path(const std::filesystem::path& data);
+
   bool isFolder() const;
   bool exists() const;
   size_t length() const;
   
+  path absolute() const;
   path relativizeToParent(const path& parent) const;
   path relativizeChildren(const path& children) const;
   
