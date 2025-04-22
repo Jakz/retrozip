@@ -95,6 +95,7 @@ struct HashData
 
 #include <unordered_map>
 #include "tags.h"
+#include "meta.h"
 
 using data_ref = s64;
 struct RomHashData;
@@ -116,6 +117,7 @@ struct Game
   Game(const std::string& name) : name(name) { }
 
   const DatRom& operator[](size_t index) const { return roms[index]; }
+  bool hasSingleRom() const { return roms.size() == 1; }
 };
 
 struct GameClone
@@ -128,10 +130,14 @@ struct DatFile
   std::string name;
   std::string folderName;
   
+  meta::System* system;
   std::vector<Game> games;
   std::vector<GameClone> clones;
 
   std::unordered_map<std::string, Game*> gameMap;
+
+  DatFile() : system(nullptr) { }
+  DatFile(const std::string& name, const std::string& folderName) : name(name), folderName(folderName), system(nullptr) { }
 
   Game* gameByName(const std::string& name) const
   {

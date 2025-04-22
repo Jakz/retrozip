@@ -16,6 +16,7 @@ Kernel::Kernel()
   _db = std::make_unique<Database>(this, "database");
   _cataloguer = std::make_unique<Cataloguer>(this, "cataloguer");
   _tags = std::make_unique<tags::TagPool>();
+  _ui = std::make_unique<UserInterface>(this, "ui");
 }
 
 Kernel::~Kernel()

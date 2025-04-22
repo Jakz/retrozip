@@ -102,6 +102,9 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\hash\hash.h">
       <Filter>tbx\hash</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\base\strings.h">
+      <Filter>tbx\base</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\patch\xdelta3\xdelta3.cpp">
@@ -127,6 +130,9 @@
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\hash\crc32.cpp">
       <Filter>tbx\hash</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\base\strings.cpp">
+      <Filter>tbx\base</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

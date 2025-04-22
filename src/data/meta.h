@@ -7,6 +7,14 @@ using ident_t = std::string;
 
 namespace meta
 {
+  enum class SystemType
+  {
+    Console,
+    Handheld,
+    Computer,
+    Arcade
+  };
+  
   class Company
   {
   protected:
@@ -26,15 +34,19 @@ namespace meta
     ident_t _ident;
     std::string _shortName;
     std::string _longName;
-    Company* _company;
+
+    SystemType _type;
+    const Company* _company;
 
   public:
-    System(const ident_t& ident, Company* company, const std::string& shortName, const std::string& longName) 
-      : _ident(ident), _company(company), _shortName(shortName), _longName(longName) { }
+    System(const ident_t& ident, SystemType type, Company* company, const std::string& shortName, const std::string& longName)
+      : _ident(ident), _type(type), _company(company), _shortName(shortName), _longName(longName) { }
 
     const ident_t& ident() const { return _ident; }
     const std::string& shortName() const { return _shortName; }
     const std::string& longName() const { return _longName; }
+    const std::string& name() const { return _longName; }
+    const Company* company() const { return _company; }
   };
 
   class Repository
@@ -47,6 +59,7 @@ namespace meta
     Repository();
 
     Company* company(const ident_t& ident);
+    System* system(const ident_t& ident);
 
     const std::vector<Company>& companies() const { return _companies; }
     const std::vector<System>& systems() const { return _systems; }

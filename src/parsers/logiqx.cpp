@@ -1,7 +1,9 @@
 #include "parser.h"
 
+#include "data/meta.h"
 #include "data/entry.h"
 #include "libs/pugixml/pugixml.hpp"
+#include "tbx/base/strings.h"
 
 namespace parsing
 {
@@ -24,7 +26,12 @@ namespace parsing
       const auto datafile = doc.child("datafile");
       
       const auto games = datafile.child("game") ? datafile.children("game") : datafile.children("machine");
-  
+
+      const std::string system = strings::tolower(datafile.child("header").child("name").child_value());
+
+      if (strings::contains(system, "game boy advance"))
+        result.system = meta::Repository::i()->system("gba");
+
       for (pugi::xml_node xgame : games)
       {
         ParseGame game;

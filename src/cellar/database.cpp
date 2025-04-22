@@ -34,10 +34,11 @@ void Database::build()
     tresult.sizeInBytes += result.sizeInBytes;
     tresult.count += result.count;
 
-    DatFile* datFile = addDatFile({ dat.filename(), dat.filename() });
+    DatFile* datFile = addDatFile(DatFile(dat.filename(), dat.filename()));
 
     /* preallocate data to be able to get address to Game instances */
     datFile->games.resize(result.games.size());
+    datFile->system = result.system;
 
     /* for each game */
     for (size_t i = 0; i < result.games.size(); ++i)
