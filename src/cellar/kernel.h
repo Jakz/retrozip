@@ -40,6 +40,7 @@ namespace cellar
   class Storage;
   class Database;
   class Cataloguer;
+  class UserInterface;
   
   namespace vfs
   {
@@ -61,6 +62,7 @@ namespace cellar
     std::unique_ptr<FileSystemBridge> _fs;
     std::unique_ptr<tags::TagPool> _tags;
     std::unique_ptr<Cataloguer> _cataloguer;
+    std::unique_ptr<UserInterface> _ui;
     Logger _logger;
   
   public:
@@ -74,6 +76,7 @@ namespace cellar
     FileSystemBridge* fs() const { return _fs.get(); }
     tags::TagPool* tags() const { return _tags.get(); }
     Cataloguer* cataloguer() const { return _cataloguer.get(); }
+    UserInterface* ui() const { return _ui.get(); }
 
     Logger& log() { return _logger; }
   };

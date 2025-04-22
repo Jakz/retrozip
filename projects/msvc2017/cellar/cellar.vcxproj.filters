@@ -22,6 +22,9 @@
     <Filter Include="src\cellar\fs">
       <UniqueIdentifier>{5e509d5a-24be-4327-8dcc-624a4e41a936}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\cellar\ui">
+      <UniqueIdentifier>{4a122d47-88e9-47d0-832a-8a7ef01eff3e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\cellar.cpp">
@@ -56,6 +59,12 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\cellar\cataloguer.cpp">
       <Filter>src\cellar</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\cellar\ui\ui.cpp">
+      <Filter>src\cellar\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\data\meta.cpp">
+      <Filter>src\data</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -97,6 +106,12 @@
     </ClInclude>
     <ClInclude Include="..\..\..\src\cellar\cataloguer.h">
       <Filter>src\cellar</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\cellar\ui\ui.h">
+      <Filter>src\cellar\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\data\meta.h">
+      <Filter>src\data</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -25,9 +25,11 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <numeric>
+#include <thread>
 
 #include "cellar/fs/cellar_fs.h"
 #include "cellar/database.h"
+#include "cellar/ui/ui.h"
 
 class DatabaseStore
 {
@@ -137,7 +139,15 @@ int main(int argc, const char* argv[])
   //database->shutdown();
 
   kernel.db()->build();
-  kernel.vfs()->mount();
+
+  std::thread thread([] {
+    if (false)
+      kernel.vfs()->mount();
+  });
+
+  kernel.ui()->init();
+
+  thread.join();
   
   return 0;
 }

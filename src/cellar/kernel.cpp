@@ -5,6 +5,7 @@
 #include "cataloguer.h"
 #include "data/tags.h"
 #include "fs/cellar_fs.h"
+#include "ui/ui.h"
 
 using namespace cellar;
 

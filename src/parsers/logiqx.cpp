@@ -21,8 +21,10 @@ namespace parsing
     
     if (xmlResult)
     {
-      const auto& games = doc.child("datafile").children("game");
+      const auto datafile = doc.child("datafile");
       
+      const auto games = datafile.child("game") ? datafile.children("game") : datafile.children("machine");
+  
       for (pugi::xml_node xgame : games)
       {
         ParseGame game;

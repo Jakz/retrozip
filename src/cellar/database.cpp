@@ -70,7 +70,7 @@ void Database::build()
 
       /* if game has parent we need to find or generate correct clone */
       if (dgame.parent != INVALID_DATA_REF)
-      {
+      {         
         auto it = std::find_if(
           datFile->clones.begin(),
           datFile->clones.end(),
@@ -100,22 +100,21 @@ void Database::build()
 
     datFile->buildMaps();
 
-    std::stringstream ss;
-    ss
-      << std::setw(8) << std::hex << hash.crc32 << " " << std::dec
-      << "  " << hash.md5.operator std::string() << " "
-      << "  " << hash.sha1.operator std::string() << " "
-      << "  " << strings::humanReadableSize(dat.length(), true, 2)
-      ;
+    std::string output = fmt::format("{:08x}  {}  {}  {}",
+      hash.crc32,
+      static_cast<std::string>(hash.md5),
+      static_cast<std::string>(hash.sha1),
+      strings::humanReadableSize(dat.length(), true, 2)
+    );
 
     debug("{}", dat.filename());
-    debug("  {}", ss.str());
+    debug("  {}", output);
     debug("  {} in {} games in {} clones", result.count, strings::humanReadableSize(result.sizeInBytes, true, 2), datFile->clones.size());
 
-    for (const auto& [name, tag] : *kernel()->tags())
+    /*for (const auto& [name, tag] : *kernel()->tags())
     {
       debug("  {}", name);
-    }
+    }*/
 
     /*auto it = std::max_element(
       datFile->clones.begin(),
