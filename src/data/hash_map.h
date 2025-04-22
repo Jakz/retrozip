@@ -27,21 +27,19 @@ struct RomHashData
 {
   HashData hash;
   std::vector<RomRef> roms;
-  size_t references;
 
-  RomHashData() : references(0UL)
+  RomHashData()
   {
 
   }
 
   const auto& sha1() const { return hash.sha1; }
   size_t size() const { return hash.size; }
+  size_t references() const { return roms.size(); }
 
   RomHashData& operator+=(const HashData& hash)
   {
     this->hash += hash;
-    ++this->references;
-
     return *this;
   }
 };

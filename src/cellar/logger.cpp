@@ -5,7 +5,7 @@
 #include <cassert>
 #include <iostream>
 
-void Logger::log(Logger::Level level, const std::string& message)
+void Logger::log(Logger::Level level, std::string_view message)
 {
   if (level == Level::Trace)
     return;

@@ -45,7 +45,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\base\file_system.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\base\path.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\base\strings.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\extra\fmt\format.cc" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\patch\xdelta3\xdelta3.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\hash\crc32.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\hash\md5.cpp" />

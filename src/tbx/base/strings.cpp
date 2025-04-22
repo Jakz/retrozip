@@ -2,6 +2,7 @@
 
 #include "tbx/extra/fmt/format.h"
 #include <cmath>
+#include <cassert>
 
 std::string strings::humanReadableSize(size_t bytes, bool si, uint32_t p) {
   static constexpr char pre[][7] = { "kMGTPE", "KMGTPE" };
@@ -11,7 +12,7 @@ std::string strings::humanReadableSize(size_t bytes, bool si, uint32_t p) {
   if (bytes < unit) return std::to_string(bytes) + "B";
   int exp = std::log(bytes) / std::log(unit);
 
-  return fmt::sprintf("%.*f%c%sB", p, bytes / std::pow(unit, exp), pre[si ? 1 : 0][exp - 1], si ? "" : "i");
+  return fmt::format("{:.{}f}{}{}B", bytes / std::pow(unit, exp), p, pre[si ? 1 : 0][exp - 1], si ? "" : "i");
 }
 
 bool strings::isPrefixOf(const std::string& string, const std::string& prefix)
@@ -23,7 +24,9 @@ std::string strings::tolower(const std::string& text)
 {
   std::string lname;
   lname.resize(text.size());
-  transform(text.begin(), text.end(), lname.begin(), std::tolower);
+  /* use std::transform */
+  for (size_t i = 0; i < text.size(); ++i)
+    lname[i] = std::tolower(text[i]);
   return lname;
 }
 

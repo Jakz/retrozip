@@ -110,9 +110,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\patch\xdelta3\xdelta3.cpp">
       <Filter>tbx\formats\patch\xdelta3</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\extra\fmt\format.cc">
-      <Filter>tbx\extra\format</Filter>
-    </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\base\file_system.cpp">
       <Filter>tbx\base</Filter>
     </ClCompile>

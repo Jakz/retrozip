@@ -78,7 +78,7 @@ bool startsWith(const std::string& str, char c) { return str.front() == c; }
 path path::append(const path& other) const
 {
   if (other.isAbsolute())
-    throw exceptions::path_exception(fmt::sprintf("path::append: children %s can't be absolute", other.c_str()));
+    throw exceptions::path_exception(fmt::format("path::append: children %s can't be absolute", other.c_str()));
   
   if (_data.empty())
     return other;

@@ -189,34 +189,57 @@ void VirtualFileSystem::mount()
   fuse.mount(this);
 }
 
+
+#include "tbx/extra/fmt/format.h"
+#include "data/entry.h"
+template<>
+struct fmt::formatter<HashData> : fmt::formatter<std::string_view> {
+  template<typename FormatContext>
+  auto format(const HashData& data, FormatContext& ctx) const {
+    return fmt::formatter<std::string_view>::format(data.sha1.operator std::string(), ctx);
+  }
+};
+
+
+
 bool VirtualFileSystem::filesReadyToBeSorted(VirtualFile* file)
 {
   Hasher hasher;
-  auto hash = hasher.compute(file->_content.data(), file->_content.size());
+  HashData hash = hasher.compute(file->_content.data(), file->_content.size());
 
   auto rom = kernel()->db()->hashes().find(hash);
 
-  /* organize by sha1 */
-  verify(rom->hash.sha1enabled, "only sha1 roms are supported for now");
-
-  path base = path("vault");
-  base = (base + rom->hash.sha1.literal().substr(0, 2)) + (rom->hash.sha1.literal() + ".bin");
-
-  info("organizing {} -> {}", file->filename(), base);
-
-  kernel()->fs()->createFolder(base.parent(), true);
-
-  auto out = fopen(base.c_str(), "wb+");
-  if (out)
+  /* a match has been found */
+  if (rom)
   {
-    size_t written = fwrite(file->_content.data(), file->_content.size(), 1, out);
-    fclose(out);
+    /* organize by sha1 */
+    verify(rom->hash.sha1enabled, "only sha1 roms are supported for now");
 
-    kernel()->storage()->map(rom->hash.sha1, base);
-    kernel()->storage()->save();
+    path base = path("vault");
+    base = (base + rom->hash.sha1.literal().substr(0, 2)) + (rom->hash.sha1.literal() + ".bin");
 
-    return true;
+    info("organizing {} -> {}", file->filename(), base);
+
+    kernel()->fs()->createFolder(base.parent(), true);
+
+    auto out = fopen(base.c_str(), "wb+");
+    if (out)
+    {
+      size_t written = fwrite(file->_content.data(), file->_content.size(), 1, out);
+      fclose(out);
+
+      kernel()->storage()->map(rom->hash.sha1, base);
+      kernel()->storage()->save();
+
+      return true;
+    }
+
+    return false;
+  }
+  else
+  {
+    debug("file {} with hash data {} not found in database", file->filename(), hash);
   }
 
-  return false;
+
 }

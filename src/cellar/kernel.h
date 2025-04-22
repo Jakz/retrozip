@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 #include "logger.h"
 
@@ -27,14 +28,14 @@ namespace cellar
     Kernel* kernel() const { return _kernel; }
 
     Logger& log();
-    void verify(bool condition, const std::string& message) { if (!condition) { log().error(_name, message); abort(); } }
+    void verify(bool condition, const std::string_view message) { if (!condition) { log().error(_name, "{}", message); abort(); } }
 
-    template<typename... Args> void trace(const std::string& format, Args&&... args) { log().trace(_name, format, std::forward<Args>(args)...); }
-    template<typename... Args> void debug(const std::string& format, Args&&... args) { log().debug(_name, format, std::forward<Args>(args)...); }
-    template<typename... Args> void info(const std::string& format, Args&&... args) { log().info(_name, format, std::forward<Args>(args)...); }
-    template<typename... Args> void warning(const std::string& format, Args&&... args) { log().warning(_name, format, std::forward<Args>(args)...); }
-    template<typename... Args> void error(const std::string& format, Args&&... args) { log().error(_name, format, std::forward<Args>(args)...); }
-    template<typename... Args> void fatal(const std::string& format, Args&&... args) { log().fatal(_name, format, std::forward<Args>(args)...); }
+    template<typename... Args> void trace(std::string_view format, Args&&... args) { log().trace(_name, format, std::forward<Args>(args)...); }
+    template<typename... Args> void debug(std::string_view format, Args&&... args) { log().debug(_name, format, std::forward<Args>(args)...); }
+    template<typename... Args> void info(std::string_view format, Args&&... args) { log().info(_name, format, std::forward<Args>(args)...); }
+    template<typename... Args> void warning(std::string_view format, Args&&... args) { log().warning(_name, format, std::forward<Args>(args)...); }
+    template<typename... Args> void error(std::string_view format, Args&&... args) { log().error(_name, format, std::forward<Args>(args)...); }
+    template<typename... Args> void fatal(std::string_view format, Args&&... args) { log().fatal(_name, format, std::forward<Args>(args)...); }
   };
 
   class Storage;
