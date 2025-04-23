@@ -21,6 +21,12 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\base\path.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\base\strings.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\extra\fmt\format.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\minizip\ioapi.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\minizip\iowin32.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\minizip\mztools.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\minizip\unzip.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\minizip\zip.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\minizip\zipcrypt.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\patch\xdelta3\xdelta3-blkcache.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\patch\xdelta3\xdelta3-cfgs.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\patch\xdelta3\xdelta3-decode.h" />
@@ -45,6 +51,19 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\base\file_system.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\base\path.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\base\strings.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\minizip\ioapi.c" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\minizip\iowin32.c" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\minizip\miniunz.c">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\minizip\minizip.c">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\minizip\mztools.c" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\minizip\unzip.c" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\minizip\zip.c" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\patch\xdelta3\xdelta3.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\hash\crc32.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\hash\md5.cpp" />

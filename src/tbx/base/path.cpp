@@ -73,6 +73,11 @@ std::string path::filenameWithoutExtension() const
   return index != std::string::npos ? filename.substr(0, index) : filename;
 }
 
+path path::withExtension(const path_extension& extension) const
+{
+  return parent() + (filenameWithoutExtension() + "." + extension);
+}
+
 bool endsWith(const std::string& str, char c) { return str.back() == c; }
 bool startsWith(const std::string& str, char c) { return str.front() == c; }
 path path::append(const path& other) const

@@ -193,7 +193,7 @@ static FuseBackend fuse;
 void VirtualFileSystem::start()
 {
   std::thread thread([this] {
-    if (false)
+    if (true)
       fuse.mount(this);
     });
   thread.detach();
@@ -220,7 +220,7 @@ struct fmt::formatter<HashData> : fmt::formatter<std::string_view> {
   }
 };
 
-
+#include "tbx/formats/minizip/zip.h"
 
 bool VirtualFileSystem::filesReadyToBeSorted(VirtualFile* file)
 {
@@ -232,6 +232,12 @@ bool VirtualFileSystem::filesReadyToBeSorted(VirtualFile* file)
   /* a match has been found */
   if (rom)
   {
+    trace("found match for file {}:", file->filename());
+    for (const RomRef& entry : rom->roms)
+    {
+      trace("  - {}", entry.game->name);
+    }
+    
     /* organize by sha1 */
     verify(rom->hash.sha1enabled, "only sha1 roms are supported for now");
 
@@ -245,6 +251,18 @@ bool VirtualFileSystem::filesReadyToBeSorted(VirtualFile* file)
     auto out = fopen(base.c_str(), "wb+");
     if (out)
     {
+      zipFile zip = zipOpen(base.withExtension("zip").c_str(), APPEND_STATUS_CREATE);
+      if (zip)
+      {
+        zip_fileinfo zi = {};
+        zipOpenNewFileInZip(zip, base.filename().c_str(), &zi, nullptr, 0, nullptr, 0, nullptr, Z_DEFLATED, Z_DEFAULT_COMPRESSION);
+        zipWriteInFileInZip(zip, file->_content.data(), file->_content.size());
+
+        zipCloseFileInZip(zip);
+        zipClose(zip, nullptr);
+      }
+      
+      
       size_t written = fwrite(file->_content.data(), file->_content.size(), 1, out);
       fclose(out);
 

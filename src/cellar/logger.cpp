@@ -7,7 +7,7 @@
 
 void Logger::log(LogLevel level, std::string_view message)
 {
-  if (level == LogLevel::Trace)
+  if (false && level == LogLevel::Trace)
     return;
   
   switch (level)

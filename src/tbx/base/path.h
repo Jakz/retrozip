@@ -11,6 +11,8 @@
 #include <codecvt>
 #endif
 
+using path_extension = std::string;
+
 class path
 {
 private:
@@ -58,6 +60,7 @@ public:
   
   std::string filename() const;
   std::string filenameWithoutExtension() const;
+  path withExtension(const path_extension& extension) const;
 
   const std::string& data() const { return _data; }
   const std::string& str() const { return _data; }
@@ -209,4 +212,3 @@ public:
   }*/
 };
 
-using path_extension = std::string;

@@ -15,15 +15,33 @@ using namespace cellar;
 
 UserInterface::UserInterface(Kernel* kernel, const std::string& name) :
   KernelModule(kernel, name),
-  _form(), _console(_form)
+  _form(), _console(_form), _toolbar(_form)
 
 { }
+
+void UserInterface::rebuildToolbar(nana::toolbar& toolbar)
+{
+  toolbar.clear();
+
+  auto toggleFuse = toolbar.append(kernel()->vfs()->isRunning() ? "Stop VFS" : "Start VFS");
+  toggleFuse.answerer([&](auto&) {
+    if (kernel()->vfs()->isRunning())
+      kernel()->vfs()->stop();
+    else
+      kernel()->vfs()->start();
+    rebuildToolbar(toolbar);
+  });
+
+  toolbar.separate();
+  toolbar.append("baz");
+
+  toolbar.textout(0, true);
+  toolbar.textout(2, true);
+}
 
 void UserInterface::init() 
 {
   nana::place layout(_form);
-
-  nana::toolbar toolbar(_form);
 
   _console.typeface(nana::paint::font("Consolas", 10.0f));
   _console.bgcolor(nana::color(0, 0, 30));
@@ -36,23 +54,12 @@ void UserInterface::init()
     arg.ignore = true;
   });
 
-  auto toggleFuse = toolbar.append("foobar");
-  toggleFuse.answerer([&](auto&) {
-    if (kernel()->vfs()->isRunning())
-      kernel()->vfs()->stop();
-    else
-      kernel()->vfs()->start();
-  });
+  rebuildToolbar(_toolbar);
 
-  toolbar.separate();
-  toolbar.append("baz");
-
-  toolbar.textout(0, true);
-  toolbar.textout(2, true);
 
   nana::treebox tree(_form);
   layout.div("vertical <toolbar weight=28> <tree> <console weight=200>");
-  layout["toolbar"] << toolbar;
+  layout["toolbar"] << _toolbar;
   layout["tree"] << tree;
   layout["console"] << _console;
 

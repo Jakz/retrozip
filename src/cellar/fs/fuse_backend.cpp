@@ -22,7 +22,7 @@ using namespace cellar::vfs;
 #if FUSE_DEBUG_FLAG
 #define FUSE_DEBUG(__format__, ...) \
   do { \
-    std::cout << fmt::format(__format__, __VA_ARGS__) << std::endl << std::flush; \
+    vfs->trace(fmt::format(__format__, __VA_ARGS__)); \
   } while(false)
 #else
 #define FUSE_DEBUG(...) do { } while(false)
@@ -327,34 +327,34 @@ fs_ret FuseBackend::sgetxattr(const char* path, const char* name, char* value, s
 fs_ret FuseBackend::getattr(const fs_path& path, FUSE_STAT* stbuf)
 {  
   auto directory = vfs->findDirectory(path);
-  vfs->trace("getattr({}): searching", path);
+  FUSE_DEBUG("getattr({}): searching", path);
 
   if (directory)
   {
-    vfs->trace("getattr({}): found", path);
+    FUSE_DEBUG("getattr({}): found", path);
     *stbuf = *vfs->defaultDirectoryStat();
     return SUCCESS;
   }
 
-  vfs->trace("getattr({}): searching", path.parent());
+  FUSE_DEBUG("getattr({}): searching", path.parent());
   directory = vfs->findDirectory(path.parent());
 
   if (directory)
   {
     auto* file = directory->get(path.filename());
-    vfs->trace("getattr({}): searching file", path.filename());
+    FUSE_DEBUG("getattr({}): searching file", path.filename());
 
 
     if (file)
     {
       //FUSE_DEBUG("getaddr({}, success)", path);
-      vfs->trace("getattr({}): found file", path.filename());
+      FUSE_DEBUG("getattr({}): found file", path.filename());
       *stbuf = file->stbuf;
       return SUCCESS;
     }
   }
 
-  vfs->trace("getattr({}): failed", path);
+  FUSE_DEBUG("getattr({}): failed", path);
   return -ENOENT;
 }
 
