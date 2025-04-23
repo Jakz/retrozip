@@ -3,6 +3,7 @@
 #include "storage.h"
 #include "database.h"
 #include "cataloguer.h"
+#include "logger.h"
 #include "data/tags.h"
 #include "fs/cellar_fs.h"
 #include "ui/ui.h"
@@ -23,6 +24,14 @@ Kernel::~Kernel()
 {
 
 }
+
+void KernelModule::doLog(LogLevel level, std::string_view section, std::string_view message) const
+{
+  kernel()->log().log(level, section, message);
+  if (kernel()->ui())
+  kernel()->ui()->appendConsoleMessage(fmt::format("[{}] {}", section, message));
+}
+
 
 #include "tbx/base/file_system.h"
 

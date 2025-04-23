@@ -182,11 +182,31 @@ void VirtualFileSystem::initStat(FUSE_STAT* stbuf, bool dir = false, bool readon
 #include "cellar/database.h"
 #include "cellar/storage.h"
 
-void VirtualFileSystem::mount()
+#include <thread>
+
+void VirtualFileSystem::init()
 {
-  FuseBackend fuse;
   generateFoldersForDATs();
-  fuse.mount(this);
+}
+
+static FuseBackend fuse;
+void VirtualFileSystem::start()
+{
+  std::thread thread([this] {
+    if (false)
+      fuse.mount(this);
+    });
+  thread.detach();
+}
+
+void VirtualFileSystem::stop()
+{
+  fuse.unmount();
+}
+
+bool VirtualFileSystem::isRunning() const
+{
+  return fuse.isRunning();
 }
 
 

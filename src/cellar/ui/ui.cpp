@@ -4,31 +4,57 @@
 #include "nana/gui/widgets/label.hpp"
 #include "nana/gui/widgets/treebox.hpp"
 #include "nana/gui/widgets/toolbar.hpp"
+#include "nana/gui/widgets/textbox.hpp"
 #include "nana/gui/place.hpp"
 
+#include "cellar/fs/cellar_fs.h"
 #include "cellar/database.h"
 #include "data/meta.h"
 
 using namespace cellar;
 
-void UserInterface::init()
+UserInterface::UserInterface(Kernel* kernel, const std::string& name) :
+  KernelModule(kernel, name),
+  _form(), _console(_form)
+
+{ }
+
+void UserInterface::init() 
 {
-  nana::form form;
-  nana::place layout(form);
+  nana::place layout(_form);
 
-  nana::toolbar toolbar(form);
+  nana::toolbar toolbar(_form);
 
-  toolbar.append("foobar");
+  _console.typeface(nana::paint::font("Consolas", 10.0f));
+  _console.bgcolor(nana::color(0, 0, 30));
+  _console.fgcolor(nana::color(255, 255, 255));
+  //_console.editable(false);
+  _console.multi_lines(true);
+  _console.events().key_char.connect([&](const nana::arg_keyboard& arg) {
+    if (arg.ctrl && (arg.key == 0x03))
+      return;
+    arg.ignore = true;
+  });
+
+  auto toggleFuse = toolbar.append("foobar");
+  toggleFuse.answerer([&](auto&) {
+    if (kernel()->vfs()->isRunning())
+      kernel()->vfs()->stop();
+    else
+      kernel()->vfs()->start();
+  });
+
   toolbar.separate();
   toolbar.append("baz");
 
   toolbar.textout(0, true);
   toolbar.textout(2, true);
 
-  nana::treebox tree(form);
-  layout.div("vertical <toolbar weight=28> <tree>");
+  nana::treebox tree(_form);
+  layout.div("vertical <toolbar weight=28> <tree> <console weight=200>");
   layout["toolbar"] << toolbar;
   layout["tree"] << tree;
+  layout["console"] << _console;
 
   std::unordered_map<const meta::Company*, std::vector<const meta::System*>> systemsByCompany;
   for (const auto& system : meta::Repository::i()->systems())
@@ -111,8 +137,14 @@ void UserInterface::init()
   auto size = nana::size(1280, 800);
 
   auto screen = nana::screen::primary_monitor_size();
-  form.move(nana::rectangle((screen.width - size.width) / 2, (screen.height - size.height) / 2, size.width, size.height));
+  _form.move(nana::rectangle((screen.width - size.width) / 2, (screen.height - size.height) / 2, size.width, size.height));
 
-  form.show();
+  _form.show();
   nana::exec();
+}
+
+void UserInterface::appendConsoleMessage(const std::string& message)
+{
+  _console.append(message, true);
+  _console.append("\n", true);
 }

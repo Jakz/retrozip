@@ -101,10 +101,7 @@ public:
 };
     
 using cataloguer_t = std::function<path(const HashData&)>;
-
-cellar::Kernel kernel;
-
-        
+     
 int main(int argc, const char* argv[])
 {  
   /*auto files = FileSystem::i()->contentsOfFolder("/Volumes/RAMDisk/input");
@@ -137,17 +134,12 @@ int main(int argc, const char* argv[])
   //std::cout << "database memory footprint: " << strings::humanReadableSize(data.aproximateSize(), true, 2) << std::endl;
 
   //database->shutdown();
+  cellar::Kernel kernel;
 
   kernel.db()->build();
-
-  std::thread thread([] {
-    if (false)
-      kernel.vfs()->mount();
-  });
-
+  kernel.vfs()->init();
+  kernel.vfs()->start();
   kernel.ui()->init();
 
-  thread.join();
-  
   return 0;
 }

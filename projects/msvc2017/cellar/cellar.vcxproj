@@ -105,6 +105,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\cellar\cataloguer.h" />
+    <ClInclude Include="..\..\..\src\cellar\common.h" />
     <ClInclude Include="..\..\..\src\cellar\database.h" />
     <ClInclude Include="..\..\..\src\cellar\fs\cellar_fs.h" />
     <ClInclude Include="..\..\..\src\cellar\fs\fuse_backend.h" />

@@ -221,7 +221,7 @@ int FuseBackend::write(const char* path, const char* buf, size_t length, FUSE_OF
 VirtualFileSystem* FuseBackend::vfs = nullptr;
 
 
-FuseBackend::FuseBackend() : fs(nullptr)
+FuseBackend::FuseBackend() : fs(nullptr), started(false)
 {
   instance = this;
 
@@ -249,14 +249,25 @@ FuseBackend::FuseBackend() : fs(nullptr)
   ops.utimens = &FuseBackend::utimens;
 }
 
+static const char* mountPoint = R"(C:\Users\Jack\Documents\dev\retrozip\projects\msvc2017\cellar\mount)";
+
 void FuseBackend::mount(VirtualFileSystem* vfs)
 {
   FuseBackend::vfs = vfs;
+  started = true;
 
-  vfs->info("mouting fuse backend");
+  vfs->info("mounting fuse backend");
   
-  char* argv[] = { (char*)"fuse", (char*)"-f", /*(char*)"-d",*/ (char*)"-s", (char*)R"(C:\Users\Jack\Documents\dev\retrozip\projects\msvc2017\cellar\mount)"};
+  char* argv[] = { (char*)"fuse", (char*)"-f", /*(char*)"-d",*/ (char*)"-s", (char*)mountPoint};
   int i = fuse_main(sizeof(argv)/sizeof(argv[0]), (char**)argv, &ops, nullptr);
+
+  vfs->info("unmounting fuse backend");
+  started = false;
+}
+
+void FuseBackend::unmount()
+{
+  fuse_unmount(mountPoint, nullptr);
 }
 
 fs_ret FuseBackend::flush(const char* path, struct fuse_file_info* fi)

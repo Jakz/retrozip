@@ -2,10 +2,13 @@
 
 #include <memory>
 #include <vector>
+#include <string_view>
 
+#include "common.h"
 #include "logger.h"
 
 class path;
+class Logger;
 
 namespace tags
 {
@@ -23,19 +26,21 @@ namespace cellar
     Kernel* _kernel;
     std::string _name;
 
+    void doLog(LogLevel level, std::string_view section, std::string_view message) const;
+
   public:
     KernelModule(Kernel* kernel, const std::string& name) : _kernel(kernel), _name(name) { }
     Kernel* kernel() const { return _kernel; }
 
     Logger& log();
-    void verify(bool condition, const std::string_view message) { if (!condition) { log().error(_name, "{}", message); abort(); } }
+    void verify(bool condition, const std::string_view message) { if (!condition) { doLog(LogLevel::Error, _name, message); abort(); } }
 
-    template<typename... Args> void trace(std::string_view format, Args&&... args) { log().trace(_name, format, std::forward<Args>(args)...); }
-    template<typename... Args> void debug(std::string_view format, Args&&... args) { log().debug(_name, format, std::forward<Args>(args)...); }
-    template<typename... Args> void info(std::string_view format, Args&&... args) { log().info(_name, format, std::forward<Args>(args)...); }
-    template<typename... Args> void warning(std::string_view format, Args&&... args) { log().warning(_name, format, std::forward<Args>(args)...); }
-    template<typename... Args> void error(std::string_view format, Args&&... args) { log().error(_name, format, std::forward<Args>(args)...); }
-    template<typename... Args> void fatal(std::string_view format, Args&&... args) { log().fatal(_name, format, std::forward<Args>(args)...); }
+    template<typename... Args> void trace(std::string_view format, Args&&... args) { doLog(LogLevel::Trace, _name, fmt::vformat(format, fmt::make_format_args(args...))); }
+    template<typename... Args> void debug(std::string_view format, Args&&... args) { doLog(LogLevel::Debug, _name, fmt::vformat(format, fmt::make_format_args(args...))); }
+    template<typename... Args> void info(std::string_view format, Args&&... args) { doLog(LogLevel::Info, _name, fmt::vformat(format, fmt::make_format_args(args...))); }
+    template<typename... Args> void warning(std::string_view format, Args&&... args) { doLog(LogLevel::Warning, _name, fmt::vformat(format, fmt::make_format_args(args...))); }
+    template<typename... Args> void error(std::string_view format, Args&&... args) { doLog(LogLevel::Error, _name, fmt::vformat(format, fmt::make_format_args(args...))); }
+    template<typename... Args> void fatal(std::string_view format, Args&&... args) { doLog(LogLevel::Fatal, _name, fmt::vformat(format, fmt::make_format_args(args...))); }
   };
 
   class Storage;
@@ -78,7 +83,6 @@ namespace cellar
     tags::TagPool* tags() const { return _tags.get(); }
     Cataloguer* cataloguer() const { return _cataloguer.get(); }
     UserInterface* ui() const { return _ui.get(); }
-
     Logger& log() { return _logger; }
   };
 

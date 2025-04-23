@@ -113,5 +113,8 @@
     <ClInclude Include="..\..\..\src\data\meta.h">
       <Filter>src\data</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\cellar\common.h">
+      <Filter>src\cellar</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

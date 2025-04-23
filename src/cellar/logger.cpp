@@ -5,27 +5,27 @@
 #include <cassert>
 #include <iostream>
 
-void Logger::log(Logger::Level level, std::string_view message)
+void Logger::log(LogLevel level, std::string_view message)
 {
-  if (level == Level::Trace)
+  if (level == LogLevel::Trace)
     return;
   
   switch (level)
   {
-    case Level::Error:
-    case Level::Fatal:
+    case LogLevel::Error:
+    case LogLevel::Fatal:
       std::cout << termcolor::red;
       break;
-    case Level::Warning:
+    case LogLevel::Warning:
       std::cout << termcolor::yellow;
       break;
-    case Level::Info:
+    case LogLevel::Info:
       std::cout << termcolor::bright_white;
       break;
-    case Level::Debug:
+    case LogLevel::Debug:
       std::cout << termcolor::white;
       break;
-    case Level::Trace:
+    case LogLevel::Trace:
       std::cout << termcolor::cyan;
       break;
     default:

@@ -93,6 +93,10 @@ namespace cellar::vfs
 
     bool filesReadyToBeSorted(VirtualFile* file);
 
-    void mount();
+    void init();
+
+    bool isRunning() const;
+    void start();
+    void stop();
   };
 }

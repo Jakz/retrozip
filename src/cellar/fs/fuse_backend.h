@@ -24,6 +24,7 @@ namespace cellar::vfs
     static FuseBackend* instance;
     struct fuse_operations ops;
     fuse* fs;
+    bool started;
 
     static int statsfs(const char* foo, struct statvfs* stats);
 
@@ -57,5 +58,7 @@ namespace cellar::vfs
   public:
     FuseBackend();
     void mount(VirtualFileSystem* vfs);
+    void unmount();
+    bool isRunning() const { return started; }
   };
 }
