@@ -17,18 +17,35 @@
 
 struct GUI
 {
+  path filepath;
+  Archive archive;
+  
   nana::listbox* table = nullptr;
   nana::form* form = nullptr;
+  nana::label* status = nullptr;
+
+  void setStatusText(const std::string& text)
+  {
+    status->caption(text);
+  }
+
+  void loadFile(const path& filename);
+  void extractNth(int index, const path& folder)
+  {
+    ArchiveBuilder builder(CachePolicy(CachePolicy::Mode::NEVER, 0), MB128, MB128);
+    builder.extractSpecificFilesFromArchive(filepath, folder, index);
+  }
 };
 
 GUI gui;
 
 
-void loadFile(const path& filename)
+void GUI::loadFile(const path& filename)
 {
+  gui.filepath = filename;
+  
   auto source = file_data_source(filename);
-  Archive archive;
-  archive.read(source);
+  gui.archive.read(source);
 
   gui.table->clear();
 
@@ -49,6 +66,8 @@ void loadFile(const path& filename)
   }
 
   gui.table->column_at(0).width(width + 20);
+
+  gui.setStatusText(filename.str());
 }
 
 int main(int argc, char* argv[])
@@ -85,6 +104,7 @@ int main(int argc, char* argv[])
   status.text_align(nana::align::left, nana::align_v::center);
   status.transparent(true);
   status.bgcolor(nana::colors::button_face);
+  gui.status = &status;
 
   nana::listbox table(form);
 
@@ -95,6 +115,28 @@ int main(int argc, char* argv[])
   table.show_header(true);
   table.auto_draw(true);
   gui.table = &table;
+
+  nana::menu contextMenu;
+  contextMenu.append("Extract here", [](nana::menu::item_proxy item) { 
+    auto selection = gui.table->selected();
+
+    for (const auto& entry : selection)
+      gui.extractNth(entry.item, gui.filepath.parent());
+  });
+  contextMenu.append("Extract to...", [](nana::menu::item_proxy) { nana::msgbox("Open") << "Opening game..."; });
+
+
+  int row_height = table.scheme().item_height_ex; // typically 24
+
+  table.events().mouse_up([&](const nana::arg_mouse& arg)
+  {
+    auto index = table.cast(arg.pos).item;
+
+    if (arg.button == nana::mouse::right_button && index != -1)
+    {
+      contextMenu.popup(form, arg.pos.x, arg.pos.y);   
+    }
+  });
 
   nana::place layout(form);
 
@@ -107,7 +149,7 @@ int main(int argc, char* argv[])
   layout.collocate();
 
   //loadFile(R"(C:\Users\Jack\Documents\dev\retrozip\projects\msvc2017\cellar\vault\f0\f071d45d8f5cb05b48d7d2b804c6cb6a79ad96fb.box)");
-  loadFile(R"(C:\Users\Jack\Desktop\patapon\patapon.box)");
+  gui.loadFile(R"(C:\Users\Jack\Desktop\patapon\patapon.box)");
 
 
 

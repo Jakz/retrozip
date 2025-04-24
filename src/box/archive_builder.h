@@ -122,6 +122,7 @@ public:
   Archive buildSingleStreamSolidArchive(const data_source_vector& sources);
   Archive buildSolidArchivePerFolderOfDirectoryTree(const path& root);
   
+  void extractSpecificFilesFromArchive(const Archive& archive, const class path& destination, size_t index);
   void extractSpecificFilesFromArchive(const class path& path, const class path& destination, size_t index);
   void extractWholeArchiveIntoFolder(const class path& path, const class path& destination);
 };

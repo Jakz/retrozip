@@ -185,7 +185,7 @@ void ArchiveBuilder::extractSpecificFilesFromArchive(const class path& path, con
   auto handle = ArchiveReadHandle(source, archive, entry);
   auto* entrySource = handle.source(true);
 
-  class path dest = destination.append(entry.name());
+  class path dest = destination + entry.name();
   file_data_sink sink(dest);
 
   passthrough_pipe pipe(entrySource, &sink, _pipeBufferPolicy);

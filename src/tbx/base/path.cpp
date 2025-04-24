@@ -12,6 +12,9 @@ static constexpr const char SEPARATOR = '/';
 
 path::path(const std::string& data) : _data(data)
 {
+  /* replace windows separator to other separator */
+  std::replace(_data.begin(), _data.end(), '\\', SEPARATOR);
+  
   if (_data.length() > 1 && _data.back() == SEPARATOR)
     _data.pop_back();
 }
