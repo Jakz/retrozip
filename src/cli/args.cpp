@@ -44,7 +44,10 @@ Arguments Parser::parse(const std::vector<std::string>& args)
   const auto command = std::find(commands.begin(), commands.end(), args[0]);
   
   if (command == commands.end())
-    return Arguments(fmt::sprintf(error::unknown_command, args[0]));
+  {
+    std::string error = fmt::format(fmt::runtime(error::unknown_command), args[0]);
+    return Arguments(error);
+  }
 
   /* discard command */
   auto it = args.begin() + 1;

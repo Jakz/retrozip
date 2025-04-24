@@ -8,7 +8,7 @@ struct data_source
 {
   virtual ~data_source() { }
   virtual size_t read(byte* dest, size_t amount) = 0;
-  template<typename T> void read(T& dest) { assert(read((byte*)&dest, sizeof(T)) == sizeof(T)); }
+  template<typename T> void read(T& dest) { auto v = read((byte*)&dest, sizeof(T)); assert(v == sizeof(T)); }
   
   virtual bool isSeekable() const { return false; }
 };

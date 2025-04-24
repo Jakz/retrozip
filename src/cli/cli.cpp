@@ -411,7 +411,7 @@ public:
   static std::string size_to_string(SizeMode mode, u64 size)
   {
     return mode == SizeMode::BYTES ?
-    fmt::sprintf("%zu bytes", size) :
+    fmt::format("{} bytes", size) :
     strings::humanReadableSize(size, true, 2);
   }
   
@@ -443,7 +443,7 @@ void cli::printArchiveInformation(const class path& path, const Archive& archive
   cout << "Path : " << path << endl;
   cout << "Size on disk : " << size_to_string(mode, info.totalSize) << endl;
   cout << "Uncompressed data size : " << size_to_string(mode, info.uncompressedEntriesData) << endl;
-  cout << "Compression ratio: " << fmt::sprintf("%1.2f (%d%%)", (float)info.uncompressedEntriesData / info.totalSize, (int) ((info.totalSize / (float)info.uncompressedEntriesData) * 100)) << endl;
+  cout << "Compression ratio: " << fmt::format("{:.2f} ({}%)", (float)info.uncompressedEntriesData / info.totalSize, (int) ((info.totalSize / (float)info.uncompressedEntriesData) * 100)) << endl;
   cout << "Bytes used for data : " << size_to_string(SizeMode::BYTES, info.streamsData) << endl;
   cout << "Bytes used for structure : " << size_to_string(SizeMode::BYTES, (info.totalSize - info.streamsData)) << endl;
   cout << "Content : " << archive.entries().size() << " entries in " << archive.streams().size() << " streams" << endl;
@@ -518,7 +518,7 @@ void cli::listArchiveContent(const ListArchiveOptions& options, const Archive& a
     //TODO: choose if all uppercase or not
     if (options.showCRC32)
     {
-      row.push_back(fmt::sprintf("%08X", binary.digest.crc32));
+      row.push_back(fmt::format("{:08X}", binary.digest.crc32));
     }
     
     if (options.showMD5andSHA1)
@@ -538,7 +538,7 @@ void cli::listArchiveContent(const ListArchiveOptions& options, const Archive& a
         row.push_back(entryMnemonic + streamMnemonic);
     }
     
-    row.push_back(fmt::sprintf("%lu:%lu", binary.stream, binary.indexInStream));
+    row.push_back(fmt::format("{}:{}", binary.stream, binary.indexInStream));
     row.push_back(entry.name());
     
     table.addRow(row);
@@ -567,7 +567,7 @@ void cli::listArchiveContent(const ListArchiveOptions& options, const Archive& a
   
   summary.push_back("");
   summary.push_back("");
-  summary.push_back(fmt::sprintf("%lu files in %lu streams", archive.entries().size(), archive.streams().size()));
+  summary.push_back(fmt::format("{} files in {} streams", archive.entries().size(), archive.streams().size()));
   
   table.addRow(summary);
   

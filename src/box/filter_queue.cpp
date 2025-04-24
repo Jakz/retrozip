@@ -45,7 +45,7 @@ filter_builder* filter_repository::generate(box::payload_uid identifier, const b
   const auto it = repository.find(identifier);
   
   if (it == repository.end())
-    throw exceptions::unserialization_exception(fmt::sprintf("unknown filter identifier: %lu", identifier));
+    throw exceptions::unserialization_exception(fmt::format("unknown filter identifier: {}", identifier));
   else
     return it->second(data, env);
 }

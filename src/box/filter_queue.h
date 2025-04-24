@@ -265,7 +265,7 @@ namespace builders
     }
     
     box::payload_uid identifier() const override { return identifier::XOR_FILTER; }
-    std::string mnemonic(bool shortMode) const override { return shortMode ? "xor" : fmt::sprintf("xor:key=%s", strings::fromByteArray(_key)); }
+    std::string mnemonic(bool shortMode) const override { return shortMode ? "xor" : fmt::format("xor:key={}", strings::fromByteArray(_key)); }
     
     size_t payloadLength() const override { return sizeof(box::slength_t) + _key.size(); }
     memory_buffer payload() const override
@@ -354,7 +354,7 @@ namespace builders
     void unsetup(const archive_environment& env) override;
     
     box::payload_uid identifier() const override { return identifier::XDELTA3_FILTER; }
-    std::string mnemonic(bool shortMode) const override { return shortMode ? "xdelta3" : fmt::sprintf("xdelta3:source_size=%lu,source_crc32=%08X", _sourceDigest.size, _sourceDigest.crc32); }
+    std::string mnemonic(bool shortMode) const override { return shortMode ? "xdelta3" : fmt::format("xdelta3:source_size={},source_crc32={:08X}", _sourceDigest.size, _sourceDigest.crc32); }
     
     size_t payloadLength() const override { return sizeof(box::DigestInfo) + sizeof(box::length_t)*2; }
     memory_buffer payload() const override

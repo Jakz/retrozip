@@ -12,3 +12,8 @@ struct fmt::formatter<path> : fmt::formatter<std::string_view> {
     return fmt::formatter<std::string_view>::format(path.c_str(), ctx);
   }
 };
+
+namespace cellar::vfs
+{
+  class VirtualFile;
+}

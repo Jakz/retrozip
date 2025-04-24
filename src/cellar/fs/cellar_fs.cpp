@@ -220,8 +220,6 @@ struct fmt::formatter<HashData> : fmt::formatter<std::string_view> {
   }
 };
 
-#include "tbx/formats/minizip/zip.h"
-
 bool VirtualFileSystem::filesReadyToBeSorted(VirtualFile* file)
 {
   Hasher hasher;
@@ -238,46 +236,12 @@ bool VirtualFileSystem::filesReadyToBeSorted(VirtualFile* file)
       trace("  - {}", entry.game->name);
     }
     
-    /* organize by sha1 */
-    verify(rom->hash.sha1enabled, "only sha1 roms are supported for now");
-
-    path base = path("vault");
-    base = (base + rom->hash.sha1.literal().substr(0, 2)) + (rom->hash.sha1.literal() + ".bin");
-
-    info("organizing {} -> {}", file->filename(), base);
-
-    kernel()->fs()->createFolder(base.parent(), true);
-
-    auto out = fopen(base.c_str(), "wb+");
-    if (out)
-    {
-      zipFile zip = zipOpen(base.withExtension("zip").c_str(), APPEND_STATUS_CREATE);
-      if (zip)
-      {
-        zip_fileinfo zi = {};
-        zipOpenNewFileInZip(zip, base.filename().c_str(), &zi, nullptr, 0, nullptr, 0, nullptr, Z_DEFLATED, Z_DEFAULT_COMPRESSION);
-        zipWriteInFileInZip(zip, file->_content.data(), file->_content.size());
-
-        zipCloseFileInZip(zip);
-        zipClose(zip, nullptr);
-      }
-      
-      
-      size_t written = fwrite(file->_content.data(), file->_content.size(), 1, out);
-      fclose(out);
-
-      kernel()->storage()->map(rom->hash.sha1, base);
-      kernel()->storage()->save();
-
-      return true;
-    }
-
-    return false;
+    kernel()->storage()->consolidate(rom, file);
+    return true;
   }
   else
   {
     debug("file {} with hash data {} not found in database", file->filename(), hash);
+    return false;
   }
-
-
 }
