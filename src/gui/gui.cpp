@@ -32,8 +32,12 @@ struct GUI
   void loadFile(const path& filename);
   void extractNth(int index, const path& folder)
   {
+    size_t total = archive.entries()[index].binary().digest.size;
+    
     ArchiveBuilder builder(CachePolicy(CachePolicy::Mode::NEVER, 0), MB128, MB128);
-    builder.extractSpecificFilesFromArchive(filepath, folder, index);
+    builder.extractSpecificFilesFromArchive(filepath, folder, index, [total](size_t bytes) {
+      printf("extraced %f\n", bytes / float(total));
+    });
   }
 };
 

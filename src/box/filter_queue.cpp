@@ -143,6 +143,24 @@ void builders::xdelta3_builder::setup(const archive_environment& env)
   }
 }
 
+class xdelta3_prepare_task : public process_task
+{
+protected:
+  seekable_data_source* _sourceArchive;
+
+public:
+  xdelta3_prepare_task(seekable_data_source* sourceArchive, size_t size)
+  {
+    _sink = new memory_buffer(size);
+  }
+
+  void prepare() const override
+  {
+
+  }
+};
+
+
 void builders::xdelta3_builder::unsetup(const archive_environment& env)
 {
   assert(_source == nullptr);
@@ -161,6 +179,8 @@ void builders::xdelta3_builder::unsetup(const archive_environment& env)
       
       //TODO: it could be lazy or not, but source not uses seek asynchronously
 
+      //xdelta3_prepare_task* task = new xdelta3_prepare_task()
+
       passthrough_pipe pipe(handle.source(true), sink, env.options().bufferSize);
       pipe.process();
       
@@ -174,5 +194,4 @@ void builders::xdelta3_builder::unsetup(const archive_environment& env)
   throw exceptions::missing_source_file_exception("can't find required source file to rebuild entry");
   
   //TODO: multiple ways to manage this
-  
 }

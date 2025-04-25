@@ -192,6 +192,33 @@ void ArchiveBuilder::extractSpecificFilesFromArchive(const class path& path, con
   pipe.process(entry.binary().digest.size);
 }
 
+void ArchiveBuilder::extractSpecificFilesFromArchive(const class path& path, const class path& destination, size_t index, const std::function<void(size_t)>& monitor)
+{
+  const auto* fs = FileSystem::i();
+
+  if (!fs->existsAsFile(path))
+    throw exceptions::file_not_found(path);
+
+  if (!fs->existsAsFolder(destination))
+    throw exceptions::file_not_found(destination);
+
+  Archive archive;
+  file_data_source source(path);
+  archive.options().bufferSize = MB64;
+  archive.read(source);
+
+  const auto& entry = archive.entries()[index];
+  TRACE_AB("%p: builder::extract() extracting entry %s (%s)", this, entry.name().c_str(), entry.filters().mnemonic(false).c_str());
+  auto handle = ArchiveReadHandle(source, archive, entry);
+  auto* entrySource = handle.source(true);
+
+  class path dest = destination + entry.name();
+  file_data_sink sink(dest);
+
+  observable_passthrough_pipe pipe(entrySource, &sink, _pipeBufferPolicy, monitor);
+  pipe.process(entry.binary().digest.size);
+}
+
 void ArchiveBuilder::extractWholeArchiveIntoFolder(const class path& path, const class path& destination)
 {
   const auto* fs = FileSystem::i();
@@ -220,5 +247,3 @@ void ArchiveBuilder::extractWholeArchiveIntoFolder(const class path& path, const
     pipe.process(entry.binary().digest.size);
   }
 }
-
-

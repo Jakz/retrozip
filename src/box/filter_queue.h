@@ -8,6 +8,8 @@
 #include <unordered_map>
 #include <numeric>
 
+#include "tbx/streams/data_pipe.h"
+
 class Archive;
 class Options;
 class filter_repository;
@@ -19,8 +21,9 @@ struct archive_environment
     seekable_data_source* r;
     memory_buffer* w;
   };
-  
+
   const filter_repository* repository;
+  process_task_list tasks;
   mutable std::unordered_map<data_source*, box::DigestInfo> digestCache;
   mutable std::unordered_map<box::DigestInfo, std::unique_ptr<data_source>, box::DigestInfo::hash> cache;
   
