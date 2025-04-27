@@ -124,7 +124,7 @@ public:
   
   void extractSpecificFilesFromArchive(const Archive& archive, const class path& destination, size_t index);
   void extractSpecificFilesFromArchive(const class path& path, const class path& destination, size_t index);
-  void extractSpecificFilesFromArchive(const class path& path, const class path& destination, size_t index, const std::function<void(size_t)>& monitor);
+  void extractSpecificFilesFromArchive(const class path& path, const class path& destination, size_t index, const std::function<void(float)>& monitor);
 
   void extractWholeArchiveIntoFolder(const class path& path, const class path& destination);
 };

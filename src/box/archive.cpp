@@ -834,6 +834,15 @@ void Archive::writeStreamPayloads(W& w)
   }
 }
 
+void ArchiveReadHandle::prepareWorkflow(data_sink* sink)
+{
+  /* get final source for entry extraction */
+  auto* source = this->source(true);
+
+  /* generate last task with specified sink */
+  _env.tasks.add(new simple_process_task("stream-process", source, sink, _entry.binary().digest.size));
+}
+
 data_source* ArchiveReadHandle::source(bool total)
 {
   _cache.clear();

@@ -197,6 +197,25 @@ public:
   virtual size_t size() const { return 0; }
   virtual data_source* source() const { return nullptr; }
   virtual data_sink* sink() const { return nullptr; }
+
+  void execute(size_t bufferPolicy, const std::function<void(float)>& monitor);
+};
+
+class simple_process_task : public process_task
+{
+protected:
+  data_source* _source;
+  data_sink* _sink;
+  size_t _size;
+
+public:
+  simple_process_task(const std::string& ident, data_source* source, data_sink* sink, size_t size) :
+    process_task(ident), _source(source), _sink(sink), _size(size)
+  { }
+
+  data_source* source() const override { return _source; }
+  data_sink* sink() const override { return _sink; }
+  size_t size() const override { return _size; }
 };
 
 class process_task_list 

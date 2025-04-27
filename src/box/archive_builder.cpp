@@ -192,7 +192,7 @@ void ArchiveBuilder::extractSpecificFilesFromArchive(const class path& path, con
   pipe.process(entry.binary().digest.size);
 }
 
-void ArchiveBuilder::extractSpecificFilesFromArchive(const class path& path, const class path& destination, size_t index, const std::function<void(size_t)>& monitor)
+void ArchiveBuilder::extractSpecificFilesFromArchive(const class path& path, const class path& destination, size_t index, const std::function<void(float)>& monitor)
 {
   const auto* fs = FileSystem::i();
 
@@ -210,26 +210,20 @@ void ArchiveBuilder::extractSpecificFilesFromArchive(const class path& path, con
   const auto& entry = archive.entries()[index];
   TRACE_AB("%p: builder::extract() extracting entry %s (%s)", this, entry.name().c_str(), entry.filters().mnemonic(false).c_str());
   auto handle = ArchiveReadHandle(source, archive, entry);
-  auto* entrySource = handle.source(true);
+
+  class path dest = destination + entry.name();
+  file_data_sink sink(dest);
+
+  handle.prepareWorkflow(&sink);
 
   {
     const auto& tasks = handle.tasks();
 
     for (const auto& task : tasks)
     {
-      task->prepare();
-      observable_passthrough_pipe pipe(task->source(), task->sink(), _pipeBufferPolicy, monitor);
-      pipe.process(task->size());
-      task->finalize();
+      task->execute(_pipeBufferPolicy, monitor);
     }
   }
-
-
-  class path dest = destination + entry.name();
-  file_data_sink sink(dest);
-
-  observable_passthrough_pipe pipe(entrySource, &sink, _pipeBufferPolicy, monitor);
-  pipe.process(entry.binary().digest.size);
 }
 
 void ArchiveBuilder::extractWholeArchiveIntoFolder(const class path& path, const class path& destination)
@@ -259,4 +253,20 @@ void ArchiveBuilder::extractWholeArchiveIntoFolder(const class path& path, const
     passthrough_pipe pipe(entrySource, &sink, _pipeBufferPolicy);
     pipe.process(entry.binary().digest.size);
   }
+}
+
+
+void process_task::execute(size_t bufferPolicy, const std::function<void(float)>& monitor)
+{
+  prepare();
+
+  auto bmonitor = [this, monitor](size_t bytes) {
+    if (bytes > 0)
+      monitor(bytes / float(size()));
+    };
+
+  observable_passthrough_pipe pipe(source(), sink(), bufferPolicy, monitor);
+
+  pipe.process(size());
+  finalize();
 }
