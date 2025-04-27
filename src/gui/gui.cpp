@@ -36,7 +36,7 @@ struct GUI
     
     ArchiveBuilder builder(CachePolicy(CachePolicy::Mode::NEVER, 0), MB128, MB128);
     builder.extractSpecificFilesFromArchive(filepath, folder, index, [total](size_t bytes) {
-      printf("extraced %f\n", bytes / float(total));
+      printf("extracted %f\n", bytes / float(total));
     });
   }
 };

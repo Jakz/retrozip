@@ -186,21 +186,17 @@ public:
 class process_task
 {
 protected:
-  data_source* _source;
-  data_sink* _sink;
+  std::string _ident;
 
 public:
-  process_task() : _source(nullptr), _sink(nullptr) { }
-  process_task(data_source* source, data_sink* sink) : _source(source), _sink(sink)
-  { 
-  
-  }
+  process_task(const std::string& ident) : _ident(ident) { }
 
-  virtual void prepare() const { }
-  virtual void finalize() const { }
+  virtual void prepare() { }
+  virtual void finalize() { }
 
-  const auto* source() const { return _source; }
-  const auto* sink() const { return _sink; }
+  virtual size_t size() const { return 0; }
+  virtual data_source* source() const { return nullptr; }
+  virtual data_sink* sink() const { return nullptr; }
 };
 
 class process_task_list 

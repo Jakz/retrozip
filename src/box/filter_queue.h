@@ -23,7 +23,7 @@ struct archive_environment
   };
 
   const filter_repository* repository;
-  process_task_list tasks;
+  mutable process_task_list tasks;
   mutable std::unordered_map<data_source*, box::DigestInfo> digestCache;
   mutable std::unordered_map<box::DigestInfo, std::unique_ptr<data_source>, box::DigestInfo::hash> cache;
   
@@ -101,7 +101,7 @@ public:
     _filters.clear();
   }
   
-  data_source* get() { return _tail; }
+  data_source* get() const { return _tail; }
 };
 
 class filter_builder_queue
@@ -333,6 +333,7 @@ namespace builders
   {
   private:
     seekable_data_source* _source;
+    std::unique_ptr<wrapped_seekable_data_source> _sourceWrapper;
     
     box::DigestInfo _sourceDigest;
     
@@ -342,15 +343,17 @@ namespace builders
   public:
     xdelta3_builder(size_t bufferSize, seekable_data_source* source, size_t xdeltaWindowSize, size_t sourceBlockSize) : filter_builder(bufferSize), _source(source), _xdeltaWindowSize(xdeltaWindowSize), _sourceBlockSize(sourceBlockSize)
     { 
-      if (sourceBlockSize > MB1 * 4096)
-        printf("sticanzi");
+
     }
+
+    /* called when unserializing */
     xdelta3_builder(size_t bufferSize, const byte* payload) : filter_builder(bufferSize), _source(nullptr)
     {
       payload += sizeof(box::Payload);
       _sourceDigest = *(const box::DigestInfo*)payload;
       _xdeltaWindowSize = *(const box::length_t*)(payload + sizeof(box::DigestInfo));
       _sourceBlockSize = *(const box::length_t*)(payload + sizeof(box::DigestInfo) + sizeof(box::length_t));
+      _sourceWrapper.reset(new wrapped_seekable_data_source());
     }
     
     void setup(const archive_environment& env) override;
@@ -371,5 +374,7 @@ namespace builders
     
     data_source* apply(data_source* source) const override;
     data_source* unapply(data_source* source) const override;
+
+    void setSource(memory_buffer* source) { _sourceWrapper->setSource(source); }
   };
 }

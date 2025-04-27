@@ -212,6 +212,19 @@ void ArchiveBuilder::extractSpecificFilesFromArchive(const class path& path, con
   auto handle = ArchiveReadHandle(source, archive, entry);
   auto* entrySource = handle.source(true);
 
+  {
+    const auto& tasks = handle.tasks();
+
+    for (const auto& task : tasks)
+    {
+      task->prepare();
+      observable_passthrough_pipe pipe(task->source(), task->sink(), _pipeBufferPolicy, monitor);
+      pipe.process(task->size());
+      task->finalize();
+    }
+  }
+
+
   class path dest = destination + entry.name();
   file_data_sink sink(dest);
 

@@ -177,6 +177,9 @@ private:
 public:
   ArchiveReadHandle(R& r, const Archive& archive, const ArchiveEntry& entry) : r(r), _archive(archive), _entry(entry), _source(nullptr) { }
   data_source* source(bool total);
+
+  const auto& filterCache() const { return _cache; }
+  const auto& tasks() const { return _env.tasks; }
   
   size_t read(byte* dest, size_t amount) { return _source->read(dest, amount); }
 };
