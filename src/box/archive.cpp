@@ -843,6 +843,11 @@ void ArchiveReadHandle::prepareWorkflow(data_sink* sink)
   _env.tasks.add(new simple_process_task("stream-process", source, sink, _entry.binary().digest.size));
 }
 
+ArchiveReadHandle::~ArchiveReadHandle()
+{
+  TRACE_A("% p: archive::destroy()");
+}
+
 data_source* ArchiveReadHandle::source(bool total)
 {
   _cache.clear();

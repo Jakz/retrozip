@@ -119,6 +119,73 @@ Archive ArchiveBuilder::buildSingleStreamBaseWithDeltasArchive(const data_source
   return Archive::ofData(data);
 }
 
+Archive ArchiveBuilder::build(const std::vector<FileGroup>& groups)
+{
+  TRACE_AB("%p: builder::build()", this);
+
+  Archive archive;
+  archive.options().bufferSize = MB64;
+
+  ArchiveFactory::Data data;
+
+  ArchiveEntry::ref e = 0, s = 0;
+  for (const auto& group : groups)
+  {
+    switch (group.mode)
+    {
+      /* generate one stream with multiple entries */
+      case GroupMode::Solid:
+      {
+        group.sources = buildSources(group.files);
+        size_t bufferSize = filterBufferSizeForPolicy(group.sources);
+
+        data.streams.push_back(ArchiveFactory::Stream({ }, { new builders::lzma_builder(bufferSize) }));
+
+        for (const auto& source : group.sources)
+        {
+          source->rewind();
+          data.entries.push_back({ source.name, source, { } });
+          data.streams.back().entries.push_back(e);
+          ++e;
+        }
+
+        ++s;
+        break;
+      }
+
+      /* generate base lzma entry + xdelta3 entries */
+      case GroupMode::BaseWithDelta:
+      {
+        group.sources = buildSources(group.files);
+        size_t bufferSize = filterBufferSizeForPolicy(group.sources);
+
+
+        for (box::index_t i = 0; i < group.sources.size(); ++i)
+        {
+          const auto& source = group.sources[i];
+          source->rewind();
+
+          if (i == group.entry)
+          {
+            data.entries.push_back({ source.name, source, { new builders::lzma_builder(bufferSize) } });
+          }
+          else
+            data.entries.push_back({ source.name, source, { new builders::xdelta3_builder(bufferSize, group.sources[group.entry], MB16, group.sources[group.entry]->size()) } });
+
+          data.streams.push_back({ { e } });
+
+          ++e;
+          ++s;
+        }
+
+        break;
+      }
+    }
+  }
+
+  return Archive::ofData(data);
+}
+
 Archive ArchiveBuilder::buildSolidArchivePerFolderOfDirectoryTree(const path& root)
 {
   TRACE_AB("%p: builder::solidArchiveOfDirectoryTree(): %s", this, root.c_str());

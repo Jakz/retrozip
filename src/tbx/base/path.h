@@ -32,6 +32,8 @@ public:
   path(const char* data);
   path(const std::filesystem::path& data);
 
+  std::vector<path> contents() const;
+
   bool isFolder() const;
   bool exists() const;
   size_t length() const;
@@ -39,6 +41,7 @@ public:
   path absolute() const;
   path relativizeToParent(const path& parent) const;
   path relativizeChildren(const path& children) const;
+  std::filesystem::path fspath() const { return std::filesystem::path(_data); }
   
   path append(const path& other) const;
   path operator+(const path& other) const { return this->append(other); }

@@ -76,7 +76,7 @@ private:
 public:
   filter_cache() : _source(nullptr), _tail(nullptr) { }
   filter_cache(data_source* source) : _source(source), _tail(source) { }
-  
+
   void setSource(data_source* source) { _source = source; _tail = source; }
   
   void apply(const filter_builder& builder)

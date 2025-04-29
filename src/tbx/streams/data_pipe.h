@@ -225,6 +225,12 @@ protected:
 
 public:
   process_task_list() { }
+  ~process_task_list() { }
+  process_task_list(const process_task_list&) = delete;
+  process_task_list(process_task_list&&) = default;
+  process_task_list& operator=(const process_task_list&) = delete;
+  process_task_list& operator=(process_task_list&&) = default;
+  
 
   void add(process_task* task)
   {

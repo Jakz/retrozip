@@ -34,6 +34,11 @@ bool path::isAbsolute() const
   return !_data.empty() && _data[0] == SEPARATOR;
 }
 
+std::vector<path> path::contents() const
+{
+  return FileSystem::i()->contentsOfFolder(*this);
+}
+
 bool path::isFolder() const { return FileSystem::i()->existsAsFolder(*this); }
 
 bool path::exists() const
