@@ -21,6 +21,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\base\path.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\base\strings.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\extra\fmt\format.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\extra\subprocess.hpp" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\minizip\ioapi.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\minizip\iowin32.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\minizip\mztools.h" />

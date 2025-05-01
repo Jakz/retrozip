@@ -28,7 +28,7 @@
     <Filter Include="tbx\extra\format">
       <UniqueIdentifier>{3e19a44b-35a6-4cfc-8627-cdec2bd8cd99}</UniqueIdentifier>
     </Filter>
-    <Filter Include="tbx\extra\minizip">
+    <Filter Include="tbx\formats\minizip">
       <UniqueIdentifier>{cf607ccc-3471-4cb0-aa6e-f943f83550c5}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -109,22 +109,25 @@
       <Filter>tbx\base</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\minizip\ioapi.h">
-      <Filter>tbx\extra\minizip</Filter>
+      <Filter>tbx\formats\minizip</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\minizip\iowin32.h">
-      <Filter>tbx\extra\minizip</Filter>
+      <Filter>tbx\formats\minizip</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\minizip\mztools.h">
-      <Filter>tbx\extra\minizip</Filter>
+      <Filter>tbx\formats\minizip</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\minizip\unzip.h">
-      <Filter>tbx\extra\minizip</Filter>
+      <Filter>tbx\formats\minizip</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\minizip\zip.h">
-      <Filter>tbx\extra\minizip</Filter>
+      <Filter>tbx\formats\minizip</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\minizip\zipcrypt.h">
-      <Filter>tbx\extra\minizip</Filter>
+      <Filter>tbx\formats\minizip</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\extra\subprocess.hpp">
+      <Filter>tbx\extra</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -153,25 +156,25 @@
       <Filter>tbx\base</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\minizip\iowin32.c">
-      <Filter>tbx\extra\minizip</Filter>
+      <Filter>tbx\formats\minizip</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\minizip\minizip.c">
-      <Filter>tbx\extra\minizip</Filter>
+      <Filter>tbx\formats\minizip</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\minizip\mztools.c">
-      <Filter>tbx\extra\minizip</Filter>
+      <Filter>tbx\formats\minizip</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\minizip\unzip.c">
-      <Filter>tbx\extra\minizip</Filter>
+      <Filter>tbx\formats\minizip</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\minizip\zip.c">
-      <Filter>tbx\extra\minizip</Filter>
+      <Filter>tbx\formats\minizip</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\minizip\ioapi.c">
-      <Filter>tbx\extra\minizip</Filter>
+      <Filter>tbx\formats\minizip</Filter>
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\minizip\miniunz.c">
-      <Filter>tbx\extra\minizip</Filter>
+      <Filter>tbx\formats\minizip</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
