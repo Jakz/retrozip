@@ -18,6 +18,8 @@
 #include "tbx/streams/file_data_source.h"
 #include "box/archive_builder.h"
 
+#include "tbx/extra/subprocess.hpp"
+
 struct GUI
 {
   path filepath;
@@ -223,6 +225,10 @@ void GUI::loadFile(const path& filename)
   setStatusText(filename.str());
 }
 
+#include <thread>
+
+#include "flow/flow.h"
+
 int main(int argc, char* argv[])
 {
   if (false)
@@ -304,5 +310,38 @@ int main(int argc, char* argv[])
 
 
   gui.form.show();
+
+  flow::InputFile input(R"(C:/Users/Jack/Desktop/patapon/files/1379 - Patapon (USA).iso)");
+  flow::OutputFile output(R"(C:/Users/Jack/Desktop/patapon/output.cso)");
+  flow::Parameters params(&input, &output);
+  
+  flow::commands::IsoToCso command;
+  command.run(params, nullptr);
+
+  if (false)
+  {
+    namespace sp = subprocess;
+
+    //auto process = sp::Popen({ "tools/maxcso/maxcso.exe", "C:/Users/Jack/Desktop/patapon/files/1379 - Patapon (USA).iso", "-o", "C:/Users/Jack/Desktop/patapon/output.cso"}, sp::output{sp::PIPE}, sp::error{sp::PIPE});
+    //auto result = process.communicate();
+
+    std::future<std::pair<sp::OutBuffer, sp::ErrBuffer>> future = std::async(std::launch::async, [] {
+      subprocess::Popen proc(
+        { "tools/maxcso/maxcso.exe", "C:/Users/Jack/Desktop/patapon/files/1379 - Patapon (USA).iso", "-o", "C:/Users/Jack/Desktop/patapon/output.cso" },
+        subprocess::output{ sp::PIPE },
+        subprocess::error{ sp::PIPE });
+      return proc.communicate();
+      });
+
+    while (future.wait_for(std::chrono::milliseconds(100)) != std::future_status::ready) {
+      std::cout << "Still working...\n";
+    }
+
+    // When done:
+    auto [stdout_str, stderr_str] = future.get();
+  }
+
+  //std::cout << "Data : " << std::string(&result.second.buf[0]) << std::endl;
+
   nana::exec();
 }

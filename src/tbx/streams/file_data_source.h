@@ -20,6 +20,8 @@ public:
  
   }
 
+  const path& path() const { return _path; }
+
   void open()
   {
     assert(!_handle);

@@ -100,7 +100,9 @@ enum class file_mode
 {
   WRITING,
   APPENDING,
-  READING
+  READING,
+
+  Reading = READING,
 };
 
 

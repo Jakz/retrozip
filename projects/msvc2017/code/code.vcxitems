@@ -23,6 +23,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\filters\deflate_filter.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\filters\lzma_filter.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\filters\xdelta3_filter.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\flow\flow.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\test\test_support.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -39,6 +40,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\filters\filters.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\filters\lzma_filter.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\filters\xdelta3_filter.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\flow\flow.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\test\catch.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\test\test_support.h" />
   </ItemGroup>
