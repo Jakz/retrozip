@@ -4,16 +4,20 @@
 #include "tbx/streams/file_data_source.h"
 
 #include <memory>
+#include <future>
+#include <any>
 
 using fs_path = path;
 
 namespace flow
-{
+{  
   struct Input
   {
   public:
     virtual ~Input() { }
-    virtual void prepare() {}
+    virtual void prepare() { }
+    virtual void finalize() { }
+
     virtual const path& path() const = 0;
   };
 
@@ -80,10 +84,11 @@ namespace flow
 
   struct Arg
   {
-    //TODO
+    // TODO
   };
 
   using ident_t = std::string;
+  using exit_code_t = int;
 
   struct Parameters
   {
@@ -107,9 +112,23 @@ namespace flow
     void setOutput(Output* output) { _outputs[""] = output; }
   };
 
+  struct CommandResult
+  {
+  protected:
+    std::any _value;
+    exit_code_t _exitCode;
+
+  public:
+    CommandResult(int exitCode) : _exitCode(exitCode) { }
+    template<typename T> CommandResult(exit_code_t exitCode, T&& value) : _value(std::forward<T>(value)), _exitCode(exitCode) { }
+
+    bool hasValue() const { return _value.has_value(); }
+    exit_code_t exitCode() const { return _exitCode; }
+  };
+
   struct Command
   {
-    int _exitCode;
+    exit_code_t _exitCode;
 
   public:
     Command() : _exitCode(0) { }
@@ -118,14 +137,21 @@ namespace flow
     virtual int exitCode() const { return _exitCode; }
 
     /* run can be blocking so this must be taken account into */
-    virtual void run(const Parameters& args, CommandReporter* reporter) = 0;
+    virtual void run(const Parameters& args, CommandReporter* reporter = nullptr) = 0;
+    /* async execution, this must remain valid, args is copied */
+    std::future<CommandResult> runAsync(const Parameters& args, CommandReporter* reporter = nullptr);
   };
 
   namespace commands
   {
     struct IsoToCso : public Command
     {
-      void run(const Parameters& args, CommandReporter* reporter) override;
+      void run(const Parameters& args, CommandReporter* reporter = nullptr) override;
+    };
+
+    struct InputToZip : public Command
+    {
+      void run(const Parameters& args, CommandReporter* reporter = nullptr) override;
     };
   }
 

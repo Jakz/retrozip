@@ -316,7 +316,7 @@ int main(int argc, char* argv[])
   flow::Parameters params(&input, &output);
   
   flow::commands::IsoToCso command;
-  command.run(params, nullptr);
+  command.run(params);
 
   if (false)
   {

@@ -22,6 +22,14 @@ Output* Parameters::output() const
 #include "tbx/extra/subprocess.hpp"
 namespace sp = subprocess;
 
+std::future<CommandResult> Command::runAsync(const Parameters& args, CommandReporter* reporter)
+{
+  return std::async(std::launch::async, [this, args, reporter] {
+    this->run(args, reporter);
+    return CommandResult(this->exitCode(), std::any());
+  });
+}
+
 void commands::IsoToCso::run(const Parameters& args, CommandReporter* reporter)
 {
   fs_path inputPath = args.input()->path();
@@ -33,4 +41,15 @@ void commands::IsoToCso::run(const Parameters& args, CommandReporter* reporter)
     subprocess::error{ sp::PIPE });
 
   proc.communicate();
+  _exitCode = proc.retcode();
 }
+
+void commands::InputToZip::run(const Parameters& args, CommandReporter* reporter)
+{
+  size_t bufferSize = MB1;
+  Input* input = args.input();
+
+  input->prepare();
+}
+
+

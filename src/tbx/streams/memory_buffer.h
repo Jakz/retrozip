@@ -54,7 +54,7 @@ public:
     }
   }
   
-  memory_buffer(memory_buffer&& other) : _data(other._data), _position(other._position), _size(other._size), _capacity(other._capacity), _dataOwned(other._dataOwned)
+  memory_buffer(memory_buffer&& other) noexcept : _data(other._data), _position(other._position), _size(other._size), _capacity(other._capacity), _dataOwned(other._dataOwned)
   {
     if (_dataOwned)
     {
@@ -66,7 +66,7 @@ public:
     }
   }
   
-  memory_buffer& operator=(memory_buffer&& other)
+  memory_buffer& operator=(memory_buffer&& other) noexcept
   {
     if (_dataOwned)
     {
