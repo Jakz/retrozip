@@ -312,14 +312,23 @@ int main(int argc, char* argv[])
   gui.form.show();
 
   flow::InputFile input(R"(C:/Users/Jack/Desktop/patapon/files/1379 - Patapon (USA).iso)");
+  flow::InputFile input2(R"(C:/Users/Jack/Desktop/patapon/files/1364 - Patapon (Europe) (En,Fr,De,Es,It).iso)");
+
   flow::OutputFile output(R"(C:/Users/Jack/Desktop/patapon/output.cso)");
   flow::OutputFile outputZip(R"(C:/Users/Jack/Desktop/patapon/output.zip)");
   flow::Parameters params(&input, &outputZip);
+  params.addInput(&input2);
   
   flow::commands::InputToZip command;
 
   flow::ProgressLambdaReporter reporter([&gui](float percent) {
-    printf("Progress: %f\n", percent);
+    int width = 20;
+    int pos = static_cast<int>(width * percent);
+    std::cout << "\r[";
+    for (int i = 0; i < width; ++i)
+      std::cout << (i < pos ? "=" : " ");
+    std::cout << "] " << std::fixed << std::setprecision(1) << (percent * 100) << "%";
+    std::cout.flush();
   });
 
   auto result = command.runAsync(params, &reporter);

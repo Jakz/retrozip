@@ -5,7 +5,7 @@ using namespace flow;
 Input* Parameters::input() const
 {
   if (_inputs.size() == 1)
-    return _inputs.begin()->second;
+    return _inputs.begin()->value;
   else
     return nullptr;
 }
@@ -13,7 +13,7 @@ Input* Parameters::input() const
 Output* Parameters::output() const
 {
   if (_outputs.size() == 1)
-    return _outputs.begin()->second;
+    return _outputs.begin()->value;
   else
     return nullptr;
 }
@@ -49,41 +49,55 @@ void commands::IsoToCso::run(const Parameters& args, CommandReporter* reporter)
 
 
 #include "tbx/formats/minizip/zip.h"
+#include <numeric>
 
 void commands::InputToZip::run(const Parameters& args, CommandReporter* reporter)
 {
   size_t bufferSize = MB1;
   std::unique_ptr<uint8_t[]> buffer(new uint8_t[bufferSize]);
 
-  Input* input = args.input();
   Output* output = args.output();
 
-  input->prepare(InputMode::Memory);
   output->prepare(OutputMode::RealFile);
 
   size_t processed = 0;
+  size_t total = std::accumulate(args.inputs().begin(), args.inputs().end(), 0,
+    [](size_t sum, const auto& pair) { return sum + pair.value->size(); });
+
+  size_t i = 0;
+
   zipFile zip = zipOpen(output->path().c_str(), APPEND_STATUS_CREATE);
   if (zip)
   {
-    zip_fileinfo zi = {};
-    zipOpenNewFileInZip(zip, input->path().filename().c_str(), &zi, nullptr, 0, nullptr, 0, nullptr, Z_DEFLATED, Z_DEFAULT_COMPRESSION);
-
-    size_t amount;
-
-    while ((amount = input->read(buffer.get(), bufferSize)) != END_OF_STREAM)
+    for (const auto& arg : args.inputs())
     {
-      processed += amount;
-      reporter->progress(processed / float(input->size()));
+      Input* input = arg.value;
+      input->prepare(InputMode::Memory);
 
-      if (amount > 0)
-        zipWriteInFileInZip(zip, buffer.get(), amount);
+      zip_fileinfo zi = {};
+      zipOpenNewFileInZip(zip, input->path().filename().c_str(), &zi, nullptr, 0, nullptr, 0, nullptr, Z_DEFLATED, Z_DEFAULT_COMPRESSION);
+
+      size_t amount;
+
+      while ((amount = input->read(buffer.get(), bufferSize)) != END_OF_STREAM)
+      {
+        processed += amount;
+        reporter->progress(((processed / float(input->size())) + i) * (1.0f / args.inputs().size()));
+
+        if (amount > 0)
+          zipWriteInFileInZip(zip, buffer.get(), amount);
+      }
+
+      zipCloseFileInZip(zip);
+      input->finalize();
+
+      processed = 0;
+      ++i;
     }
-
-    zipCloseFileInZip(zip);
+    
     zipClose(zip, nullptr);
   }
 
-  input->finalize();
 }
 
 

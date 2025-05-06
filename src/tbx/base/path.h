@@ -180,7 +180,6 @@ public:
     
     return _file != nullptr;
   }
-
   bool close() const
   {
     if (_file == nullptr)

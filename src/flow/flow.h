@@ -130,34 +130,43 @@ namespace flow
     }
   };
 
-  struct Arg
-  {
-    // TODO
-  };
 
   using ident_t = std::string;
   using exit_code_t = int;
 
+
+  template<typename T = std::string>
+  struct Arg
+  {
+    ident_t name;
+    T value;
+
+    Arg(const ident_t& name, const T& value) : name(name), value(value) { }
+  };
+
   struct Parameters
   {
-    std::unordered_map<ident_t, Input*> _inputs;
-    std::unordered_map<ident_t, Output*> _outputs;
-    std::vector<Arg> _args;
+    std::vector<Arg<Input*>> _inputs;
+    std::vector<Arg<Output*>> _outputs;
+    std::vector<Arg<>> _args;
 
     Parameters(Input* input, Output* output) 
     {
-      if (input) setInput(input);
-      if (output) setOutput(output);
+      if (input) addInput(input);
+      if (output) addOutput(output);
     }
 
     Input* input() const;
     Output* output() const;
 
-    void setInput(const ident_t& ident, Input* input) { _inputs[ident] = input; }
-    void setInput(Input* input) { _inputs[""] = input; }
+    const auto& inputs() const { return _inputs; }
+    const auto& outputs() const { return _outputs; }
 
-    void setOutput(const ident_t& ident, Output* output) { _outputs[ident] = output; }
-    void setOutput(Output* output) { _outputs[""] = output; }
+    void addInput(const ident_t& ident, Input* input) { _inputs.emplace_back(ident, input); }
+    void addInput(Input* input) { addInput("", input); }
+
+    void addOutput(const ident_t& ident, Output* output) { _outputs.emplace_back(ident, output); }
+    void addOutput(Output* output) { addOutput("", output); }
   };
 
   struct CommandResult
