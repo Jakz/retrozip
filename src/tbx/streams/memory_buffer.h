@@ -261,12 +261,14 @@ public:
     }
   }
   
+  /* advance position by amount */
   void advance(size_t offset)
   {
     _size += offset;
     TRACE_MB("%p: memory_buffer::advance %lu (%lu/%lu)", this, offset, _size, _capacity);
   }
   
+  /* consume amount bytes and shift the remainder toward the start */
   void consume(size_t amount)
   {
     if (_size != amount)

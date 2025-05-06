@@ -10,6 +10,7 @@ namespace meta
   enum class SystemType
   {
     Console,
+    HybridConsole,
     Handheld,
     Computer,
     Arcade

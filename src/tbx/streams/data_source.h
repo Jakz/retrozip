@@ -80,7 +80,7 @@ private:
   size_t _current;
   size_t _maxAccepted;
 public:
-  null_data_sink() : _maxAccepted(END_OF_STREAM) { }
+  null_data_sink() : _current(0), _maxAccepted(END_OF_STREAM) { }
   null_data_sink(size_t maxAccepted) : _current(0), _maxAccepted(maxAccepted) { }
   
   size_t write(const byte* src, size_t amount) override

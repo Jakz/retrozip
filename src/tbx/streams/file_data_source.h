@@ -20,6 +20,7 @@ public:
  
   }
 
+  bool opened() const { return _handle.operator bool(); }
   const path& path() const { return _path; }
 
   void open()
@@ -68,6 +69,8 @@ private:
   
 public:
   file_data_sink(path path, bool waitForOpen = false) : _path(path), _handle(waitForOpen ? file_handle(path) : file_handle(path, file_mode::WRITING)) { }
+
+  const path& path() const { return _path; }
     
   void open()
   {

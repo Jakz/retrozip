@@ -86,7 +86,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(RetroZipRoot)\libs\zlib\lib\win_x64\zlib.lib;$(RetroZipRoot)\libs\lzma\lib\win\x64\lzma.lib;$(RetroZipRoot)\libs\leveldb\lib\win_x64\leveldbD.lib;$(RetroZipRoot)\libs\dokan\lib\win_x64\dokanfuse2.lib;$(RetroZipRoot)\libs\nana\lib\win_x64\nanad.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(RetroZipRoot)\libs\zlib\lib\win_x64\zlib.lib;$(RetroZipRoot)\libs\lzma\lib\win\x64\lzma.lib;$(RetroZipRoot)\libs\leveldb\lib\win_x64\leveldbD.lib;$(RetroZipRoot)\libs\dokan\lib\win_x64\dokanfuse2.lib;$(RetroZipRoot)\libs\nana\lib\win_x64\nana.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

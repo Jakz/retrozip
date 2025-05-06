@@ -313,10 +313,17 @@ int main(int argc, char* argv[])
 
   flow::InputFile input(R"(C:/Users/Jack/Desktop/patapon/files/1379 - Patapon (USA).iso)");
   flow::OutputFile output(R"(C:/Users/Jack/Desktop/patapon/output.cso)");
-  flow::Parameters params(&input, &output);
+  flow::OutputFile outputZip(R"(C:/Users/Jack/Desktop/patapon/output.zip)");
+  flow::Parameters params(&input, &outputZip);
   
-  flow::commands::IsoToCso command;
-  command.run(params);
+  flow::commands::InputToZip command;
+
+  flow::ProgressLambdaReporter reporter([&gui](float percent) {
+    printf("Progress: %f\n", percent);
+  });
+
+  auto result = command.runAsync(params, &reporter);
+  result.wait_for(std::chrono::seconds(30));
 
   if (false)
   {

@@ -41,6 +41,7 @@ Repository::Repository()
     System("nes", SystemType::Console, company("nintendo"), "NES", "Nintendo Entertainment System"),
     System("snes", SystemType::Console, company("nintendo"), "SNES", "Super Nintendo Entertainment System"),
     System("gba", SystemType::Handheld, company("nintendo"), "GBA", "Game Boy Advance"),
+    System("ns", SystemType::HybridConsole, company("nintendo"), "NS", "Nintendo Switch"),
 
     System("md", SystemType::Console, company("sega"), "MD", "Sega MegaDrive/Genesis"),
 

@@ -170,7 +170,9 @@ public:
     if (mode == file_mode::WRITING) smode = "wb+";
     else if (mode == file_mode::APPENDING) smode = "rb+";
     
+    assert(!_file);
     _file = fopen(path.c_str() , smode);
+    assert(_file);
 #endif
     
     //if (!file || ferror(file))

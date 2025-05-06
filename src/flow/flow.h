@@ -11,12 +11,21 @@ using fs_path = path;
 
 namespace flow
 {  
+  enum class InputMode { RealFile, Memory };
+
   struct Input
   {
+  protected:
+    size_t _size;
+
   public:
+    Input() : _size(END_OF_STREAM) { }
     virtual ~Input() { }
-    virtual void prepare() { }
+    virtual void prepare(InputMode mode) { }
     virtual void finalize() { }
+
+    virtual size_t size() const { return _size; }
+    virtual size_t read(byte* dest, size_t amount) = 0;
 
     virtual const path& path() const = 0;
   };
@@ -31,14 +40,35 @@ namespace flow
     InputFile(const fs_path& path) : _path(path) { }
     const fs_path& path() const { return _path; }
 
-    void prepare() override { _source.reset(new file_data_source(_path, file_handle(_path, file_mode::READING, true))); }
+    void prepare(InputMode mode) override
+    { 
+      if (mode == InputMode::Memory)
+      {
+        _source.reset(new file_data_source(_path, false));
+        _size = _source->size();
+      }
+      else
+        /* do nothing */;
+    }
+
+    size_t read(byte* dest, size_t amount) override
+    {
+      return _source->read(dest, amount);
+    }
+
+    void finalize()
+    {
+      _source.reset();
+    }
   };
+
+  enum class OutputMode { RealFile, Memory };
 
   struct Output
   {
   public:
     virtual ~Output() { }
-    virtual void prepare() {}
+    virtual void prepare(OutputMode mode) {}
     virtual const path& path() const = 0;
   };
 
@@ -52,7 +82,13 @@ namespace flow
     OutputFile(const fs_path& path) : _path(path) { }
     const fs_path& path() const { return _path; }
 
-    void prepare() override { _sink.reset(new file_data_sink(_path, false)); }
+    void prepare(OutputMode mode) override
+    {
+      if (mode == OutputMode::Memory) 
+        _sink.reset(new file_data_sink(_path, false));
+      else
+        /* do nothing */;
+    }
   };
 
   struct Value
@@ -80,6 +116,18 @@ namespace flow
     void out(const std::string& message) override { }
     void err(const std::string& message) override { }
     void progress(float percent) override { }
+  };
+
+  struct ProgressLambdaReporter : public NullCommandReporter
+  {
+    std::function<void(float)> _progressCallback;
+    ProgressLambdaReporter(std::function<void(float)> progressCallback) : _progressCallback(progressCallback) { }
+
+    void progress(float percent) override
+    {
+      if (_progressCallback)
+        _progressCallback(percent);
+    }
   };
 
   struct Arg
