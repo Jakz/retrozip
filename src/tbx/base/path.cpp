@@ -26,7 +26,7 @@ path::path(const std::string& data) : _data(data)
     _data.pop_back();
 }
 
-path::path(const std::filesystem::path& path) : path(path.string())
+path::path(const std::filesystem::path& fspath) : path(fspath.string())
 {
 
 }
