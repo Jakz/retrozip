@@ -2,7 +2,7 @@
 
 using namespace flow;
 
-Parameters::Parameters(const std::string& original)
+Parameters::Parameters(const std::string& original) : _original(original)
 {
   /* simple argument tokenizer */
   std::string current;
@@ -21,7 +21,7 @@ Parameters::Parameters(const std::string& original)
       {
         if (!current.empty())
         {
-          _original.push_back(current);
+          _tokens.push_back(current);
           current = std::string();
         }
         continue;
@@ -32,7 +32,7 @@ Parameters::Parameters(const std::string& original)
       if (quoted)
       {
         quoted = '\0';
-        _original.push_back(current);
+        _tokens.push_back(current);
         current = std::string();
       }
       else
@@ -43,7 +43,7 @@ Parameters::Parameters(const std::string& original)
   }
 
   if (!current.empty())
-    _original.push_back(current);
+    _tokens.push_back(current);
 }
 
 Input* Parameters::input() const
@@ -145,9 +145,22 @@ void commands::InputToZip::run(const Parameters& args, CommandReporter* reporter
 }
 
 
+void commands::Echo::run(const Parameters& args, CommandReporter* reporter)
+{
+  reporter->out(args.original().substr(5));
+}
+
+
 void Registry::init()
 {
   registerCommand(new commands::InputToZip());
   registerCommand(new commands::IsoToCso());
 }
 
+void Engine::tryToExecute(const std::string& command)
+{
+  Parameters params(command);
+
+  if (params.token(0) == "echo")
+    commands::Echo().run(params, _reporter);
+}

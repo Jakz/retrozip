@@ -146,7 +146,8 @@ namespace flow
 
   struct Parameters
   {
-    std::vector<std::string> _original;
+    std::string _original;
+    std::vector<std::string> _tokens;
     std::vector<Arg<Input*>> _inputs;
     std::vector<Arg<Output*>> _outputs;
     std::vector<Arg<>> _args;
@@ -158,6 +159,8 @@ namespace flow
       if (output) addOutput(output);
     }
 
+    const std::string& token(size_t i) const { return _tokens[i]; }
+    const std::string& original() const { return _original; }
     Input* input() const;
     Output* output() const;
 
@@ -243,6 +246,31 @@ namespace flow
     {
       void run(const Parameters& args, CommandReporter* reporter = nullptr) override;
     };
+
+    struct Echo : public Command
+    {
+      void run(const Parameters& args, CommandReporter* reporter = nullptr) override;
+    };
   }
+
+  struct Engine
+  {
+  protected:
+    Registry _registry;
+    Environment _env;
+    CommandReporter* _reporter;
+
+  public:
+    Engine() { _registry.init(); }
+    ~Engine() { }
+
+    void init()
+    {
+      _registry.init();
+    }
+
+    void setReporter(CommandReporter* reporter) { _reporter = reporter; }
+    void tryToExecute(const std::string& command);
+  };
 
 }

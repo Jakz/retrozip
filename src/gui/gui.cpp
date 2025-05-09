@@ -228,10 +228,14 @@ void GUI::loadFile(const path& filename)
 #include "flow/flow.h"
 #include "BearLibTerminal.h"
 
-class Terminal
+flow::Engine f;
+
+class Terminal : public flow::CommandReporter
 {
 protected:
   std::string _prompt;
+  std::vector<std::string> _history;
+  std::vector<std::string> _buffer;
     
   bool _shouldQuit;
 
@@ -249,6 +253,10 @@ public:
   {
 
   }
+
+  void out(const std::string& message) override { _buffer.push_back("[color=gray]" + message); }
+  void err(const std::string& message) override { _buffer.push_back("[color=red]" + message); }
+  void progress(float percent) override { }
 
   void init();
   void deinit();
@@ -292,6 +300,7 @@ void Terminal::loop()
       if (key == TK_ENTER)
       {
         /* execute command */
+        f.tryToExecute(_prompt);
         _prompt.clear();
       }
       else if (key == TK_BACKSPACE)
@@ -303,6 +312,8 @@ void Terminal::loop()
       {
         _prompt += static_cast<char>((key - TK_A) + 'a');
       }
+      else if (key == TK_SPACE)
+        _prompt += ' ';
     }
 
     render();
@@ -315,10 +326,17 @@ void Terminal::loop()
 void Terminal::render()
 {
   terminal_clear();
-  terminal_printf(0, _height - 1, "> %s", _prompt.c_str());
-  if (_caretVisible) {
-    terminal_put(2 + static_cast<int>(_prompt.size()), _height - 1, '_');
+
+  for (size_t i = 0; i < _buffer.size(); ++i)
+  {
+    terminal_print(0, i, _buffer[i].c_str());
   }
+
+  terminal_printf(0, _height - 1, ">%s", _prompt.c_str());
+  if (_caretVisible)
+    terminal_put(1 + static_cast<int>(_prompt.size()), _height - 1, '_');
+
+
   terminal_refresh();
 }
 
@@ -336,6 +354,8 @@ void Terminal::init()
 
   terminal_refresh();
   onResize();
+
+  f.setReporter(this);
 }
 
 void Terminal::deinit()
