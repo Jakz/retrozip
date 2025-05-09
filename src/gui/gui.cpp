@@ -225,11 +225,62 @@ void GUI::loadFile(const path& filename)
   setStatusText(filename.str());
 }
 
+#include "flow/flow.h"
+#include "BearLibTerminal.h"
+
+int main(int argc, char* argv[])
+{
+  terminal_open();
+  terminal_set("window: title='RetroZip', resizeable=true");
+  terminal_set("font: consola.ttf, size=12");
+
+  terminal_set("0xE000: flags.png, size=16x16, align=center, spacing=2x1");
+
+  terminal_put(0, 0, 0xE000);
+  terminal_printf(3, 0, "Mario Madness (Italy).gba");
+
+  terminal_printf(2, 1, "Hello, world!");
+
+  terminal_refresh();
+
+  int status;
+  while ((status = terminal_read()))
+  {
+    if (status == TK_CLOSE)
+      break;
+    else if (status == TK_RESIZED)
+    {
+      terminal_clear();
+      terminal_put(0, 0, 0xE000);
+      terminal_printf(3, 0, "Mario Madness (Italy).gba");
+
+      terminal_printf(2, 1, "Hello, world!");
+      terminal_refresh();
+    }
+  }
+
+  terminal_close();
+
+  //terminal_printf("Hello, world!\n");
+  //terminal_refresh();
+
+  //terminal_read();
+
+  //terminal_close();
+
+  //return 0;
+
+  //std::cout << "Hello World!" << std::endl;
+
+  return 0;
+}
+
+
 #include <thread>
 
 #include "flow/flow.h"
 
-int main(int argc, char* argv[])
+int maindisabled(int argc, char* argv[])
 {
   if (false)
   {
@@ -311,6 +362,11 @@ int main(int argc, char* argv[])
 
   gui.form.show();
 
+  flow::Registry registry;
+  registry.init();
+
+  flow::Parameters test = flow::Parameters("compress zip 'C:/Users/Jack/Desktop/patapon/files/1379 - Patapon (USA).iso)' 'C:/Users/Jack/Desktop/patapon/output.zip'");
+
   flow::InputFile input(R"(C:/Users/Jack/Desktop/patapon/files/1379 - Patapon (USA).iso)");
   flow::InputFile input2(R"(C:/Users/Jack/Desktop/patapon/files/1364 - Patapon (Europe) (En,Fr,De,Es,It).iso)");
 
@@ -360,4 +416,6 @@ int main(int argc, char* argv[])
   //std::cout << "Data : " << std::string(&result.second.buf[0]) << std::endl;
 
   nana::exec();
+
+  return 0;
 }

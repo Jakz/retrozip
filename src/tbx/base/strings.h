@@ -18,4 +18,5 @@ namespace strings
 
   std::string fileNameFromPath(const std::string& path);
 
+  std::vector<std::string> splitText(const std::string& text, int32_t length, const std::string& delimiter);
 }

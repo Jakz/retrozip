@@ -146,10 +146,12 @@ namespace flow
 
   struct Parameters
   {
+    std::vector<std::string> _original;
     std::vector<Arg<Input*>> _inputs;
     std::vector<Arg<Output*>> _outputs;
     std::vector<Arg<>> _args;
 
+    Parameters(const std::string& original);
     Parameters(Input* input, Output* output) 
     {
       if (input) addInput(input);
@@ -167,6 +169,19 @@ namespace flow
 
     void addOutput(const ident_t& ident, Output* output) { _outputs.emplace_back(ident, output); }
     void addOutput(Output* output) { addOutput("", output); }
+  };
+
+  enum class CommandPositionalContract
+  {
+    OneToOne,
+    OneToMany,
+    ManyToOne,
+    MabyToMany
+  };
+
+  struct CommandSpec
+  {
+    CommandPositionalContract positionalContract;
   };
 
   struct CommandResult
@@ -197,6 +212,24 @@ namespace flow
     virtual void run(const Parameters& args, CommandReporter* reporter = nullptr) = 0;
     /* async execution, this must remain valid, args is copied */
     std::future<CommandResult> runAsync(const Parameters& args, CommandReporter* reporter = nullptr);
+  };
+
+  struct Environment
+  {
+    std::unordered_map<ident_t, std::any> _variables;
+
+  public:
+    void set(const ident_t& name, const std::any& value) { _variables[name] = value; }
+  };
+
+  struct Registry
+  {
+  protected:
+    std::vector<std::unique_ptr<Command>> _commands;
+
+  public:
+    void init();
+    void registerCommand(Command* command) { _commands.emplace_back(std::unique_ptr<Command>(command)); }
   };
 
   namespace commands

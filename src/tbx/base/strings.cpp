@@ -80,3 +80,47 @@ std::string strings::fileNameFromPath(const std::string& path)
 }
 
 
+std::vector<std::string> strings::splitText(const std::string& text, int32_t length, const std::string& delimiter)
+{
+  const bool keepEmpty = false;
+
+  std::vector<std::string> strings;
+
+  std::string::size_type pos = 0;
+  std::string::size_type prev = 0;
+  while ((pos = text.find(delimiter, prev)) != std::string::npos)
+  {
+    std::string token = text.substr(prev, pos - prev);
+
+    if (!token.empty() || keepEmpty)
+      strings.push_back(text.substr(prev, pos - prev));
+
+    prev = pos + delimiter.length();
+  }
+
+  std::string lastToken = text.substr(prev);
+
+  if (!lastToken.empty() || keepEmpty)
+    strings.push_back(text.substr(prev));
+
+  if (length != -1)
+  {
+    for (size_t i = 0; i < strings.size(); ++i)
+    {
+      std::string& ith = strings[i];
+
+      if (ith.length() > length)
+      {
+        std::string fs = ith.substr(0, length);
+        std::string fh = ith.substr(length);
+
+        strings[i] = fs;
+        strings.insert(strings.begin() + i + 1, fh);
+      }
+    }
+  }
+
+  return strings;
+}
+
+

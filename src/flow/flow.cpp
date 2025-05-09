@@ -2,6 +2,50 @@
 
 using namespace flow;
 
+Parameters::Parameters(const std::string& original)
+{
+  /* simple argument tokenizer */
+  std::string current;
+  char quoted = '\0';
+
+  for (size_t i = 0; i < original.size(); ++i)
+  {
+    char c = original[i];
+
+    /* consume white space or add to current token if we're in quote */
+    if (c == ' ')
+    {
+      if (quoted != '\0')
+        current += ' ';
+      else
+      {
+        if (!current.empty())
+        {
+          _original.push_back(current);
+          current = std::string();
+        }
+        continue;
+      }
+    }
+    else if (c == '\'' || c == '"')
+    {
+      if (quoted)
+      {
+        quoted = '\0';
+        _original.push_back(current);
+        current = std::string();
+      }
+      else
+        quoted = c;
+    }
+    else
+      current += c;
+  }
+
+  if (!current.empty())
+    _original.push_back(current);
+}
+
 Input* Parameters::input() const
 {
   if (_inputs.size() == 1)
@@ -100,4 +144,10 @@ void commands::InputToZip::run(const Parameters& args, CommandReporter* reporter
 
 }
 
+
+void Registry::init()
+{
+  registerCommand(new commands::InputToZip());
+  registerCommand(new commands::IsoToCso());
+}
 
