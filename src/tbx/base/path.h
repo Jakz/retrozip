@@ -11,6 +11,8 @@
 #include <codecvt>
 #endif
 
+using path_extension = std::string;
+
 class path
 {
 private:
@@ -29,7 +31,9 @@ public:
   path(const char* data);
   path(const std::string& data);
   path(const std::filesystem::path& path);
-  
+
+  std::vector<path> contents() const;
+
   bool isFolder() const;
   bool exists() const;
   size_t length() const;
@@ -37,6 +41,7 @@ public:
   path absolute() const;
   path relativizeToParent(const path& parent) const;
   path relativizeChildren(const path& children) const;
+  std::filesystem::path fspath() const { return std::filesystem::path(_data); }
   
   path append(const path& other) const;
   path operator+(const path& other) const { return this->append(other); }
@@ -58,6 +63,7 @@ public:
   
   std::string filename() const;
   std::string filenameWithoutExtension() const;
+  path withExtension(const path_extension& extension) const;
 
   const std::string& data() const { return _data; }
   const std::string& str() const { return _data; }
@@ -94,7 +100,9 @@ enum class file_mode
 {
   WRITING,
   APPENDING,
-  READING
+  READING,
+
+  Reading = READING,
 };
 
 
@@ -162,7 +170,9 @@ public:
     if (mode == file_mode::WRITING) smode = "wb+";
     else if (mode == file_mode::APPENDING) smode = "rb+";
     
+    assert(!_file);
     _file = fopen(path.c_str() , smode);
+    assert(_file);
 #endif
     
     //if (!file || ferror(file))
@@ -170,7 +180,6 @@ public:
     
     return _file != nullptr;
   }
-
   bool close() const
   {
     if (_file == nullptr)
@@ -209,4 +218,3 @@ public:
   }*/
 };
 
-using path_extension = std::string;

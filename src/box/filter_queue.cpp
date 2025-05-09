@@ -45,7 +45,7 @@ filter_builder* filter_repository::generate(box::payload_uid identifier, const b
   const auto it = repository.find(identifier);
   
   if (it == repository.end())
-    throw exceptions::unserialization_exception(fmt::sprintf("unknown filter identifier: %lu", identifier));
+    throw exceptions::unserialization_exception(fmt::format("unknown filter identifier: {}", identifier));
   else
     return it->second(data, env);
 }
@@ -106,7 +106,7 @@ data_source* builders::xdelta3_builder::apply(data_source* source) const
 
 data_source* builders::xdelta3_builder::unapply(data_source* source) const
 {
-  return new source_filter<xdelta3_decoder>(source, _source, _bufferSize, _xdeltaWindowSize, _sourceBlockSize);
+  return new source_filter<xdelta3_decoder>(source, _sourceWrapper.get(), _bufferSize, _xdeltaWindowSize, _sourceBlockSize);
 }
 
 void builders::xdelta3_builder::setup(const archive_environment& env)
@@ -143,36 +143,87 @@ void builders::xdelta3_builder::setup(const archive_environment& env)
   }
 }
 
+class xdelta3_prepare_task : public process_task
+{
+protected:
+  const archive_environment* _env;
+  const ArchiveEntry* _entry;
+  ArchiveReadHandle* _handle;
+
+  builders::xdelta3_builder* _builder;
+  data_source* _source;
+  memory_buffer* _sink;
+
+public:
+  xdelta3_prepare_task(builders::xdelta3_builder* builder, const archive_environment* env, const ArchiveEntry* entry) 
+  : process_task("xdelta3-base-extract"),
+    _env(env),
+    _entry(entry),
+    _handle(nullptr),
+    _builder(builder),
+    _source(nullptr),
+    _sink(nullptr)
+  {
+
+  }
+
+  ~xdelta3_prepare_task()
+  {
+    delete _handle;
+    delete _sink;
+  }
+
+  data_source* source() const override { return _source; }
+  data_sink* sink() const override { return _sink; }
+  virtual size_t size() const { return _sink->capacity(); }
+
+  void prepare() override
+  {
+    /* prepare a whole buffer for the uncompressed entry which is the source of xdelta3 diff */
+    memory_buffer* sink = new memory_buffer(_entry->binary().digest.size);
+    _handle = new ArchiveReadHandle(*_env->r, *_env->archive, *_entry);
+
+    _source = _handle->source(true);
+    _sink = sink;
+  }
+
+  void finalize() override
+  {
+    //TODO: for now simple solution, just fill the entry after this one in the process task list
+
+    /* cache entry in environment so that successive tasks will be able to use it */
+    _env->cache.emplace(std::make_pair(_entry->binary().digest, std::unique_ptr<seekable_data_source>(_sink)));
+    /* set source in original xdelta task, we expect this task to be executed before */
+    _builder->setSource(_sink);
+
+    auto filter = _handle->filterCache().get();
+  }
+};
+
+
 void builders::xdelta3_builder::unsetup(const archive_environment& env)
 {
   assert(_source == nullptr);
   
   /* search for matching source between entries */
+  size_t i = 0;
   for (const auto& entry : env.archive->entries())
   {
     /* we found a matching source */
     if (entry.binary().digest == _sourceDigest)
     {
       TRACE_A("%p: xdelta3_builder::unsetup() found matching source %s", this, entry.name().c_str());
-      
-      //TODO: multiple choices here, we could build a source which is read together with this one, cache it on memory, cache it on a file etc
-      memory_buffer* sink = new memory_buffer(entry.binary().digest.size);
-      ArchiveReadHandle handle = ArchiveReadHandle(*env.r, *env.archive, entry);
-      
-      //TODO: it could be lazy or not, but source not uses seek asynchronously
 
-      passthrough_pipe pipe(handle.source(true), sink, env.options().bufferSize);
-      pipe.process();
-      
-      _source = sink;
-      env.cache.emplace(std::make_pair(_sourceDigest, std::unique_ptr<seekable_data_source>(sink)));
-      
+      /* prepare extraction of source task and add it */
+      xdelta3_prepare_task* task = new xdelta3_prepare_task(this, &env, &entry);
+      env.tasks.add(task);
       return;
     }
+
+    ++i;
   }
   
   throw exceptions::missing_source_file_exception("can't find required source file to rebuild entry");
   
   //TODO: multiple ways to manage this
-  
 }

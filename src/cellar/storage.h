@@ -33,6 +33,7 @@ namespace cellar
       _files[sha1] = StorageFile(path);
     }
 
+    void consolidate(const RomHashData* rom, vfs::VirtualFile* file);
     bool isOwned(const DatRom* rom) const;
   };
 }

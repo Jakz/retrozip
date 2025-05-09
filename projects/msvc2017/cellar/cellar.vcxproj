@@ -39,6 +39,7 @@
   </ImportGroup>
   <ImportGroup Label="Shared">
     <Import Project="..\toolbox\toolbox.vcxitems" Label="Shared" />
+    <Import Project="..\code\code.vcxitems" Label="Shared" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -50,7 +51,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS;NOMINMAX;_SILENCE_ALL_MS_EXT_DEPRECATION_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(RetroZipRoot)\src;$(RetroZipRoot)\src;$(RetroZipRoot)\libs\zlib\include;$(RetroZipRoot)\libs\lzma\include;$(RetroZipRoot)\libs\leveldb\include;$(RetroZipRoot)\libs\dokan\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(RetroZipRoot)\src;$(RetroZipRoot)\libs\zlib\include;$(RetroZipRoot)\libs\lzma\include;$(RetroZipRoot)\libs\leveldb\include;$(RetroZipRoot)\libs\dokan\include;$(RetroZipRoot)\libs\nana\include;$(RetroZipRoot)\src\tbx\extra\fmt;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <DisableSpecificWarnings>4068</DisableSpecificWarnings>
@@ -62,11 +63,12 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(RetroZipRoot)\libs\zlib\lib\win_x64\zlib.lib;$(RetroZipRoot)\libs\lzma\lib\win\x64\lzma.lib;$(RetroZipRoot)\libs\leveldb\lib\win_x64\leveldbD.lib;$(RetroZipRoot)\libs\dokan\lib\win_x64\dokanfuse2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(RetroZipRoot)\libs\zlib\lib\win_x64\zlib.lib;$(RetroZipRoot)\libs\lzma\lib\win\x64\lzma.lib;$(RetroZipRoot)\libs\leveldb\lib\win_x64\leveldbD.lib;$(RetroZipRoot)\libs\dokan\lib\win_x64\dokanfuse2.lib;$(RetroZipRoot)\libs\nana\lib\win_x64\nanad.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -77,35 +79,45 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(RetroZipRoot)\libs\zlib\lib\win_x64\zlib.lib;$(RetroZipRoot)\libs\lzma\lib\win\x64\lzma.lib;$(RetroZipRoot)\libs\leveldb\lib\win_x64\leveldbD.lib;$(RetroZipRoot)\libs\dokan\lib\win_x64\dokanfuse2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(RetroZipRoot)\libs\zlib\lib\win_x64\zlib.lib;$(RetroZipRoot)\libs\lzma\lib\win\x64\lzma.lib;$(RetroZipRoot)\libs\leveldb\lib\win_x64\leveldbD.lib;$(RetroZipRoot)\libs\dokan\lib\win_x64\dokanfuse2.lib;$(RetroZipRoot)\libs\nana\lib\win_x64\nana.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\cellar.cpp" />
+    <ClCompile Include="..\..\..\src\cellar\cataloguer.cpp" />
+    <ClCompile Include="..\..\..\src\cellar\database.cpp" />
     <ClCompile Include="..\..\..\src\cellar\fs\cellar_fs.cpp" />
     <ClCompile Include="..\..\..\src\cellar\fs\fuse_backend.cpp" />
     <ClCompile Include="..\..\..\src\cellar\kernel.cpp" />
     <ClCompile Include="..\..\..\src\cellar\logger.cpp" />
     <ClCompile Include="..\..\..\src\cellar\storage.cpp" />
+    <ClCompile Include="..\..\..\src\cellar\ui\ui.cpp" />
+    <ClCompile Include="..\..\..\src\data\meta.cpp" />
     <ClCompile Include="..\..\..\src\libs\pugixml\pugixml.cpp" />
     <ClCompile Include="..\..\..\src\parsers\clrmamepro.cpp" />
     <ClCompile Include="..\..\..\src\parsers\logiqx.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\src\cellar\cataloguer.h" />
+    <ClInclude Include="..\..\..\src\cellar\common.h" />
     <ClInclude Include="..\..\..\src\cellar\database.h" />
     <ClInclude Include="..\..\..\src\cellar\fs\cellar_fs.h" />
     <ClInclude Include="..\..\..\src\cellar\fs\fuse_backend.h" />
     <ClInclude Include="..\..\..\src\cellar\kernel.h" />
     <ClInclude Include="..\..\..\src\cellar\logger.h" />
     <ClInclude Include="..\..\..\src\cellar\storage.h" />
+    <ClInclude Include="..\..\..\src\cellar\ui\ui.h" />
     <ClInclude Include="..\..\..\src\data\entry.h" />
     <ClInclude Include="..\..\..\src\data\hash_map.h" />
+    <ClInclude Include="..\..\..\src\data\meta.h" />
+    <ClInclude Include="..\..\..\src\data\tags.h" />
     <ClInclude Include="..\..\..\src\libs\pugixml\pugiconfig.hpp" />
     <ClInclude Include="..\..\..\src\libs\pugixml\pugixml.hpp" />
     <ClInclude Include="..\..\..\src\parsers\parser.h" />

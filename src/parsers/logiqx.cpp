@@ -1,7 +1,9 @@
 #include "parser.h"
 
+#include "data/meta.h"
 #include "data/entry.h"
 #include "libs/pugixml/pugixml.hpp"
+#include "tbx/base/strings.h"
 
 namespace parsing
 {
@@ -12,7 +14,7 @@ namespace parsing
     pugi::xml_document doc;
     pugi::xml_parse_result xmlResult = doc.load_file(path.c_str());
     
-    ParseResult result = { 0, 0 };
+    ParseResult result;
 
     /* map name/id to position in array */
     std::unordered_map<std::string, size_t> gameMap;
@@ -21,8 +23,18 @@ namespace parsing
     
     if (xmlResult)
     {
-      const auto& games = doc.child("datafile").children("game");
+      const auto datafile = doc.child("datafile");
       
+      const auto games = datafile.child("game") ? datafile.children("game") : datafile.children("machine");
+
+      const std::string system = strings::tolower(datafile.child("header").child("name").child_value());
+
+      if (strings::contains(system, "game boy advance"))
+        result.system = meta::Repository::i()->system("gba");
+      //else if (strings::contains(system, "nintendo switch"))
+      //  result.system = meta::Repository::i()->system("ns");
+
+
       for (pugi::xml_node xgame : games)
       {
         ParseGame game;

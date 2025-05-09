@@ -119,6 +119,73 @@ Archive ArchiveBuilder::buildSingleStreamBaseWithDeltasArchive(const data_source
   return Archive::ofData(data);
 }
 
+Archive ArchiveBuilder::build(const std::vector<FileGroup>& groups)
+{
+  TRACE_AB("%p: builder::build()", this);
+
+  Archive archive;
+  archive.options().bufferSize = MB64;
+
+  ArchiveFactory::Data data;
+
+  ArchiveEntry::ref e = 0, s = 0;
+  for (const auto& group : groups)
+  {
+    switch (group.mode)
+    {
+      /* generate one stream with multiple entries */
+      case GroupMode::Solid:
+      {
+        group.sources = buildSources(group.files);
+        size_t bufferSize = filterBufferSizeForPolicy(group.sources);
+
+        data.streams.push_back(ArchiveFactory::Stream({ }, { new builders::lzma_builder(bufferSize) }));
+
+        for (const auto& source : group.sources)
+        {
+          source->rewind();
+          data.entries.push_back({ source.name, source, { } });
+          data.streams.back().entries.push_back(e);
+          ++e;
+        }
+
+        ++s;
+        break;
+      }
+
+      /* generate base lzma entry + xdelta3 entries */
+      case GroupMode::BaseWithDelta:
+      {
+        group.sources = buildSources(group.files);
+        size_t bufferSize = filterBufferSizeForPolicy(group.sources);
+
+
+        for (box::index_t i = 0; i < group.sources.size(); ++i)
+        {
+          const auto& source = group.sources[i];
+          source->rewind();
+
+          if (i == group.entry)
+          {
+            data.entries.push_back({ source.name, source, { new builders::lzma_builder(bufferSize) } });
+          }
+          else
+            data.entries.push_back({ source.name, source, { new builders::xdelta3_builder(bufferSize, group.sources[group.entry], MB16, group.sources[group.entry]->size()) } });
+
+          data.streams.push_back({ { e } });
+
+          ++e;
+          ++s;
+        }
+
+        break;
+      }
+    }
+  }
+
+  return Archive::ofData(data);
+}
+
 Archive ArchiveBuilder::buildSolidArchivePerFolderOfDirectoryTree(const path& root)
 {
   TRACE_AB("%p: builder::solidArchiveOfDirectoryTree(): %s", this, root.c_str());
@@ -185,11 +252,45 @@ void ArchiveBuilder::extractSpecificFilesFromArchive(const class path& path, con
   auto handle = ArchiveReadHandle(source, archive, entry);
   auto* entrySource = handle.source(true);
 
-  class path dest = destination.append(entry.name());
+  class path dest = destination + entry.name();
   file_data_sink sink(dest);
 
   passthrough_pipe pipe(entrySource, &sink, _pipeBufferPolicy);
   pipe.process(entry.binary().digest.size);
+}
+
+void ArchiveBuilder::extractSpecificFilesFromArchive(const class path& path, const class path& destination, size_t index, const std::function<void(float)>& monitor)
+{
+  const auto* fs = FileSystem::i();
+
+  if (!fs->existsAsFile(path))
+    throw exceptions::file_not_found(path);
+
+  if (!fs->existsAsFolder(destination))
+    throw exceptions::file_not_found(destination);
+
+  Archive archive;
+  file_data_source source(path);
+  archive.options().bufferSize = MB64;
+  archive.read(source);
+
+  const auto& entry = archive.entries()[index];
+  TRACE_AB("%p: builder::extract() extracting entry %s (%s)", this, entry.name().c_str(), entry.filters().mnemonic(false).c_str());
+  auto handle = ArchiveReadHandle(source, archive, entry);
+
+  class path dest = destination + entry.name();
+  file_data_sink sink(dest);
+
+  handle.prepareWorkflow(&sink);
+
+  {
+    const auto& tasks = handle.tasks();
+
+    for (const auto& task : tasks)
+    {
+      task->execute(_pipeBufferPolicy, monitor);
+    }
+  }
 }
 
 void ArchiveBuilder::extractWholeArchiveIntoFolder(const class path& path, const class path& destination)
@@ -222,3 +323,17 @@ void ArchiveBuilder::extractWholeArchiveIntoFolder(const class path& path, const
 }
 
 
+void process_task::execute(size_t bufferPolicy, const std::function<void(float)>& monitor)
+{
+  prepare();
+
+  auto bmonitor = [this, monitor](size_t bytes) {
+    if (bytes > 0)
+      monitor(bytes / float(size()));
+    };
+
+  observable_passthrough_pipe pipe(source(), sink(), bufferPolicy, monitor);
+
+  pipe.process(size());
+  finalize();
+}

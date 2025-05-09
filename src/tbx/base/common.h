@@ -11,7 +11,7 @@
 #include "tbx/extra/fmt/format.h"
 #include "exceptions.h"
 #include "path.h"
-
+#include "strings.h"
 
 
 using u8 = uint8_t;
@@ -231,21 +231,6 @@ using u16se = std::conditional<IS_LITTLE_ENDIAN_, u16le, u16be>::type;
 using u16de = std::conditional<IS_LITTLE_ENDIAN_, u16be, u16le>::type;
 using u32se = std::conditional<IS_LITTLE_ENDIAN_, u32le, u32be>::type;
 using u32de = std::conditional<IS_LITTLE_ENDIAN_, u32be, u32le>::type;
-
-namespace strings
-{
-  std::string humanReadableSize(size_t bytes, bool si, u32 p = 1);
-  bool isPrefixOf(const std::string& string, const std::string& prefix);
-  std::string tolower(const std::string &text);
-  inline bool caseInsensitiveEqual(const std::string& t1, const std::string& t2) { return tolower(t1) == tolower(t2); }
-  
-  std::vector<byte> toByteArray(const std::string& string);
-  std::string fromByteArray(const byte* data, size_t length);
-  inline std::string fromByteArray(const std::vector<byte>& data) { return fromByteArray(data.data(), data.size()); }
-  
-  std::string fileNameFromPath(const std::string& path);
-
-}
 
 template<typename T>
 struct optional

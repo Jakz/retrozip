@@ -63,7 +63,7 @@ namespace args
     std::vector<path> fileNames;
     
     Arguments(cli::Command command, const path& archiveName, const std::vector<path>& fileNames) : command(command), archiveName(archiveName), fileNames(fileNames) { }
-    Arguments(std::string& message) : error(message) { }
+    Arguments(const std::string& message) : error(message) { }
     Arguments(Error&& error) : error(error) { }
     
     operator bool() const { return !error.present; }

@@ -13,6 +13,9 @@ static constexpr const char SEPARATOR = '/';
 
 path::path(const char* data) : _data(data)
 {
+  /* replace windows separator to other separator */
+  std::replace(_data.begin(), _data.end(), '\\', SEPARATOR);
+  
   if (_data.length() > 1 && _data.back() == SEPARATOR)
     _data.pop_back();
 }
@@ -31,6 +34,11 @@ path::path(const std::filesystem::path& path) : path(path.string())
 bool path::isAbsolute() const
 {
   return !_data.empty() && _data[0] == SEPARATOR;
+}
+
+std::vector<path> path::contents() const
+{
+  return FileSystem::i()->contentsOfFolder(*this);
 }
 
 bool path::isFolder() const { return FileSystem::i()->existsAsFolder(*this); }
@@ -75,12 +83,17 @@ std::string path::filenameWithoutExtension() const
   return index != std::string::npos ? filename.substr(0, index) : filename;
 }
 
+path path::withExtension(const path_extension& extension) const
+{
+  return parent() + (filenameWithoutExtension() + "." + extension);
+}
+
 bool endsWith(const std::string& str, char c) { return str.back() == c; }
 bool startsWith(const std::string& str, char c) { return str.front() == c; }
 path path::append(const path& other) const
 {
   if (other.isAbsolute())
-    throw exceptions::path_exception(fmt::sprintf("path::append: children %s can't be absolute", other.c_str()));
+    throw exceptions::path_exception(fmt::format("path::append: children %s can't be absolute", other.c_str()));
   
   if (_data.empty())
     return other;

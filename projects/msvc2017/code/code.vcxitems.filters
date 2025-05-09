@@ -16,11 +16,11 @@
     <Filter Include="src\filters">
       <UniqueIdentifier>{fb15d1d5-8998-4871-ac52-c53490b9dd6c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\libs">
-      <UniqueIdentifier>{f5bca5a5-8f9d-49aa-aa1c-b2b113d481b8}</UniqueIdentifier>
-    </Filter>
     <Filter Include="src\test">
       <UniqueIdentifier>{df13c9c6-d733-4ebc-9937-bda49052c634}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\flow">
+      <UniqueIdentifier>{89779257-e270-49bc-bceb-39437e946818}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -53,6 +53,9 @@
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\test\test_support.cpp">
       <Filter>src\test</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\flow\flow.cpp">
+      <Filter>src\flow</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -100,6 +103,9 @@
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\cli\cxxopts.hpp">
       <Filter>src\cli</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\flow\flow.h">
+      <Filter>src\flow</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

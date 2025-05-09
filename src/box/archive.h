@@ -164,7 +164,7 @@ struct Options
 
 class Archive;
 
-class ArchiveReadHandle : public data_source
+class ArchiveReadHandle
 {
 private:
   R& r;
@@ -176,9 +176,16 @@ private:
   
 public:
   ArchiveReadHandle(R& r, const Archive& archive, const ArchiveEntry& entry) : r(r), _archive(archive), _entry(entry), _source(nullptr) { }
+  virtual ~ArchiveReadHandle();
+
   data_source* source(bool total);
+
+  const auto& filterCache() const { return _cache; }
+  const auto& tasks() const { return _env.tasks; }
+
+  void prepareWorkflow(data_sink* sink);
   
-  size_t read(byte* dest, size_t amount) { return _source->read(dest, amount); }
+  //size_t read(byte* dest, size_t amount) { return _source->read(dest, amount); }
 };
 
 struct ArchiveFactory
@@ -215,7 +222,7 @@ struct ArchiveSizeInfo
 
 class Archive
 {
-private:
+protected:
   Options _options;
   
   box::Header _header;

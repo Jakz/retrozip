@@ -8,10 +8,8 @@ struct data_source
 {
   virtual ~data_source() { }
   virtual size_t read(byte* dest, size_t amount) = 0;
-  template<typename T> void read(T& dest) { assert(read((byte*)&dest, sizeof(T)) == sizeof(T)); }
-  
-  virtual bool isSeekable() const { return false; }
-};
+  template<typename T> void read(T& dest) { auto v = read((byte*)&dest, sizeof(T)); assert(v == sizeof(T)); }
+  };
 
 struct data_sink
 {
@@ -27,7 +25,6 @@ struct seekable
   virtual void seek(roff_t position) = 0;
   virtual roff_t tell() const = 0;
   virtual size_t size() const = 0;
-  virtual bool isSeekable() const { return true; }
   
   void rewind() { seek(0); }
 };
@@ -36,6 +33,26 @@ struct seekable_data_source : public data_source, public seekable { };
 struct seekable_data_sink : public data_sink, public seekable { };
 struct seekable_data : public data_source, public data_sink, public seekable { };
 struct data : public data_source, public data_sink { };
+
+struct wrapped_seekable_data_source : public seekable_data_source
+{
+protected:
+  seekable_data_source* _source;
+
+public:
+  wrapped_seekable_data_source() : _source(nullptr) { }
+  wrapped_seekable_data_source(seekable_data_source* source) : _source(source) { }
+
+  seekable_data_source* source() const { return _source; }
+  void setSource(seekable_data_source* source) { _source = source; }
+
+  size_t read(byte* dest, size_t amount) override { return _source->read(dest, amount); }
+  using data_source::read;
+
+  void seek(roff_t position) override { _source->seek(position); }
+  roff_t tell() const override { return _source->tell(); }
+  size_t size() const override { return _source->size(); }
+};
 
 struct data_buffer
 {
@@ -63,7 +80,7 @@ private:
   size_t _current;
   size_t _maxAccepted;
 public:
-  null_data_sink() : _maxAccepted(END_OF_STREAM) { }
+  null_data_sink() : _current(0), _maxAccepted(END_OF_STREAM) { }
   null_data_sink(size_t maxAccepted) : _current(0), _maxAccepted(maxAccepted) { }
   
   size_t write(const byte* src, size_t amount) override

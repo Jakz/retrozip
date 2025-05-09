@@ -100,21 +100,21 @@ bool Archive::checkEntriesMappingToStreams() const
     
     /* check that stream index and index in stream are set */
     if (indexInStream == box::INVALID_INDEX)
-      throw uexc(fmt::sprintf("indexInStream not set for entry %lu", index));
+      throw uexc(fmt::format("indexInStream not set for entry {}", index));
     else if (stream == box::INVALID_INDEX)
-      throw uexc(fmt::sprintf("stream index not set for entry %lu", index));
+      throw uexc(fmt::format("stream index not set for entry {}", index));
     
     /* check that no other entry is mapped in the same position */
     auto existing = mapping.find({ stream, indexInStream });
     
     if (existing != mapping.end())
-      throw uexc(fmt::sprintf("entry %lu and %lu are both mapped to stream %lu:%lu ", index, existing->entryIndex, stream, indexInStream));
+      throw uexc(fmt::format("entry {} and {} are both mapped to stream {}:{} ", index, existing->entryIndex, stream, indexInStream));
     
     /* check that mapping is consistent */
     if (stream >= _streams.size())
-      throw uexc(fmt::sprintf("stream index out of bounds for entry %lu", index));
+      throw uexc(fmt::format("stream index out of bounds for entry {}", index));
     else if (indexInStream >= _streams[binary.stream].entries().size())
-      throw uexc(fmt::sprintf("index in stream out of bounds (%lu:%lu) for entry %lu", stream, indexInStream, index));
+      throw uexc(fmt::format("index in stream out of bounds ({}:{}) for entry {}", stream, indexInStream, index));
     
     mapping.insert({ stream, indexInStream, index });
 
@@ -128,9 +128,9 @@ bool Archive::checkEntriesMappingToStreams() const
     for (const auto entry : stream.entries())
     {
       if (entry == box::INVALID_INDEX)
-        throw uexc(fmt::sprintf("entry not set stream %lu", index));
+        throw uexc(fmt::format("entry not set stream {}", index));
       if (entry >= _entries.size())
-        throw uexc(fmt::sprintf("entry %lu out of bounds for stream %lu", entry, index));
+        throw uexc(fmt::format("entry {} out of bounds for stream {}", entry, index));
     }
     
     ++index;
@@ -142,10 +142,10 @@ bool Archive::checkEntriesMappingToStreams() const
     std::unordered_set<ArchiveEntry::ref> uniques(group.entries().begin(), group.entries().end());
     
     if (uniques.size() != group.size())
-      throw uexc(fmt::sprintf("group %s has non unique entries", group.name().c_str()));
+      throw uexc(fmt::format("group '{}' has non unique entries", group.name().c_str()));
     
     if (std::any_of(group.begin(), group.end(), [this](ArchiveEntry::ref index) { return index >= _entries.size() || index < 0; }))
-      throw uexc(fmt::sprintf("group '%s' has invalid indices", group.name()));
+      throw uexc(fmt::format("group '{}' has invalid indices", group.name()));
   }
 
   return true;
@@ -832,6 +832,20 @@ void Archive::writeStreamPayloads(W& w)
     w.seek(stream.binary().payload);
     w.write(payload.raw(), 1, payload.size());
   }
+}
+
+void ArchiveReadHandle::prepareWorkflow(data_sink* sink)
+{
+  /* get final source for entry extraction */
+  auto* source = this->source(true);
+
+  /* generate last task with specified sink */
+  _env.tasks.add(new simple_process_task("stream-process", source, sink, _entry.binary().digest.size));
+}
+
+ArchiveReadHandle::~ArchiveReadHandle()
+{
+  TRACE_A("% p: archive::destroy()");
 }
 
 data_source* ArchiveReadHandle::source(bool total)

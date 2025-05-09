@@ -22,7 +22,7 @@ using namespace cellar::vfs;
 #if FUSE_DEBUG_FLAG
 #define FUSE_DEBUG(__format__, ...) \
   do { \
-    std::cout << fmt::format(__format__, __VA_ARGS__) << std::endl << std::flush; \
+    vfs->trace(fmt::format(__format__, __VA_ARGS__)); \
   } while(false)
 #else
 #define FUSE_DEBUG(...) do { } while(false)
@@ -221,7 +221,7 @@ int FuseBackend::write(const char* path, const char* buf, size_t length, FUSE_OF
 VirtualFileSystem* FuseBackend::vfs = nullptr;
 
 
-FuseBackend::FuseBackend() : fs(nullptr)
+FuseBackend::FuseBackend() : fs(nullptr), started(false)
 {
   instance = this;
 
@@ -249,14 +249,25 @@ FuseBackend::FuseBackend() : fs(nullptr)
   ops.utimens = &FuseBackend::utimens;
 }
 
+static const char* mountPoint = R"(C:\Users\Jack\Documents\dev\retrozip\projects\msvc2017\cellar\mount)";
+
 void FuseBackend::mount(VirtualFileSystem* vfs)
 {
   FuseBackend::vfs = vfs;
+  started = true;
 
-  vfs->info("mouting fuse backend");
+  vfs->info("mounting fuse backend");
   
-  char* argv[] = { (char*)"fuse", (char*)"-f", /*(char*)"-d",*/ (char*)"-s", (char*)R"(C:\Users\Jack\Documents\dev\retrozip\projects\msvc2017\cellar\mount)"};
+  char* argv[] = { (char*)"fuse", (char*)"-f", /*(char*)"-d",*/ (char*)"-s", (char*)mountPoint};
   int i = fuse_main(sizeof(argv)/sizeof(argv[0]), (char**)argv, &ops, nullptr);
+
+  vfs->info("unmounting fuse backend");
+  started = false;
+}
+
+void FuseBackend::unmount()
+{
+  fuse_unmount(mountPoint, nullptr);
 }
 
 fs_ret FuseBackend::flush(const char* path, struct fuse_file_info* fi)
@@ -316,29 +327,34 @@ fs_ret FuseBackend::sgetxattr(const char* path, const char* name, char* value, s
 fs_ret FuseBackend::getattr(const fs_path& path, FUSE_STAT* stbuf)
 {  
   auto directory = vfs->findDirectory(path);
+  FUSE_DEBUG("getattr({}): searching", path);
 
   if (directory)
   {
-    //FUSE_DEBUG("getaddr({}, success)", path);
+    FUSE_DEBUG("getattr({}): found", path);
     *stbuf = *vfs->defaultDirectoryStat();
     return SUCCESS;
   }
 
+  FUSE_DEBUG("getattr({}): searching", path.parent());
   directory = vfs->findDirectory(path.parent());
 
   if (directory)
   {
     auto* file = directory->get(path.filename());
+    FUSE_DEBUG("getattr({}): searching file", path.filename());
+
 
     if (file)
     {
       //FUSE_DEBUG("getaddr({}, success)", path);
+      FUSE_DEBUG("getattr({}): found file", path.filename());
       *stbuf = file->stbuf;
       return SUCCESS;
     }
   }
 
-  FUSE_DEBUG("getaddr({}, failed: path not found)", path);
+  FUSE_DEBUG("getattr({}): failed", path);
   return -ENOENT;
 }
 

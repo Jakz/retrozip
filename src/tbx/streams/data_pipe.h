@@ -11,7 +11,7 @@ class data_pipe
 
 class passthrough_pipe : public data_pipe
 {
-private:
+protected:
   enum class state
   {
     READY = 0,
@@ -32,7 +32,7 @@ public:
   passthrough_pipe(data_source* source, data_sink* sink, size_t bufferSize) : _source(source), _sink(sink), _buffer(bufferSize), _state(state::OPENED)
   { }
   
-  void stepInput()
+  size_t stepInput()
   {
     TRACE_P("%p: pipe::stepInput()", this);
     /* available data to read is minimum between free room in buffer and remaining data */
@@ -52,7 +52,11 @@ public:
       }
       else if (effective) //TODO: not necessary, used to skip tracing, just forward 0 in case
         _buffer.advance(effective);
+
+      return effective;
     }
+
+    return 0;
   }
   
   void stepOutput()
@@ -91,12 +95,16 @@ public:
     }
   }
   
-  inline void step()
+  inline size_t step()
   {
+    size_t effective = 0;
+    
     if (_state == state::OPENED)
-      stepInput();
+      effective = stepInput();
     
     stepOutput();
+
+    return 0;
   }
   
   void process() override
@@ -141,3 +149,95 @@ public:
   }
 };
 
+class observable_passthrough_pipe : public passthrough_pipe
+{
+protected:
+  std::function<void(size_t)> _monitor;
+
+public:
+  observable_passthrough_pipe(data_source* source, data_sink* sink, size_t bufferSize, const std::function<void(size_t)>& monitor) :
+    passthrough_pipe(source, sink, bufferSize), _monitor(monitor)
+  { }
+
+  void process(size_t requiredSize)
+  {
+    size_t size = 0;
+
+    while (_state != state::CLOSED)
+    {
+      if (_state == state::OPENED)
+        stepInput();
+
+      size_t availableOutput = _buffer.used();
+     
+      stepOutput();
+
+      size += availableOutput - _buffer.used();
+      _monitor(size);
+
+      if (size >= requiredSize)
+        break;
+    }
+
+    TRACE_P("%p: pipe::process() pipe closed", this);
+  }
+};
+
+class process_task
+{
+protected:
+  std::string _ident;
+
+public:
+  process_task(const std::string& ident) : _ident(ident) { }
+
+  virtual void prepare() { }
+  virtual void finalize() { }
+
+  virtual size_t size() const { return 0; }
+  virtual data_source* source() const { return nullptr; }
+  virtual data_sink* sink() const { return nullptr; }
+
+  void execute(size_t bufferPolicy, const std::function<void(float)>& monitor);
+};
+
+class simple_process_task : public process_task
+{
+protected:
+  data_source* _source;
+  data_sink* _sink;
+  size_t _size;
+
+public:
+  simple_process_task(const std::string& ident, data_source* source, data_sink* sink, size_t size) :
+    process_task(ident), _source(source), _sink(sink), _size(size)
+  { }
+
+  data_source* source() const override { return _source; }
+  data_sink* sink() const override { return _sink; }
+  size_t size() const override { return _size; }
+};
+
+class process_task_list 
+{
+protected:
+  std::vector<std::unique_ptr<process_task>> _tasks;
+
+public:
+  process_task_list() { }
+  ~process_task_list() { }
+  process_task_list(const process_task_list&) = delete;
+  process_task_list(process_task_list&&) = default;
+  process_task_list& operator=(const process_task_list&) = delete;
+  process_task_list& operator=(process_task_list&&) = default;
+  
+
+  void add(process_task* task)
+  {
+    _tasks.push_back({});
+    _tasks.back().reset(task);
+  }
+
+  auto begin() const { return _tasks.begin(); }
+  auto end() const { return _tasks.end(); }
+};

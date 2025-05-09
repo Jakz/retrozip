@@ -8,6 +8,8 @@
 #include <unordered_map>
 #include <numeric>
 
+#include "tbx/streams/data_pipe.h"
+
 class Archive;
 class Options;
 class filter_repository;
@@ -19,8 +21,9 @@ struct archive_environment
     seekable_data_source* r;
     memory_buffer* w;
   };
-  
+
   const filter_repository* repository;
+  mutable process_task_list tasks;
   mutable std::unordered_map<data_source*, box::DigestInfo> digestCache;
   mutable std::unordered_map<box::DigestInfo, std::unique_ptr<data_source>, box::DigestInfo::hash> cache;
   
@@ -73,7 +76,7 @@ private:
 public:
   filter_cache() : _source(nullptr), _tail(nullptr) { }
   filter_cache(data_source* source) : _source(source), _tail(source) { }
-  
+
   void setSource(data_source* source) { _source = source; _tail = source; }
   
   void apply(const filter_builder& builder)
@@ -98,7 +101,7 @@ public:
     _filters.clear();
   }
   
-  data_source* get() { return _tail; }
+  data_source* get() const { return _tail; }
 };
 
 class filter_builder_queue
@@ -265,7 +268,7 @@ namespace builders
     }
     
     box::payload_uid identifier() const override { return identifier::XOR_FILTER; }
-    std::string mnemonic(bool shortMode) const override { return shortMode ? "xor" : fmt::sprintf("xor:key=%s", strings::fromByteArray(_key)); }
+    std::string mnemonic(bool shortMode) const override { return shortMode ? "xor" : fmt::format("xor:key={}", strings::fromByteArray(_key)); }
     
     size_t payloadLength() const override { return sizeof(box::slength_t) + _key.size(); }
     memory_buffer payload() const override
@@ -330,6 +333,7 @@ namespace builders
   {
   private:
     seekable_data_source* _source;
+    std::unique_ptr<wrapped_seekable_data_source> _sourceWrapper;
     
     box::DigestInfo _sourceDigest;
     
@@ -339,22 +343,24 @@ namespace builders
   public:
     xdelta3_builder(size_t bufferSize, seekable_data_source* source, size_t xdeltaWindowSize, size_t sourceBlockSize) : filter_builder(bufferSize), _source(source), _xdeltaWindowSize(xdeltaWindowSize), _sourceBlockSize(sourceBlockSize)
     { 
-      if (sourceBlockSize > MB1 * 4096)
-        printf("sticanzi");
+
     }
+
+    /* called when unserializing */
     xdelta3_builder(size_t bufferSize, const byte* payload) : filter_builder(bufferSize), _source(nullptr)
     {
       payload += sizeof(box::Payload);
       _sourceDigest = *(const box::DigestInfo*)payload;
       _xdeltaWindowSize = *(const box::length_t*)(payload + sizeof(box::DigestInfo));
       _sourceBlockSize = *(const box::length_t*)(payload + sizeof(box::DigestInfo) + sizeof(box::length_t));
+      _sourceWrapper.reset(new wrapped_seekable_data_source());
     }
     
     void setup(const archive_environment& env) override;
     void unsetup(const archive_environment& env) override;
     
     box::payload_uid identifier() const override { return identifier::XDELTA3_FILTER; }
-    std::string mnemonic(bool shortMode) const override { return shortMode ? "xdelta3" : fmt::sprintf("xdelta3:source_size=%lu,source_crc32=%08X", _sourceDigest.size, _sourceDigest.crc32); }
+    std::string mnemonic(bool shortMode) const override { return shortMode ? "xdelta3" : fmt::format("xdelta3:source_size={},source_crc32={:08X}", _sourceDigest.size, _sourceDigest.crc32); }
     
     size_t payloadLength() const override { return sizeof(box::DigestInfo) + sizeof(box::length_t)*2; }
     memory_buffer payload() const override
@@ -368,5 +374,7 @@ namespace builders
     
     data_source* apply(data_source* source) const override;
     data_source* unapply(data_source* source) const override;
+
+    void setSource(memory_buffer* source) { _sourceWrapper->setSource(source); }
   };
 }

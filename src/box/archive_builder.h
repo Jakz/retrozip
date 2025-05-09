@@ -85,6 +85,19 @@ struct RamUsagePolicy
   
 };
 
+enum class GroupMode { Solid, BaseWithDelta };
+
+struct FileGroup
+{
+  GroupMode mode;
+  path_vector files;
+  size_t entry;
+  mutable data_source_vector sources;
+
+  static FileGroup ofSolid(const std::vector<path>& files) { return FileGroup{ GroupMode::Solid, files, 0 }; }
+  static FileGroup ofBaseWithDelta(const std::vector<path>& files, size_t entry) { return FileGroup{ GroupMode::BaseWithDelta, files, entry }; }
+};
+
 class ArchiveBuilder
 {
 private:
@@ -121,7 +134,11 @@ public:
   Archive buildSingleStreamBaseWithDeltasArchive(const data_source_vector& sources, size_t baseIndex);
   Archive buildSingleStreamSolidArchive(const data_source_vector& sources);
   Archive buildSolidArchivePerFolderOfDirectoryTree(const path& root);
+  Archive build(const std::vector<FileGroup>& groups);
   
+  void extractSpecificFilesFromArchive(const Archive& archive, const class path& destination, size_t index);
   void extractSpecificFilesFromArchive(const class path& path, const class path& destination, size_t index);
+  void extractSpecificFilesFromArchive(const class path& path, const class path& destination, size_t index, const std::function<void(float)>& monitor);
+
   void extractWholeArchiveIntoFolder(const class path& path, const class path& destination);
 };

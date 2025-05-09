@@ -1,6 +1,7 @@
 #include "tbx/base/path.h"
 
 #include "data/entry.h"
+#include "data/meta.h"
 
 #include <vector>
 
@@ -25,7 +26,10 @@ namespace parsing
   {
     size_t count;
     size_t sizeInBytes;
+    meta::System* system;
     std::vector<ParseGame> games;
+
+    ParseResult() : count(0), sizeInBytes(0), system(nullptr) { }
   };
 
   class Parser
