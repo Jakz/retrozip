@@ -1,4 +1,4 @@
-#include <cstdio>
+﻿#include <cstdio>
 
 #include "nana/gui.hpp"
 #include "nana/system/dataexch.hpp"
@@ -228,50 +228,126 @@ void GUI::loadFile(const path& filename)
 #include "flow/flow.h"
 #include "BearLibTerminal.h"
 
-int main(int argc, char* argv[])
+class Terminal
 {
-  terminal_open();
-  terminal_set("window: title='RetroZip', resizeable=true");
+protected:
+  std::string _prompt;
+    
+  bool _shouldQuit;
+
+  int _width, _height;
+
+  static constexpr int _blinkInterval = 500;
+  bool _caretVisible;
+  std::chrono::steady_clock::time_point _lastBlink;
+
+  void onResize();
+
+public:
+
+  Terminal() : _caretVisible(true), _shouldQuit(false)
+  {
+
+  }
+
+  void init();
+  void deinit();
+
+  void loop();
+  void render();
+
+};
+
+void Terminal::onResize()
+{
+  _width = terminal_state(TK_WIDTH);
+  _height = terminal_state(TK_HEIGHT);
+}
+
+void Terminal::loop()
+{
+  /* init caret management */
+  _caretVisible = true;
+  _lastBlink = std::chrono::steady_clock::now();
+
+  while (!_shouldQuit)
+  {
+    auto now = std::chrono::steady_clock::now();
+    auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(now - _lastBlink);
+    if (delta.count() > _blinkInterval)
+    {
+      _caretVisible = !_caretVisible;
+      _lastBlink = std::chrono::steady_clock::now();
+    }
+
+    while (terminal_has_input() && !_shouldQuit)
+    {
+      int key = terminal_read();
+
+      if (key == TK_CLOSE || key == TK_ESCAPE)
+        _shouldQuit = true;
+      else if (key == TK_RESIZED)
+        onResize();
+
+      if (key == TK_ENTER)
+      {
+        /* execute command */
+        _prompt.clear();
+      }
+      else if (key == TK_BACKSPACE)
+      {
+        if (!_prompt.empty())
+          _prompt.pop_back();
+      }
+      else if (key >= TK_A && key <= TK_Z)
+      {
+        _prompt += static_cast<char>((key - TK_A) + 'a');
+      }
+    }
+
+    render();
+    terminal_delay(16); // ~60 FPS
+  }
+
+  deinit();
+}
+
+void Terminal::render()
+{
+  terminal_clear();
+  terminal_printf(0, _height - 1, "> %s", _prompt.c_str());
+  if (_caretVisible) {
+    terminal_put(2 + static_cast<int>(_prompt.size()), _height - 1, '_');
+  }
+  terminal_refresh();
+}
+
+void Terminal::init()
+{  
+  if (!terminal_open())
+    assert(false);
+
+  terminal_set("window: title='RetroZip', resizeable=true, size=80x25");
   terminal_set("font: consola.ttf, size=12");
+
+  // terminal_set("input: cursor-symbol=0x1f, cursor-blink-rate=500");
 
   terminal_set("0xE000: flags.png, size=16x16, align=center, spacing=2x1");
 
-  terminal_put(0, 0, 0xE000);
-  terminal_printf(3, 0, "Mario Madness (Italy).gba");
-
-  terminal_printf(2, 1, "Hello, world!");
-
   terminal_refresh();
+  onResize();
+}
 
-  int status;
-  while ((status = terminal_read()))
-  {
-    if (status == TK_CLOSE)
-      break;
-    else if (status == TK_RESIZED)
-    {
-      terminal_clear();
-      terminal_put(0, 0, 0xE000);
-      terminal_printf(3, 0, "Mario Madness (Italy).gba");
-
-      terminal_printf(2, 1, "Hello, world!");
-      terminal_refresh();
-    }
-  }
-
+void Terminal::deinit()
+{
   terminal_close();
+}
 
-  //terminal_printf("Hello, world!\n");
-  //terminal_refresh();
-
-  //terminal_read();
-
-  //terminal_close();
-
-  //return 0;
-
-  //std::cout << "Hello World!" << std::endl;
-
+int main(int argc, char* argv[])
+{
+  Terminal terminal;
+  terminal.init();
+  terminal.loop();
   return 0;
 }
 
