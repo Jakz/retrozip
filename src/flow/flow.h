@@ -192,29 +192,32 @@ namespace flow
   protected:
     std::any _value;
     exit_code_t _exitCode;
+    bool _unrecognized;
 
   public:
-    CommandResult(int exitCode) : _exitCode(exitCode) { }
-    template<typename T> CommandResult(exit_code_t exitCode, T&& value) : _value(std::forward<T>(value)), _exitCode(exitCode) { }
+    CommandResult() : _exitCode(0), _unrecognized(true) { }
+    CommandResult(int exitCode) : _exitCode(exitCode), _unrecognized(false) { }
+    template<typename T> CommandResult(exit_code_t exitCode, T&& value) : _value(std::forward<T>(value)), _exitCode(exitCode), _unrecognized(false) { }
 
+    bool isRecognized() const { return !_unrecognized; }
     bool hasValue() const { return _value.has_value(); }
     exit_code_t exitCode() const { return _exitCode; }
+
+    operator bool() const { return isRecognized(); }
   };
+
+  struct Engine;
 
   struct Command
   {
-    exit_code_t _exitCode;
-
   public:
-    Command() : _exitCode(0) { }
+    Command() { }
     virtual ~Command() { }
 
-    virtual int exitCode() const { return _exitCode; }
-
     /* run can be blocking so this must be taken account into */
-    virtual void run(const Parameters& args, CommandReporter* reporter = nullptr) = 0;
+    virtual CommandResult run(const Parameters& args, Engine* engine) = 0;
     /* async execution, this must remain valid, args is copied */
-    std::future<CommandResult> runAsync(const Parameters& args, CommandReporter* reporter = nullptr);
+    std::future<CommandResult> runAsync(const Parameters& args, Engine* engine);
   };
 
   struct Environment
@@ -233,23 +236,26 @@ namespace flow
   public:
     void init();
     void registerCommand(Command* command) { _commands.emplace_back(std::unique_ptr<Command>(command)); }
+
+    const auto begin() const { return _commands.begin(); }
+    const auto end() const { return _commands.end(); }
   };
 
   namespace commands
   {
     struct IsoToCso : public Command
     {
-      void run(const Parameters& args, CommandReporter* reporter = nullptr) override;
+      CommandResult run(const Parameters& args, Engine* engine) override;
     };
 
     struct InputToZip : public Command
     {
-      void run(const Parameters& args, CommandReporter* reporter = nullptr) override;
+      CommandResult run(const Parameters& args, Engine* engine) override;
     };
 
     struct Echo : public Command
     {
-      void run(const Parameters& args, CommandReporter* reporter = nullptr) override;
+      CommandResult run(const Parameters& args, Engine* engine) override;
     };
   }
 
@@ -268,6 +274,8 @@ namespace flow
     {
       _registry.init();
     }
+
+    CommandReporter* reporter() { return _reporter; }
 
     void setReporter(CommandReporter* reporter) { _reporter = reporter; }
     void tryToExecute(const std::string& command);

@@ -16,6 +16,7 @@ class Terminal : public flow::CommandReporter
 {
 protected:
   std::string _prompt;
+  int32_t _caretPosition;
   std::vector<std::string> _history;
   std::vector<std::string> _buffer;
     
@@ -31,9 +32,11 @@ protected:
 
 public:
 
-  Terminal() : _caretVisible(true), _shouldQuit(false)
+  Terminal() : _caretVisible(true), _shouldQuit(false), _caretPosition(0)
   {
-
+    _width = 80;
+    _height = 25;
+    _prompt = "";
   }
 
   void out(const std::string& message) override { _buffer.push_back("[color=gray]" + message); }
@@ -85,6 +88,37 @@ void Terminal::loop()
         f.tryToExecute(_prompt);
         _prompt.clear();
       }
+      else if (key == TK_LEFT)
+      {
+        if (_caretPosition > -(int)_prompt.size())
+          --_caretPosition;
+      }
+      else if (key == TK_RIGHT)
+      {
+        if (_caretPosition < 0)
+          ++_caretPosition;
+      }
+      else if (key == TK_DELETE)
+      {
+        if (_caretPosition < _prompt.size())
+          _prompt.erase(_prompt.begin() + _caretPosition);
+      }
+      else if (key == TK_BACKSPACE)
+      {
+        if (_caretPosition > 0)
+        {
+          --_caretPosition;
+          _prompt.erase(_prompt.begin() + _caretPosition);
+        }
+      }
+      else if (key == TK_HOME)
+      {
+        _caretPosition = 0;
+      }
+      else if (key == TK_END)
+      {
+        _caretPosition = static_cast<int>(_prompt.size());
+      }
       else if (key == TK_BACKSPACE)
       {
         if (!_prompt.empty())
@@ -92,7 +126,7 @@ void Terminal::loop()
       }
       else if (key >= TK_A && key <= TK_Z)
       {
-        _prompt += static_cast<char>((key - TK_A) + 'a');
+        _prompt.insert(_prompt.end() + _caretPosition, static_cast<char>((key - TK_A) + 'a'));
       }
       else if (key == TK_SPACE)
         _prompt += ' ';
@@ -114,10 +148,11 @@ void Terminal::render()
     terminal_print(0, i, _buffer[i].c_str());
   }
 
-  terminal_printf(0, _height - 1, ">%s", _prompt.c_str());
+  terminal_printf(0, _height - 2, ">%s", _prompt.c_str());
+  terminal_layer(1);
   if (_caretVisible)
-    terminal_put(1 + static_cast<int>(_prompt.size()), _height - 1, '_');
-
+    terminal_put(1 + static_cast<int>(_prompt.size()) + _caretPosition, _height - 2, '_');
+  terminal_layer(0);
 
   terminal_refresh();
 }
@@ -217,7 +252,7 @@ int maindisabled(int argc, char* argv[])
     std::cout.flush();
   });
 
-  auto result = command.runAsync(params, &reporter);
+  auto result = command.runAsync(params, &f);
   result.wait_for(std::chrono::seconds(30));
 
   if (false)

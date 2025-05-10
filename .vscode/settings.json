@@ -1,3 +1,48 @@
 {
-  "cmake.sourceDirectory": "/Users/jack/Documents/Dev/retrozip"
+  "editor.fontFamily": "'Cascadia Mono', Consolas, 'Courier New', monospace",
+  "editor.fontWeight": "400",
+  "editor.fontSize": 13,
+  "editor.tokenColorCustomizations": {
+    "strings": "#FF2900",
+    "types": "#FFE400",
+    "keywords": "#5ECBF2",
+    "functions": "#6CDBB7",
+    "comments": "#FCA72C",
+    "numbers": "#7098EC",
+    "variables": "#DADADA",
+
+    "textMateRules": [
+      { "scope": [ "keyword.operator" ], "settings": { "foreground": "#B4B4B4" } },
+      { "scope": [ "punctuation.section" ], "settings": { "foreground": "#B4B4B4" } },
+      { "scope": [ "meta.preprocessor" ], "settings": { "foreground": "#9B9B9B" } }
+    ]
+  },
+
+  "editor.semanticTokenColorCustomizations": {
+    "enabled": true,
+    "rules": {
+      "enumMember": "#00F94E",
+      "parameter": "#E2E2E2",
+      "templateType": "#4EC9B0",
+      "namespace": "#FFAC00",
+      "*.static": "#00F94E",
+      "method.static": "#6CDBB7",
+      "operator": "#B4B4B4",
+      "variable.local": "#AABEFF",
+      "operatorOverload": "#6CDBB7",
+      "memberOperatorOverload": "#6CDBB7",
+      "newOperator": "#569CD6",
+      "keyword": "#5ECBF2"
+    }
+  },
+
+  "workbench.colorCustomizations": {
+    "editor.background": "#071733"
+  },
+  "cmake.sourceDirectory": "/Users/jack/Documents/Dev/retrozip",
+  "files.associations": {
+    "*.ls": "angelscript",
+    "future": "cpp",
+    "vector": "cpp"
+  }
 }

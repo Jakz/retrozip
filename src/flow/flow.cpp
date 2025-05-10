@@ -66,15 +66,15 @@ Output* Parameters::output() const
 #include "tbx/extra/subprocess.hpp"
 namespace sp = subprocess;
 
-std::future<CommandResult> Command::runAsync(const Parameters& args, CommandReporter* reporter)
+std::future<CommandResult> Command::runAsync(const Parameters& args, Engine* engine)
 {
-  return std::async(std::launch::async, [this, args, reporter] {
-    this->run(args, reporter);
-    return CommandResult(this->exitCode(), std::any());
+  return std::async(std::launch::async, [this, args, engine]() {
+    auto result = this->run(args, engine);
+    return result;
   });
 }
 
-void commands::IsoToCso::run(const Parameters& args, CommandReporter* reporter)
+CommandResult commands::IsoToCso::run(const Parameters& args, Engine* engine)
 {
   args.input()->prepare(InputMode::RealFile);
   args.output()->prepare(OutputMode::RealFile);
@@ -88,14 +88,15 @@ void commands::IsoToCso::run(const Parameters& args, CommandReporter* reporter)
     subprocess::error{ sp::PIPE });
 
   proc.communicate();
-  _exitCode = proc.retcode();
+
+  return CommandResult(proc.retcode());
 }
 
 
 #include "tbx/formats/minizip/zip.h"
 #include <numeric>
 
-void commands::InputToZip::run(const Parameters& args, CommandReporter* reporter)
+CommandResult commands::InputToZip::run(const Parameters& args, Engine* engine)
 {
   size_t bufferSize = MB1;
   std::unique_ptr<uint8_t[]> buffer(new uint8_t[bufferSize]);
@@ -126,7 +127,7 @@ void commands::InputToZip::run(const Parameters& args, CommandReporter* reporter
       while ((amount = input->read(buffer.get(), bufferSize)) != END_OF_STREAM)
       {
         processed += amount;
-        reporter->progress(((processed / float(input->size())) + i) * (1.0f / args.inputs().size()));
+        engine->reporter()->progress(((processed / float(input->size())) + i) * (1.0f / args.inputs().size()));
 
         if (amount > 0)
           zipWriteInFileInZip(zip, buffer.get(), amount);
@@ -142,25 +143,42 @@ void commands::InputToZip::run(const Parameters& args, CommandReporter* reporter
     zipClose(zip, nullptr);
   }
 
+  return CommandResult(0);
 }
 
 
-void commands::Echo::run(const Parameters& args, CommandReporter* reporter)
+CommandResult commands::Echo::run(const Parameters& args, Engine* engine)
 {
-  reporter->out(args.original().substr(5));
+  if (args.token(0) == "echo")
+  {
+    engine->reporter()->out(args.original().substr(5));
+    return CommandResult(0);
+  }
+  else
+    return CommandResult();
 }
 
 
 void Registry::init()
 {
-  registerCommand(new commands::InputToZip());
-  registerCommand(new commands::IsoToCso());
+  //registerCommand(new commands::InputToZip());
+  //registerCommand(new commands::IsoToCso());
+  registerCommand(new commands::Echo());
 }
 
 void Engine::tryToExecute(const std::string& command)
 {
   Parameters params(command);
 
-  if (params.token(0) == "echo")
-    commands::Echo().run(params, _reporter);
+  for (auto& cmd : _registry)
+  {
+    auto result = cmd->run(params, this);
+
+    if (result.isRecognized())
+    {
+      return;
+    }
+  }
+
+  _reporter->err(fmt::format("Command not recognized: {}", command));
 }
