@@ -20,6 +20,8 @@
 
 #include "tbx/extra/subprocess.hpp"
 
+#if FALSE
+
 struct GUI
 {
   path filepath;
@@ -515,3 +517,5 @@ int maindisabled(int argc, char* argv[])
 
   return 0;
 }
+
+#endif

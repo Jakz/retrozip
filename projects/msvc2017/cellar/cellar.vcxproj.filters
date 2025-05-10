@@ -39,9 +39,6 @@
     <ClCompile Include="..\..\..\src\libs\pugixml\pugixml.cpp">
       <Filter>src\libs\pugixml</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\cellar\fs\cellar_fs.cpp">
-      <Filter>src\cellar\fs</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\src\cellar\storage.cpp">
       <Filter>src\cellar</Filter>
     </ClCompile>
@@ -66,6 +63,9 @@
     <ClCompile Include="..\..\..\src\data\meta.cpp">
       <Filter>src\data</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\cellar\fs\cellar_fs.cpp">
+      <Filter>src\cellar\fs</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\parsers\parser.h">
@@ -79,9 +79,6 @@
     </ClInclude>
     <ClInclude Include="..\..\..\src\libs\pugixml\pugiconfig.hpp">
       <Filter>src\libs\pugixml</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\cellar\fs\cellar_fs.h">
-      <Filter>src\cellar\fs</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\data\hash_map.h">
       <Filter>src\data</Filter>
@@ -115,6 +112,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\src\cellar\common.h">
       <Filter>src\cellar</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\cellar\fs\cellar_fs.h">
+      <Filter>src\cellar\fs</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
