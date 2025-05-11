@@ -161,6 +161,8 @@ namespace flow
 
     const std::string& token(size_t i) const { return _tokens[i]; }
     const std::string& original() const { return _original; }
+    size_t tokenCount() const { return _tokens.size(); }
+
     Input* input() const;
     Output* output() const;
 
@@ -266,19 +268,30 @@ namespace flow
     Environment _env;
     CommandReporter* _reporter;
 
+    bool _shouldQuit;
+
   public:
-    Engine() { _registry.init(); }
+    Engine() : _shouldQuit(false) { init(); }
     ~Engine() { }
 
-    void init()
-    {
-      _registry.init();
-    }
+    void init();
 
     CommandReporter* reporter() { return _reporter; }
 
     void setReporter(CommandReporter* reporter) { _reporter = reporter; }
     void tryToExecute(const std::string& command);
+
+    template<typename T> T* get(const ident_t& name)
+    { 
+      if (_env._variables[name].type() == typeid(T))
+        return std::any_cast<T>(&_env._variables[name]);
+      else
+        return nullptr;
+    }
+    template<typename T> void set(const ident_t& name, const T& value) { _env.set(name, value); }
+
+    void quit() { _shouldQuit = true; }
+    bool shouldQuit() const { return _shouldQuit; }
   };
 
 }

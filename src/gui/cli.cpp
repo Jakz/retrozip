@@ -39,8 +39,8 @@ public:
     _prompt = "";
   }
 
-  void out(const std::string& message) override { _buffer.push_back("[color=gray]" + message); }
-  void err(const std::string& message) override { _buffer.push_back("[color=red]" + message); }
+  void out(const std::string& message) override { _buffer.push_back(message); }
+  void err(const std::string& message) override { _buffer.push_back("[color=red]" + message + "[color=white]"); }
   void progress(float percent) override { }
 
   void init();
@@ -63,8 +63,23 @@ void Terminal::loop()
   _caretVisible = true;
   _lastBlink = std::chrono::steady_clock::now();
 
+  static std::array<char, 256> mapping = { { '\0' }};
+  for (int i = TK_A; i <= TK_Z; ++i)
+    mapping[i] = i - TK_A + 'a';
+  for (int i = TK_1; i <= TK_9; ++i)
+    mapping[i] = i - TK_1 + '1';
+  mapping[TK_0] = '0';
+  mapping[TK_MINUS] = '-';
+  mapping[TK_COMMA] = ',';
+  mapping[TK_PERIOD] = '.';
+  mapping[TK_SLASH] = '/';
+  mapping[TK_SPACE] = ' ';
+
   while (!_shouldQuit)
   {
+    if (f.shouldQuit())
+      _shouldQuit = true;
+    
     auto now = std::chrono::steady_clock::now();
     auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(now - _lastBlink);
     if (delta.count() > _blinkInterval)
@@ -100,16 +115,16 @@ void Terminal::loop()
       }
       else if (key == TK_DELETE)
       {
-        if (_caretPosition < _prompt.size())
-          _prompt.erase(_prompt.begin() + _caretPosition);
+        if (_caretPosition < 0)
+        {
+          _prompt.erase(_prompt.end() + _caretPosition);
+          ++_caretPosition;
+        }
       }
       else if (key == TK_BACKSPACE)
       {
-        if (_caretPosition > 0)
-        {
-          --_caretPosition;
-          _prompt.erase(_prompt.begin() + _caretPosition);
-        }
+        if (_caretPosition > -(int)_prompt.size())
+          _prompt.erase(_prompt.end() + _caretPosition - 1);
       }
       else if (key == TK_HOME)
       {
@@ -124,12 +139,8 @@ void Terminal::loop()
         if (!_prompt.empty())
           _prompt.pop_back();
       }
-      else if (key >= TK_A && key <= TK_Z)
-      {
-        _prompt.insert(_prompt.end() + _caretPosition, static_cast<char>((key - TK_A) + 'a'));
-      }
-      else if (key == TK_SPACE)
-        _prompt += ' ';
+      else if (mapping[key] != '\0')
+        _prompt.insert(_prompt.end() + _caretPosition, mapping[key]);
     }
 
     render();

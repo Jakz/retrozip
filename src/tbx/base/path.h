@@ -33,9 +33,12 @@ public:
   path(const std::filesystem::path& path);
 
   std::vector<path> contents() const;
+  static path current();
 
   bool isFolder() const;
   bool exists() const;
+  bool existsAsFile() const;
+  bool empty() const { return _data.empty(); }
   size_t length() const;
   
   path absolute() const;
@@ -45,7 +48,8 @@ public:
   
   path append(const path& other) const;
   path operator+(const path& other) const { return this->append(other); }
-  
+  path operator/(const path& other) const { return this->append(other); }
+
   inline path& operator+=(const path& other) { *this = append(other); return *this; }
   
   inline bool operator!=(const path& other) const { return !(_data == other._data); }
@@ -53,6 +57,7 @@ public:
   
   bool isAbsolute() const;
   bool hasExtension(const std::string& ext) const;
+  bool hasParent() const;
   
   path removeLast() const;
   path parent() const { return removeLast(); }

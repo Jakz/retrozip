@@ -20,10 +20,9 @@ path::path(const char* data) : _data(data)
     _data.pop_back();
 }
 
-path::path(const std::string& data) : _data(data)
+path::path(const std::string& data) : path(data.c_str())
 {
-  if (!_data.empty() && _data.back() == SEPARATOR && _data.length() > 1)
-    _data.pop_back();
+
 }
 
 path::path(const std::filesystem::path& fspath) : path(fspath.string())
@@ -38,10 +37,20 @@ bool path::isAbsolute() const
 
 std::vector<path> path::contents() const
 {
-  return FileSystem::i()->contentsOfFolder(*this);
+  return FileSystem::i()->contentsOfFolder(*this, false);
+}
+
+path path::current()
+{
+  return path(fs::absolute(fs::current_path()));
 }
 
 bool path::isFolder() const { return FileSystem::i()->existsAsFolder(*this); }
+
+bool path::existsAsFile() const
+{
+  return FileSystem::i()->existsAsFile(*this);
+}
 
 bool path::exists() const
 {
@@ -109,6 +118,11 @@ bool path::hasExtension(const std::string& ext) const
 {
   size_t index = _data.find_last_of('.');
   return index != std::string::npos && _data.substr(index+1) == ext;
+}
+
+bool path::hasParent() const
+{
+  return !removeLast().empty();
 }
 
 path path::removeLast() const

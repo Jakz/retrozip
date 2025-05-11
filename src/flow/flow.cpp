@@ -159,11 +159,144 @@ CommandResult commands::Echo::run(const Parameters& args, Engine* engine)
 }
 
 
+namespace flow::commands
+{
+  struct Quit : public Command
+  {
+    CommandResult run(const Parameters& args, Engine* engine) override
+    {
+      if (args.token(0) == "exit")
+      {
+        engine->reporter()->out("Exiting...");
+        engine->quit();
+        return CommandResult(0);
+      }
+      else
+        return CommandResult();
+    }
+  };
+
+  struct Cd : public Command
+  {
+    CommandResult run(const Parameters& args, Engine* engine) override
+    {
+      if (args.token(0) == "cd" && args.tokenCount() == 2)
+      {
+        if (args.token(1) == "..")
+        {
+          auto& cwd = *engine->get<fs_path>("cwd");
+          cwd = cwd.parent();
+          engine->reporter()->out(fmt::format("Changed directory to: {}", cwd.str()));
+        }
+        else
+        {
+          fs_path path = args.token(1);
+
+          if (path.isAbsolute())
+            engine->set("cwd", path);
+          else
+          {
+            fs_path cwd = *engine->get<fs_path>("cwd");
+            fs_path potential = cwd + path;
+            if (potential.exists())
+              engine->set("cwd", potential);
+            else
+            {
+              engine->reporter()->err(fmt::format("Directory does not exist: {}", potential.str()));
+              return CommandResult(1);
+            }
+          }
+        }
+
+        return CommandResult(0);
+      }
+      else
+        return CommandResult();
+    }
+  };
+
+  struct Ls : public Command
+  {
+    CommandResult run(const Parameters& args, Engine* engine) override
+    {
+      if (args.token(0) == "ls")
+      {
+        fs_path cwd = *engine->get<fs_path>("cwd");
+        auto contents = cwd.contents();
+
+        /* sort folders first */
+        std::sort(contents.begin(), contents.end(), [](const fs_path& a, const fs_path& b) {
+          return a.isFolder() && !b.isFolder();
+          });
+
+        for (const auto& entry : contents)
+        {
+          if (entry.isFolder())
+            engine->reporter()->out(fmt::format("[color=#ffd86b]{}", entry.filename()));
+          else
+            engine->reporter()->out(fmt::format("[color=white]{}", entry.filename()));
+        }
+
+        return CommandResult(0);
+      }
+      else
+        return CommandResult();
+    }
+  };
+}
+
+#include "data/hash_map.h"
+namespace flow::commands
+{
+  struct Md5 : public Command
+  {
+    CommandResult run(const Parameters& args, Engine* engine) override
+    {
+      if (args.token(0) == "md5" && args.tokenCount() == 2)
+      {
+        fs_path cwd = *engine->get<fs_path>("cwd");
+        fs_path file = args.token(1);
+        
+        fs_path target = cwd / file;
+
+        if (target.existsAsFile())
+        {
+          Hasher hasher;
+          auto result = hasher.compute(target);
+          engine->reporter()->out(fmt::format("{}", result.md5.literal()));
+          return CommandResult(0);
+        }
+        else
+        {
+          engine->reporter()->err(fmt::format("File does not exist: {}", target.str()));
+          return CommandResult(-1);
+        }
+      }
+      else
+        return CommandResult();
+    }
+  };
+}
+
 void Registry::init()
 {
   //registerCommand(new commands::InputToZip());
   //registerCommand(new commands::IsoToCso());
   registerCommand(new commands::Echo());
+  registerCommand(new commands::Quit());
+  registerCommand(new commands::Cd());
+  registerCommand(new commands::Ls());
+  registerCommand(new commands::Md5());
+
+}
+
+#include "cellar/database.h"
+
+void Engine::init()
+{
+  _registry.init();
+  _env.set("database", cellar::Database(nullptr, "database"));
+  _env.set("cwd", fs_path::current());
 }
 
 void Engine::tryToExecute(const std::string& command)
