@@ -12,6 +12,19 @@
 
 flow::Engine f;
 
+struct point
+{
+  int32_t x, y;
+  point(int32_t x, int32_t y) : x(x), y(y) { };
+  point() : x(0), y(0) {};
+};
+
+struct selection
+{
+  point start;
+  int32_t length;
+};
+
 class Terminal : public flow::CommandReporter
 {
 protected:
@@ -19,7 +32,9 @@ protected:
   int32_t _caretPosition;
   std::vector<std::string> _history;
   std::vector<std::string> _buffer;
-    
+  std::optional<selection> _selection;
+
+
   bool _shouldQuit;
 
   int _width, _height;
@@ -30,6 +45,8 @@ protected:
 
   void onResize();
 
+  point hoverCell() const;
+
 public:
 
   Terminal() : _caretVisible(true), _shouldQuit(false), _caretPosition(0)
@@ -37,6 +54,13 @@ public:
     _width = 80;
     _height = 25;
     _prompt = "";
+  }
+
+  const std::string* visibleRow(size_t row) const
+  {
+    if (row >= _buffer.size())
+      return nullptr;
+    return &_buffer[row];
   }
 
   void out(const std::string& message) override { _buffer.push_back(message); }
@@ -50,6 +74,13 @@ public:
   void render();
 
 };
+
+point Terminal::hoverCell() const
+{
+  int x = terminal_state(TK_MOUSE_X);
+  int y = terminal_state(TK_MOUSE_Y);
+  return point(x, y);
+}
 
 void Terminal::onResize()
 {
@@ -92,8 +123,10 @@ void Terminal::loop()
     {
       int key = terminal_read();
 
+      /* exit */
       if (key == TK_CLOSE || key == TK_ESCAPE)
         _shouldQuit = true;
+      /* manage screen resize */
       else if (key == TK_RESIZED)
         onResize();
 
@@ -113,6 +146,37 @@ void Terminal::loop()
         if (_caretPosition < 0)
           ++_caretPosition;
       }
+
+      /* mouse management */
+      else if (key == TK_MOUSE_LEFT)
+      {
+        auto c = hoverCell();
+        auto row = visibleRow(c.y);
+        if (row)
+        {
+          /* select word around the cell selected */
+          const std::string string = *row;
+
+          /* strip all [color=XXX] tags */
+
+
+          if (c.x < string.size() && string[c.x] != ' ')
+          {
+            auto start = c.x;
+            while (start > 0 && string[start-1] != ' ')
+              --start;
+            auto end = c.x;
+            while (end < string.size() - 1 && string[end] != ' ')
+              ++end;
+
+            _selection = { point(start, c.y), end - start};
+          }
+
+          printf("row '%s'\n", row->c_str());
+        }
+      }
+
+      /* manage prompt delete/backspace */
       else if (key == TK_DELETE)
       {
         if (_caretPosition < 0)
@@ -128,11 +192,11 @@ void Terminal::loop()
       }
       else if (key == TK_HOME)
       {
-        _caretPosition = 0;
+        _caretPosition = -static_cast<int>(_prompt.size());
       }
       else if (key == TK_END)
       {
-        _caretPosition = static_cast<int>(_prompt.size());
+        _caretPosition = 0;
       }
       else if (key == TK_BACKSPACE)
       {
@@ -150,9 +214,15 @@ void Terminal::loop()
   deinit();
 }
 
+static constexpr int BACKGROUND_LAYER = 0;
+static constexpr int TEXT_LAYER = 1;
+static constexpr int CARET_LAYER = 2;
+
 void Terminal::render()
 {
   terminal_clear();
+
+  terminal_layer(TEXT_LAYER);
 
   for (size_t i = 0; i < _buffer.size(); ++i)
   {
@@ -160,10 +230,21 @@ void Terminal::render()
   }
 
   terminal_printf(0, _height - 2, ">%s", _prompt.c_str());
-  terminal_layer(1);
+  terminal_layer(CARET_LAYER);
   if (_caretVisible)
     terminal_put(1 + static_cast<int>(_prompt.size()) + _caretPosition, _height - 2, '_');
-  terminal_layer(0);
+  terminal_layer(TEXT_LAYER);
+
+  if (_selection)
+  {
+    auto& sel = *_selection;
+    terminal_layer(BACKGROUND_LAYER);
+    auto color = terminal_state(TK_BKCOLOR);
+    terminal_bkcolor("blue");
+    terminal_print(sel.start.x, sel.start.y, std::string(sel.length, ' ').c_str());
+    terminal_bkcolor(color);
+  }
+
 
   terminal_refresh();
 }
@@ -173,7 +254,10 @@ void Terminal::init()
   if (!terminal_open())
     assert(false);
 
-  terminal_set("window: title='RetroZip', resizeable=true, size=80x25, cellsize=8x16");
+  terminal_set(
+    "window: title='RetroZip', resizeable=true, size=80x25, cellsize=8x16;"
+    "input: filter=[keyboard, mouse];"
+  );
   
   terminal_set("font: consola.ttf, size=12");
 
