@@ -25,6 +25,51 @@ struct selection
   int32_t length;
 };
 
+struct Clipboard
+{
+  Clipboard& operator<<(const std::string& text);
+  Clipboard& operator>>(std::string& text);
+};
+
+Clipboard& Clipboard::operator<<(const std::string& text)
+{
+#ifdef _WIN32
+  /* copy text to clipboard by using Windows API */
+  if (OpenClipboard(NULL))
+  {
+    EmptyClipboard();
+    HGLOBAL hGlob = GlobalAlloc(GMEM_MOVEABLE, text.size() + 1);
+    memcpy(GlobalLock(hGlob), text.c_str(), text.size() + 1);
+    GlobalUnlock(hGlob);
+    SetClipboardData(CF_TEXT, hGlob);
+    CloseClipboard();
+  }
+#endif
+  return *this;
+}
+
+Clipboard& Clipboard::operator>>(std::string& text)
+{
+#ifdef _WIN32
+  /* copy text from clipboard by using Windows API */
+  if (OpenClipboard(NULL))
+  {
+    HANDLE hData = GetClipboardData(CF_TEXT);
+    if (hData)
+    {
+      char* pText = static_cast<char*>(GlobalLock(hData));
+      if (pText)
+      {
+        text = pText;
+        GlobalUnlock(hData);
+      }
+    }
+    CloseClipboard();
+  }
+#endif
+  return *this;
+}
+
 class Terminal : public flow::CommandReporter
 {
 protected:
@@ -33,6 +78,8 @@ protected:
   std::vector<std::string> _history;
   std::vector<std::string> _buffer;
   std::optional<selection> _selection;
+
+  Clipboard _clipboard;
 
 
   bool _shouldQuit;
@@ -155,9 +202,15 @@ void Terminal::loop()
         if (row)
         {
           /* select word around the cell selected */
-          const std::string string = *row;
+          std::string string = *row;
 
           /* strip all [color=XXX] tags */
+          size_t s;
+          while ((s = string.find("[color=")) != std::string::npos)
+          {
+            auto e = string.find("]", s);
+            string.erase(s, e - s + 1);
+          }
 
 
           if (c.x < string.size() && string[c.x] != ' ')
@@ -169,7 +222,8 @@ void Terminal::loop()
             while (end < string.size() - 1 && string[end] != ' ')
               ++end;
 
-            _selection = { point(start, c.y), end - start};
+            _clipboard << string.substr(start, end - start + 1);
+            _selection = { point(start, c.y), end - start + 1};
           }
 
           printf("row '%s'\n", row->c_str());
