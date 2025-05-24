@@ -299,6 +299,8 @@ void Terminal::render()
     terminal_bkcolor(color);
   }
 
+  //terminal_put(0, 0, 0xE100); 
+  //terminal_print(4, 0, "Nintendo Entertainment System (NES)" );
 
   terminal_refresh();
 }
@@ -317,7 +319,8 @@ void Terminal::init()
 
   // terminal_set("input: cursor-symbol=0x1f, cursor-blink-rate=500");
 
-  terminal_set("0xE000: flags.png, size=16x16, align=center, spacing=2x1");
+  terminal_set("0xE000: flags.png, size=16x16, align=top-left, spacing=2x1");
+  terminal_set("0xE100: systems.png, size=32x32, align=top-left, spacing=2x2");
 
   terminal_refresh();
   onResize();

@@ -276,6 +276,33 @@ namespace flow::commands
         return CommandResult();
     }
   };
+
+  struct LoadDat : public Command
+  {
+    CommandResult run(const Parameters& args, Engine* engine) override
+    {
+      if (args.token(0) == "load" && args.tokenCount() == 2)
+      {
+        fs_path cwd = *engine->get<fs_path>("cwd");
+        fs_path file = args.token(1);
+
+        fs_path target = cwd / file;
+
+        if (target.existsAsFile())
+        {
+          engine->reporter()->out(fmt::format("Loading DAT file {}...", file.str()));
+          return CommandResult(0);
+        }
+        else
+        {
+          engine->reporter()->err(fmt::format("File does not exist: {}", target.str()));
+          return CommandResult(-1);
+        }
+      }
+      else
+        return CommandResult();
+    }
+  };
 }
 
 void Registry::init()
@@ -287,7 +314,7 @@ void Registry::init()
   registerCommand(new commands::Cd());
   registerCommand(new commands::Ls());
   registerCommand(new commands::Md5());
-
+  registerCommand(new commands::LoadDat());
 }
 
 #include "cellar/database.h"
