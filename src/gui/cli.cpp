@@ -100,7 +100,7 @@ public:
   {
     _width = 80;
     _height = 25;
-    _prompt = "";
+    _prompt.clear();
   }
 
   const std::string* visibleRow(size_t row) const
@@ -169,6 +169,7 @@ void Terminal::loop()
     while (terminal_has_input() && !_shouldQuit)
     {
       int key = terminal_read();
+      bool shift = terminal_check(TK_SHIFT);
 
       /* exit */
       if (key == TK_CLOSE || key == TK_ESCAPE)
@@ -258,7 +259,13 @@ void Terminal::loop()
           _prompt.pop_back();
       }
       else if (mapping[key] != '\0')
-        _prompt.insert(_prompt.end() + _caretPosition, mapping[key]);
+      {
+        wchar_t ch = terminal_state(TK_WCHAR);
+        std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+        std::string utf8 = converter.to_bytes(ch);
+
+        _prompt.insert(_prompt.end() + _caretPosition, utf8.begin(), utf8.end());
+      }
     }
 
     render();

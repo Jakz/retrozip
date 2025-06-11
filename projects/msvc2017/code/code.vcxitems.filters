@@ -107,5 +107,8 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\flow\flow.h">
       <Filter>src\flow</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\flow\value.h">
+      <Filter>src\flow</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

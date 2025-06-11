@@ -41,6 +41,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\filters\lzma_filter.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\filters\xdelta3_filter.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\flow\flow.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\flow\value.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\test\catch.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\test\test_support.h" />
   </ItemGroup>

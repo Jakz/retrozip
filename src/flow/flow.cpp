@@ -199,7 +199,10 @@ namespace flow::commands
             fs_path cwd = *engine->get<fs_path>("cwd");
             fs_path potential = cwd + path;
             if (potential.exists())
+            {
               engine->set("cwd", potential);
+              engine->reporter()->out(fmt::format("Changed directory to: {}", potential.str()));
+            }
             else
             {
               engine->reporter()->err(fmt::format("Directory does not exist: {}", potential.str()));
@@ -208,7 +211,7 @@ namespace flow::commands
           }
         }
 
-        return CommandResult(0);
+        return CommandResult(0, *engine->get<fs_path>("cwd"));
       }
       else
         return CommandResult();
@@ -243,6 +246,23 @@ namespace flow::commands
         return CommandResult();
     }
   };
+
+  struct Pwd : public Command
+  {
+    CommandResult run(const Parameters& args, Engine* engine) override
+    {
+      if (args.token(0) == "pwd")
+      {
+        fs_path cwd = *engine->get<fs_path>("cwd");
+        engine->reporter()->out(fmt::format("Current directory: {}", cwd.str()));
+
+        return CommandResult(0);
+      }
+      else
+        return CommandResult();
+    }
+  };
+
 }
 
 #include "data/hash_map.h"
@@ -313,6 +333,7 @@ void Registry::init()
   registerCommand(new commands::Quit());
   registerCommand(new commands::Cd());
   registerCommand(new commands::Ls());
+  registerCommand(new commands::Pwd());
   registerCommand(new commands::Md5());
   registerCommand(new commands::LoadDat());
 }
@@ -336,6 +357,11 @@ void Engine::tryToExecute(const std::string& command)
 
     if (result.isRecognized())
     {
+      if (result.hasValue())
+      {
+        _reporter->out(fmt::format(" : {} ({})", result.value().caption(), result.value().typeName() ));
+      }
+      
       return;
     }
   }

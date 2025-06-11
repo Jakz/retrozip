@@ -3,6 +3,8 @@
 #include "tbx/base/path.h"
 #include "tbx/streams/file_data_source.h"
 
+#include "value.h"
+
 #include <memory>
 #include <future>
 #include <any>
@@ -89,18 +91,6 @@ namespace flow
       else
         /* do nothing */;
     }
-  };
-
-  struct Value
-  {
-  protected:
-    std::string _value;
-
-  public:
-    Value() { }
-
-    void set(const std::string& value) { _value = value; }
-    const std::string& get() const { return _value; }
   };
 
   struct CommandReporter
@@ -192,7 +182,7 @@ namespace flow
   struct CommandResult
   {
   protected:
-    std::any _value;
+    Value _value;
     exit_code_t _exitCode;
     bool _unrecognized;
 
@@ -202,11 +192,14 @@ namespace flow
     template<typename T> CommandResult(exit_code_t exitCode, T&& value) : _value(std::forward<T>(value)), _exitCode(exitCode), _unrecognized(false) { }
 
     bool isRecognized() const { return !_unrecognized; }
-    bool hasValue() const { return _value.has_value(); }
+    bool hasValue() const { return !_value.empty(); }
     exit_code_t exitCode() const { return _exitCode; }
+    const Value& value() const { return _value; }
 
     operator bool() const { return isRecognized(); }
   };
+
+
 
   struct Engine;
 
