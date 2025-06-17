@@ -129,6 +129,9 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\extra\subprocess.hpp">
       <Filter>tbx\extra</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\patch\ips.h">
+      <Filter>tbx\formats\patch</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\patch\xdelta3\xdelta3.cpp">
@@ -175,6 +178,9 @@
     </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\minizip\miniunz.c">
       <Filter>tbx\formats\minizip</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\patch\ups.cpp">
+      <Filter>tbx\formats\patch</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -21,6 +21,18 @@ namespace patch::ips
     std::vector<uint8_t> data;
     size_t rleSize;
     uint8_t rleByte;
+
+    void apply(uint8_t* target) const
+    {
+      if (rleSize > 0)
+      {
+        std::fill_n(target + offset, rleSize, rleByte);
+      }
+      else if (!data.empty())
+      {
+        std::memcpy(target + offset, data.data(), size);
+      }
+    }
   };
 
   struct PatchData
@@ -91,5 +103,53 @@ namespace patch::ips
 
       return ParseResult::Ok;
     }
+  };
+}
+
+struct data_source;
+struct seekable_data_source;
+struct data_sink;
+
+namespace patch::ups
+{
+  struct Header
+  {
+    char magic[4];
+    uint64_t inputSize;
+    uint64_t outputSize;
+  };
+
+  struct Checksum
+  {
+    uint32_t inputChecksum;
+    uint32_t outputChecksum;
+    uint32_t patchChecksum;
+  };
+
+  enum class Status
+  {
+    InvalidPatchChecksum,
+    InvalidSourceSize,
+    InvalidSourceChecksum,
+    Ok,
+  };
+ 
+  struct Patch
+  {
+  protected:
+    Header _header;
+    Checksum _checksum;
+    std::vector<uint8_t> _data;
+
+    /* read a variable int and shift pointer by given amount*/
+    uint64_t readVariableInt(const uint8_t*& ptr);
+    uint64_t readVariableInt(data_source* src);
+
+  public:
+
+    Status load(seekable_data_source* source);
+    Status apply(seekable_data_source* source, data_sink* sink);
+
+    static void test();
   };
 }

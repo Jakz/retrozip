@@ -110,7 +110,8 @@ public:
   byte* raw() { return _data; }
   
   const byte* direct() const { return _data + _position; }
-  
+  byte* direct() { return _data + _position; }
+
   const byte* data() const { return _data; }
   byte* data() { return _data; }
   
@@ -135,8 +136,8 @@ public:
       TRACE_MB("%p: memory_buffer::ensure_capacity (old: %lu, new: %lu)", this, _capacity, capacity);
       //TODO: this may fail and must be managed
       byte* newData = new byte[capacity];
-      memset(newData, 0, capacity);
       std::copy(_data, _data+_size, newData);
+      std::memset(newData + _size, 0, capacity - _size);
       delete[] _data;
       this->_data = newData;
       this->_capacity = capacity;

@@ -28,6 +28,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\minizip\unzip.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\minizip\zip.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\minizip\zipcrypt.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\patch\ips.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\patch\xdelta3\xdelta3-blkcache.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\patch\xdelta3\xdelta3-cfgs.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\patch\xdelta3\xdelta3-decode.h" />
@@ -65,6 +66,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\minizip\mztools.c" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\minizip\unzip.c" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\minizip\zip.c" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\patch\ups.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\patch\xdelta3\xdelta3.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\hash\crc32.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\hash\md5.cpp" />

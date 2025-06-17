@@ -340,11 +340,15 @@ void Terminal::deinit()
   terminal_close();
 }
 
+#include "tbx/formats/patch/ips.h"
+
 int main(int argc, char* argv[])
 {
-  Terminal terminal;
-  terminal.init();
-  terminal.loop();
+  patch::ups::Patch::test();
+  
+  //Terminal terminal;
+  //terminal.init();
+  //terminal.loop();
   return 0;
 }
 
