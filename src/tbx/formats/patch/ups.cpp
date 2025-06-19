@@ -4,30 +4,10 @@
 #include "tbx/streams/memory_buffer.h"
 #include "tbx/streams/file_data_source.h"
 #include "tbx/streams/data_filter.h"
+#include "tbx/streams/vector_stream.h"
 #include "filters/filters.h"
 
 using namespace patch::ups;
-
-/* read a variable int and shift pointer by given amount*/
-uint64_t Patch::readVariableInt(const uint8_t*& ptr)
-{
-  uint64_t result = 0;
-  uint64_t shift = 1;
-
-  while (true)
-  {
-    uint8_t byte = *ptr++;
-    result += (byte & 0x7F) * shift;
-    if (byte & 0x80) /* stop bit */
-      break;
-
-    shift <<= 7;
-    result += shift;
-
-  }
-
-  return result;
-}
 
 uint64_t Patch::readVariableInt(data_source* src)
 {
@@ -49,7 +29,7 @@ uint64_t Patch::readVariableInt(data_source* src)
   return result;
 }
 
-void Patch::writeVariableInt(std::vector<uint8_t>& sink, uint64_t value)
+void Patch::writeVariableInt(data_sink* sink, uint64_t value)
 {
   while (true)
   {
@@ -61,7 +41,7 @@ void Patch::writeVariableInt(std::vector<uint8_t>& sink, uint64_t value)
     if (last)
     {
       uint8_t byte = current | 0x80;
-      sink.push_back(byte);
+      sink->write(&byte, 1);
       break;
     }
     else
@@ -69,7 +49,7 @@ void Patch::writeVariableInt(std::vector<uint8_t>& sink, uint64_t value)
       value -= 1;
       
       uint8_t byte = current;
-      sink.push_back(byte);
+      sink->write(&byte, 1);
     }
   }
 }
@@ -115,6 +95,8 @@ Status Patch::apply(seekable_data_source* source, data_sink* sink) const
   const uint8_t* dataStart = data;
   const uint8_t* dataEnd = data + _data.size();
 
+  weak_data_source weakData = weak_data_source(_data);
+
   size_t sourceOffset = 0;
   size_t written = 0;
 
@@ -127,7 +109,7 @@ Status Patch::apply(seekable_data_source* source, data_sink* sink) const
   {
     /* read offset */
     auto* dataBefore = data;
-    size_t amountToCopy = readVariableInt(data);
+    size_t amountToCopy = readVariableInt(&weakData);
     size_t offset = 0;
     //offset += sourceOffset;
 
@@ -197,9 +179,10 @@ Status Patch::generate(seekable_data_source* source, seekable_data_source* patch
 {  
   size_t relative = 0;
   size_t streak = 0;
+
+  auto wrapped = weak_vector_sink(_data);
   
   bool finished = false;
-
 
   while (!finished)
   {
@@ -212,7 +195,7 @@ Status Patch::generate(seekable_data_source* source, seekable_data_source* patch
       ++streak;
     else
     {
-      writeVariableInt(_data, streak - relative);
+      writeVariableInt(&wrapped, streak - relative);
       _data.push_back(ss ^ ps);
 
       while (true)
@@ -226,6 +209,7 @@ Status Patch::generate(seekable_data_source* source, seekable_data_source* patch
     }
   }
 
+  return Status::Ok;
 }
 
 void Patch::test()

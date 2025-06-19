@@ -47,6 +47,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\streams\data_source.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\streams\file_data_source.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\streams\memory_buffer.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\streams\vector_stream.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\base\common.cpp" />

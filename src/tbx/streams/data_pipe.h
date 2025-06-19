@@ -31,6 +31,12 @@ protected:
 public:
   passthrough_pipe(data_source* source, data_sink* sink, size_t bufferSize) : _source(source), _sink(sink), _buffer(bufferSize), _state(state::OPENED)
   { }
+
+  static void process(data_source* source, data_sink* sink, size_t bufferSize)
+  {
+    passthrough_pipe pipe(source, sink, bufferSize);
+    pipe.process();
+  }
   
   size_t stepInput()
   {

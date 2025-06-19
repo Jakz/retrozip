@@ -336,6 +336,12 @@
     <ClCompile Include="..\..\..\src\test\catch2\benchmark\catch_chronometer.cpp">
       <Filter>src\test\catch2</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\test\tests_patch_ups.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\test\tests_vector_stream.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\test\test_support.h">

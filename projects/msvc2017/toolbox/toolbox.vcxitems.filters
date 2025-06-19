@@ -132,6 +132,9 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\patch\ips.h">
       <Filter>tbx\formats\patch</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\streams\vector_stream.h">
+      <Filter>tbx\streams</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\tbx\formats\patch\xdelta3\xdelta3.cpp">

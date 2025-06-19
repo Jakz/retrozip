@@ -152,11 +152,8 @@ namespace patch::ups
 
   protectedExposed:
     /* read a variable int and shift pointer by given amount*/
-    static uint64_t readVariableInt(const uint8_t*& ptr);
     static uint64_t readVariableInt(data_source* src);
-
     static void writeVariableInt(data_sink* sink, uint64_t value);
-    static void writeVariableInt(std::vector<uint8_t>& sink, uint64_t value);
 
     static void test();
   };
