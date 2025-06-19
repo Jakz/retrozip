@@ -49,23 +49,27 @@ uint64_t Patch::readVariableInt(data_source* src)
   return result;
 }
 
-void Patch::writeVariableInt(data_sink* sink, uint64_t value)
+void Patch::writeVariableInt(std::vector<uint8_t>& sink, uint64_t value)
 {
   while (true)
   {
     uint64_t current = value & 0x7F;
+    bool last = ((value >> 7) == 0);
+    
     value >>= 7;
 
-    if (value == 0)
+    if (last)
     {
       uint8_t byte = current | 0x80;
-      sink->write(&byte, 1);
+      sink.push_back(byte);
       break;
     }
     else
     {
+      value -= 1;
+      
       uint8_t byte = current;
-      sink->write(&byte, 1);
+      sink.push_back(byte);
     }
   }
 }
@@ -101,7 +105,7 @@ Status Patch::load(seekable_data_source* source)
   return Status::Ok;
 }
 
-Status Patch::apply(seekable_data_source* source, data_sink* sink)
+Status Patch::apply(seekable_data_source* source, data_sink* sink) const
 {
   bool verifySource = true;
   bool verifyOutput = true;
@@ -187,6 +191,41 @@ Status Patch::apply(seekable_data_source* source, data_sink* sink)
   }
 
   return Status::Ok;
+}
+
+Status Patch::generate(seekable_data_source* source, seekable_data_source* patched)
+{  
+  size_t relative = 0;
+  size_t streak = 0;
+  
+  bool finished = false;
+
+
+  while (!finished)
+  {
+    uint8_t sbyte, pbyte;
+    
+    auto ss = source->read(&sbyte, 1);
+    auto ps = patched->read(&pbyte, 1);
+
+    if (ss == ps)
+      ++streak;
+    else
+    {
+      writeVariableInt(_data, streak - relative);
+      _data.push_back(ss ^ ps);
+
+      while (true)
+      {
+        
+        ss = source->read(&sbyte, 1);
+        ps = patched->read(&pbyte, 1);
+
+        _data.push_back(ss ^ ps);
+      }
+    }
+  }
+
 }
 
 void Patch::test()

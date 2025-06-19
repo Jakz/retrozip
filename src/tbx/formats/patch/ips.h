@@ -146,7 +146,8 @@ namespace patch::ups
   public:
 
     Status load(seekable_data_source* source);
-    Status apply(seekable_data_source* source, data_sink* sink);
+    Status apply(seekable_data_source* source, data_sink* sink) const;
+    Status generate(seekable_data_source* source, seekable_data_source* patched);
 
 
   protectedExposed:
@@ -155,6 +156,7 @@ namespace patch::ups
     static uint64_t readVariableInt(data_source* src);
 
     static void writeVariableInt(data_sink* sink, uint64_t value);
+    static void writeVariableInt(std::vector<uint8_t>& sink, uint64_t value);
 
     static void test();
   };
