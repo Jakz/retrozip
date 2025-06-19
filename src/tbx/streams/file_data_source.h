@@ -71,7 +71,8 @@ public:
   file_data_sink(path path, bool waitForOpen = false) : _path(path), _handle(waitForOpen ? file_handle(path) : file_handle(path, file_mode::WRITING)) { }
 
   const path& path() const { return _path; }
-    
+  size_t tell() { return _handle.tell(); }
+
   void open()
   {
     assert(!_handle);

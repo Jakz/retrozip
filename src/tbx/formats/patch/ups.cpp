@@ -59,6 +59,7 @@ Status Patch::load(seekable_data_source* source)
   digester.read((byte*)&_header.magic[0], 4);
   _header.inputSize = readVariableInt(&digester);
   _header.outputSize = readVariableInt(&digester);
+  _header.headerSizeInBytes = source->tell();
 
   /* read data */
   size_t amount = source->size() - source->tell() - sizeof(Checksum);
@@ -86,6 +87,8 @@ Status Patch::apply(seekable_data_source* source, data_sink* sink)
   
   bool finished = false;
   const uint8_t* data = _data.data();
+  const uint8_t* dataStart = data;
+  const uint8_t* dataEnd = data + _data.size();
 
   size_t sourceOffset = 0;
   size_t written = 0;
@@ -95,29 +98,37 @@ Status Patch::apply(seekable_data_source* source, data_sink* sink)
   if (source->size() != _header.inputSize)
     return Status::InvalidSourceSize;
 
-  while (written < _header.outputSize)
+  while (data < dataEnd)
   {
     /* read offset */
+    auto* dataBefore = data;
     size_t amountToCopy = readVariableInt(data);
     size_t offset = 0;
     //offset += sourceOffset;
 
     /* copy bytes until offset is correct */
     //size_t amountToCopy = offset - sourceOffset;
-    TRACE("%p: Patch::apply: sourceOffset = %lu, amountToCopy = %lu", this, sourceOffset, amountToCopy);
+    TRACE("%p: Patch::apply: %08x  sourceOffset = %08x -> %08x, amountToCopy = %lu", this, _header.headerSizeInBytes + dataBefore - dataStart, sourceOffset, sourceOffset + amountToCopy, amountToCopy);
 
     buffer.ensure_capacity(amountToCopy + 1);
     buffer.seek(0);
-    source->read(buffer.direct(), amountToCopy);
+    memset(buffer.direct(), 0, amountToCopy);
+
+    auto actual = source->read(buffer.direct(), amountToCopy);
+
     sink->write(buffer.direct(), amountToCopy);
+
     written += amountToCopy;
     sourceOffset += amountToCopy;
+
+    assert(((file_data_sink*)sink)->tell() == written);
 
     size_t before = written;
 
     /* now keep xoring until a byte it's equal both on source and patch */
     do
     {
+      dataBefore = data;
       uint8_t patchByte = *data++;
       uint8_t sourceByte = 0;
 
@@ -125,18 +136,33 @@ Status Patch::apply(seekable_data_source* source, data_sink* sink)
         source->read(sourceByte);
 
       uint8_t result = patchByte ^ sourceByte;
-      TRACE("%p: Patch::apply %02x ^ %02x = %02x, sourceOffset = %08x", this, patchByte, sourceByte, result, sourceOffset);
+      //TRACE("%p: Patch::apply %02x ^ %02x = %02x, sourceOffset = %08x", this, patchByte, sourceByte, result, sourceOffset);
 
       sink->write(&result, 1);
       ++written;
       ++sourceOffset;
 
-      if (result == 0)
+      if (patchByte == 0)
       {
-        TRACE("%p: Patch::apply: written = %lu, sourceOffset = %lu", this, written - before, sourceOffset);
+        TRACE("%p: Patch::apply: %08x written = %lu, sourceOffset = %08x", this, _header.headerSizeInBytes + dataBefore - dataStart, written - before, sourceOffset);
         break;
       }
+
+      if (data >= dataEnd)
+        break;
+
     } while (true);
+  }
+
+  /* if patch didn't produce enough bytes just fill with zeros */
+  if (written < _header.outputSize)
+  {
+    size_t remaining = _header.outputSize - written;
+    buffer.ensure_capacity(remaining);
+    buffer.seek(0);
+    memset(buffer.direct(), 0, remaining);
+    sink->write(buffer.direct(), remaining);
+    written += remaining;
   }
 
   return Status::Ok;

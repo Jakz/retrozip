@@ -117,6 +117,7 @@ namespace patch::ups
     char magic[4];
     uint64_t inputSize;
     uint64_t outputSize;
+    uint64_t headerSizeInBytes;
   };
 
   struct Checksum
