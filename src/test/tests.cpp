@@ -1,8 +1,7 @@
-#define CATCH_CONFIG_FAST_COMPILE
-
 #define NOMINMAX
 
-#include "test/catch.h"
+#define CATCH_CONFIG_MAIN
+#include "catch2/catch_all.hpp"
 
 #include "tbx/base/file_system.h"
 
@@ -22,46 +21,48 @@
 
 #include <random>
 
-TEST_CASE("path", "[base]") {
-  SECTION("initializing") {
-    REQUIRE(path("/foo") == path("/foo/"));
-    REQUIRE(path("/").data() == "/");
-  }
+TEST_CASE("classes.path::path()")
+{
+  REQUIRE(path("/foo") == path("/foo/"));
+  REQUIRE(path("/").data() == "/");
+}
   
-  SECTION("getting parent") {
-    path p("/foo/bar");
-    REQUIRE(p.parent() == "/foo");
-    
-    p = path("/foo/bar/");
-    REQUIRE(p.parent() == "/foo");
-    
-    p = path("/foo/bar.bin");
-    REQUIRE(p.parent() == "/foo");
-    
-    p = path("foobar.bin");
-    REQUIRE(p.parent() == "");
-  }
+TEST_CASE("classes.path::parent()")
+{
+  path p("/foo/bar");
+  REQUIRE(p.parent() == "/foo");
+
+  p = path("/foo/bar/");
+  REQUIRE(p.parent() == "/foo");
+
+  p = path("/foo/bar.bin");
+  REQUIRE(p.parent() == "/foo");
+
+  p = path("foobar.bin");
+  REQUIRE(p.parent() == "");
+}
+ 
+TEST_CASE("classes.path::append()")
+{
+  REQUIRE(path("/foo") + path("bar") == path("/foo/bar"));
+  REQUIRE(path("/foo/") + path("bar") == path("/foo/bar"));
+  REQUIRE(path("/foo/") + path("bar/") == path("/foo/bar"));
+  REQUIRE(path("/") + path("foo") == path("/foo"));
+
+  REQUIRE_THROWS(path("/foo") + path("/bar"));
+}
   
-  SECTION("appending") {
-    REQUIRE(path("/foo") + path("bar") == path("/foo/bar"));
-    REQUIRE(path("/foo/") + path("bar") == path("/foo/bar"));
-    REQUIRE(path("/foo/") + path("bar/") == path("/foo/bar"));
-    REQUIRE(path("/") + path("foo") == path("/foo"));
+TEST_CASE("classes.path::relativize()")
+{
+  REQUIRE(path("/foo").relativizeChildren("/foo/bar") == path("bar"));
+  REQUIRE(path("/foo").relativizeChildren("/foo/bar/baz") == path("bar/baz"));
     
-    REQUIRE_THROWS(path("/foo") + path("/bar"));
-  }
-  
-  SECTION("relativizing") {
-    REQUIRE(path("/foo").relativizeChildren("/foo/bar") == path("bar"));
-    REQUIRE(path("/foo").relativizeChildren("/foo/bar/baz") == path("bar/baz"));
-    
-    REQUIRE(path("/foo/bar").relativizeToParent("/foo") == path("bar"));
-    REQUIRE(path("/foo/bar/baz").relativizeToParent("/foo") == path("bar/baz"));
+  REQUIRE(path("/foo/bar").relativizeToParent("/foo") == path("bar"));
+  REQUIRE(path("/foo/bar/baz").relativizeToParent("/foo") == path("bar/baz"));
 
     
-    REQUIRE_THROWS(path("/foo").relativizeToParent("/bar"));
-    REQUIRE_THROWS(path("/foo").relativizeChildren("/bar"));
-  }
+  REQUIRE_THROWS(path("/foo").relativizeToParent("/bar"));
+  REQUIRE_THROWS(path("/foo").relativizeChildren("/bar"));
 }
 
 TEST_CASE("file system operations", "[base]") {
@@ -291,20 +292,21 @@ TEST_CASE("bit hacks", "[base]")
 void randomize(byte* data, size_t len) { for (size_t i = 0; i < len; ++i) { data[i] = testing::random(256); } }
 #define READ_DATA(dest, name, length, res) byte name[(length)]; size_t res = dest.read(name, 1, (length));
 
-TEST_CASE("memory buffer", "[support]") {
-  SECTION("write") {
-    SECTION("write with realloc") {
-      constexpr size_t LEN = 64;
-      memory_buffer b(0);
+TEST_CASE("classes.MemoryBuffer::writeWithRealloc")
+{
+  constexpr size_t LEN = 64;
+  memory_buffer b(0);
       
-      WRITE_RANDOM_DATA(b, temp, LEN);
+  WRITE_RANDOM_DATA(b, temp, LEN);
 
-      REQUIRE(b.capacity() == LEN);
-      REQUIRE(b.size() == LEN);
-      REQUIRE(b.position() == LEN);
-      REQUIRE(memcmp(b.raw(), temp, LEN) == 0);
-    }
+  REQUIRE(b.capacity() == LEN);
+  REQUIRE(b.size() == LEN);
+  REQUIRE(b.position() == LEN);
+  REQUIRE(memcmp(b.raw(), temp, LEN) == 0);
+}
     
+ TEST_CASE("memory buffer", "[support]") {
+   SECTION("[base]") {
     SECTION("write without realloc") {
       constexpr size_t LEN = 64, CAP = 128;
       memory_buffer b(CAP);
@@ -1572,7 +1574,7 @@ TEST_CASE("archive (one entry per stream) (no filters)", "[box archive]") {
   SECTION("two entries") {
     for (size_t i = 0; i < 2; ++i)
     {
-      data.entries.push_back({ fmt::sprintf("entry%lu.bin", i), testing::randomDataSource(testing::random(512) + 512) });
+      data.entries.push_back({ fmt::format("entry{}.bin", i), testing::randomDataSource(testing::random(512) + 512) });
       data.streams.push_back({ { static_cast<int>(i) }, { } });
     }
   }
@@ -1580,7 +1582,7 @@ TEST_CASE("archive (one entry per stream) (no filters)", "[box archive]") {
   SECTION("ten entries") {
     for (size_t i = 0; i < 10; ++i)
     {
-      data.entries.push_back({ fmt::sprintf("entry%lu.bin", i), testing::randomDataSource(testing::random(512) + 512) });
+      data.entries.push_back({ fmt::format("entry{}.bin", i), testing::randomDataSource(testing::random(512) + 512) });
       data.streams.push_back({ { static_cast<int>(i) }, { } });
     }
   }
@@ -1695,4 +1697,57 @@ TEST_CASE("archive (single entry archive with filters)", "[box archive]") {
   testing::ArchiveTester::verify(data, verify, output);
  
   testing::ArchiveTester::release(data);
+}
+
+#include "tbx/formats/patch/ips.h"
+
+TEST_CASE("classes.PatchUps.writeVariableInt")
+{
+  struct Test {
+    uint64_t value;
+    size_t expectedSize;
+  };
+
+  std::array<Test, 7> tests = {{
+    { 0x000012, 1 },
+    { 0x00007f, 1 },
+    { 0x000080, 2 },
+    { 0x003FFF, 2 },
+    { 0x004000, 3 },
+    { 0x1FFFFF, 3 },
+    { 0x200000, 4 }
+  }};
+  
+  memory_buffer buffer;
+
+  for (const auto& test : tests)
+  {
+    buffer.seek(0);
+    patch::ups::Patch::writeVariableInt(&buffer, test.value); 
+    REQUIRE(buffer.size() == test.expectedSize);
+  }
+}
+
+TEST_CASE("classes.PatchUps.readVariableInt")
+{
+  std::array<uint64_t, 7> values = {
+   0x000012,
+   0x00007f,
+   0x000080,
+   0x003FFF,
+   0x004000,
+   0x1FFFFF,
+   0x200000
+  };
+
+  memory_buffer buffer;
+
+  for (const auto& value1 : values)
+  {
+    buffer.seek(0);
+    patch::ups::Patch::writeVariableInt(&buffer, value1);
+    buffer.seek(0);
+    uint64_t value2 = patch::ups::Patch::readVariableInt(&buffer);
+    REQUIRE(value1 == value2);
+  }
 }

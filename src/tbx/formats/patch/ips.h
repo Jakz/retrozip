@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include "tbx/base/common.h"
 
 namespace patch::ips
 {
@@ -142,14 +143,18 @@ namespace patch::ups
     Checksum _checksum;
     std::vector<uint8_t> _data;
 
-    /* read a variable int and shift pointer by given amount*/
-    uint64_t readVariableInt(const uint8_t*& ptr);
-    uint64_t readVariableInt(data_source* src);
-
   public:
 
     Status load(seekable_data_source* source);
     Status apply(seekable_data_source* source, data_sink* sink);
+
+
+  protectedExposed:
+    /* read a variable int and shift pointer by given amount*/
+    static uint64_t readVariableInt(const uint8_t*& ptr);
+    static uint64_t readVariableInt(data_source* src);
+
+    static void writeVariableInt(data_sink* sink, uint64_t value);
 
     static void test();
   };

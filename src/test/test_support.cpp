@@ -2,8 +2,11 @@
 
 #include "filters/xdelta3_filter.h"
 
+#define TEST
+
 #if defined(TEST)
-#include "catch.h"
+#include "catch2/catch_all.hpp"
+
 #else
 #include <cassert>
 #define REQUIRE assert

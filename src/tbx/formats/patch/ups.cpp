@@ -49,6 +49,27 @@ uint64_t Patch::readVariableInt(data_source* src)
   return result;
 }
 
+void Patch::writeVariableInt(data_sink* sink, uint64_t value)
+{
+  while (true)
+  {
+    uint64_t current = value & 0x7F;
+    value >>= 7;
+
+    if (value == 0)
+    {
+      uint8_t byte = current | 0x80;
+      sink->write(&byte, 1);
+      break;
+    }
+    else
+    {
+      uint8_t byte = current;
+      sink->write(&byte, 1);
+    }
+  }
+}
+
 Status Patch::load(seekable_data_source* source)
 {
   static_assert(sizeof(Checksum) == sizeof(uint32_t) * 3);

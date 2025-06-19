@@ -1,0 +1,267 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{851f0e25-b4d0-4a91-a02c-ac03d36ef7aa}</ProjectGuid>
+    <RootNamespace>tests</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+    <Import Project="..\code\code.vcxitems" Label="Shared" />
+    <Import Project="..\toolbox\toolbox.vcxitems" Label="Shared" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS;NOMINMAX</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\..\src;$(SolutionDir)..\..\src\test;$(SolutionDir)..\..\libs\zlib\include;$(SolutionDir)..\..\libs\lzma\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>$(SolutionDir)..\..\libs\zlib\lib\win_x64\zlib.lib;$(SolutionDir)..\..\libs\lzma\lib\win\x64\lzma.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS;NOMINMAX</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\..\src;$(SolutionDir)..\..\src\test;$(SolutionDir)..\..\libs\zlib\include;$(SolutionDir)..\..\libs\lzma\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>$(SolutionDir)..\..\libs\zlib\lib\win_x64\zlib.lib;$(SolutionDir)..\..\libs\lzma\lib\win\x64\lzma.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS;NOMINMAX</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\..\src;$(SolutionDir)..\..\src\test;$(SolutionDir)..\..\libs\zlib\include;$(SolutionDir)..\..\libs\lzma\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>$(SolutionDir)..\..\libs\zlib\lib\win_x64\zlib.lib;$(SolutionDir)..\..\libs\lzma\lib\win\x64\lzma.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS;NOMINMAX</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\..\src;$(SolutionDir)..\..\src\test;$(SolutionDir)..\..\libs\zlib\include;$(SolutionDir)..\..\libs\lzma\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>$(SolutionDir)..\..\libs\zlib\lib\win_x64\zlib.lib;$(SolutionDir)..\..\libs\lzma\lib\win\x64\lzma.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\src\test\catch2\benchmark\catch_chronometer.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\benchmark\detail\catch_analyse.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\benchmark\detail\catch_benchmark_function.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\benchmark\detail\catch_run_for_at_least.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\benchmark\detail\catch_stats.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\catch_approx.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\catch_assertion_result.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\catch_config.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\catch_get_random_seed.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\catch_message.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\catch_registry_hub.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\catch_session.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\catch_tag_alias_autoregistrar.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\catch_test_case_info.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\catch_test_spec.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\catch_timer.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\catch_tostring.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\catch_totals.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\catch_translate_exception.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\catch_version.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\generators\catch_generators.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\generators\catch_generators_random.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\generators\catch_generator_exception.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\interfaces\catch_interfaces_capture.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\interfaces\catch_interfaces_config.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\interfaces\catch_interfaces_exception.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\interfaces\catch_interfaces_generatortracker.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\interfaces\catch_interfaces_registry_hub.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\interfaces\catch_interfaces_reporter.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\interfaces\catch_interfaces_reporter_factory.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\interfaces\catch_interfaces_testcase.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_assertion_handler.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_case_insensitive_comparisons.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_clara.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_commandline.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_console_colour.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_context.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_debugger.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_debug_console.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_decomposer.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_enforce.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_enum_values_registry.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_errno_guard.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_exception_translator_registry.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_fatal_condition_handler.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_floating_point_helpers.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_getenv.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_istream.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_jsonwriter.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_lazy_expr.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_leak_detector.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_list.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_main.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_message_info.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_output_redirect.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_parse_numbers.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_polyfills.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_random_number_generator.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_random_seed_generation.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_reporter_registry.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_reporter_spec_parser.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_reusable_string_stream.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_run_context.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_section.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_singletons.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_source_line_info.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_startup_exception_registry.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_stdstreams.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_stringref.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_string_manip.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_tag_alias_registry.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_test_case_info_hasher.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_test_case_registry_impl.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_test_case_tracker.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_test_failure_exception.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_test_registry.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_test_spec_parser.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_textflow.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_uncaught_exceptions.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_wildcard_pattern.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\internal\catch_xmlwriter.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\matchers\catch_matchers.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\matchers\catch_matchers_container_properties.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\matchers\catch_matchers_exception.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\matchers\catch_matchers_floating_point.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\matchers\catch_matchers_predicate.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\matchers\catch_matchers_quantifiers.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\matchers\catch_matchers_string.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\matchers\catch_matchers_templated.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\matchers\internal\catch_matchers_impl.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\reporters\catch_reporter_automake.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\reporters\catch_reporter_common_base.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\reporters\catch_reporter_compact.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\reporters\catch_reporter_console.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\reporters\catch_reporter_cumulative_base.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\reporters\catch_reporter_event_listener.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\reporters\catch_reporter_helpers.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\reporters\catch_reporter_json.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\reporters\catch_reporter_junit.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\reporters\catch_reporter_multi.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\reporters\catch_reporter_registrars.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\reporters\catch_reporter_sonarqube.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\reporters\catch_reporter_streaming_base.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\reporters\catch_reporter_tap.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\reporters\catch_reporter_teamcity.cpp" />
+    <ClCompile Include="..\..\..\src\test\catch2\reporters\catch_reporter_xml.cpp" />
+    <ClCompile Include="..\..\..\src\test\tests.cpp" />
+    <ClCompile Include="..\..\..\src\test\test_support.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\src\test\test_support.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

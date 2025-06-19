@@ -15,6 +15,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cellar", "cellar\cellar.vcx
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gui", "gui\gui.vcxproj", "{43E0263B-7A70-4043-944C-B5DFD0D66A17}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tests", "tests\tests.vcxproj", "{851F0E25-B4D0-4A91-A02C-AC03D36EF7AA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -37,6 +39,10 @@ Global
 		{43E0263B-7A70-4043-944C-B5DFD0D66A17}.Debug|x64.Build.0 = Debug|x64
 		{43E0263B-7A70-4043-944C-B5DFD0D66A17}.Release|x64.ActiveCfg = Release|x64
 		{43E0263B-7A70-4043-944C-B5DFD0D66A17}.Release|x64.Build.0 = Release|x64
+		{851F0E25-B4D0-4A91-A02C-AC03D36EF7AA}.Debug|x64.ActiveCfg = Debug|x64
+		{851F0E25-B4D0-4A91-A02C-AC03D36EF7AA}.Debug|x64.Build.0 = Debug|x64
+		{851F0E25-B4D0-4A91-A02C-AC03D36EF7AA}.Release|x64.ActiveCfg = Release|x64
+		{851F0E25-B4D0-4A91-A02C-AC03D36EF7AA}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -52,6 +58,8 @@ Global
 		toolbox\toolbox.vcxitems*{43e0263b-7a70-4043-944c-b5dfd0d66a17}*SharedItemsImports = 4
 		code\code.vcxitems*{4c03b808-3e6f-4eab-84a3-aceacbd1158e}*SharedItemsImports = 4
 		toolbox\toolbox.vcxitems*{4c03b808-3e6f-4eab-84a3-aceacbd1158e}*SharedItemsImports = 4
+		code\code.vcxitems*{851f0e25-b4d0-4a91-a02c-ac03d36ef7aa}*SharedItemsImports = 4
+		toolbox\toolbox.vcxitems*{851f0e25-b4d0-4a91-a02c-ac03d36ef7aa}*SharedItemsImports = 4
 		toolbox\toolbox.vcxitems*{be56fe8f-36c5-4de9-86ea-d934aac72114}*SharedItemsImports = 9
 		code\code.vcxitems*{efe17067-fb70-4711-89f4-f5992c0f4e4f}*SharedItemsImports = 4
 		toolbox\toolbox.vcxitems*{efe17067-fb70-4711-89f4-f5992c0f4e4f}*SharedItemsImports = 4

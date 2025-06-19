@@ -58,6 +58,8 @@ constexpr bool IS_LITTLE_ENDIAN_ = true;
 */
 
 
+#define protectedExposed public
+
 
 #if defined(_WIN32) || defined(_WIN64)
 
