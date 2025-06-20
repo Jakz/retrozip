@@ -59,7 +59,7 @@ struct GUI
   {
     size_t total = archive.entries()[index].binary().digest.size;
     
-    ArchiveBuilder builder(CachePolicy(CachePolicy::Mode::NEVER, 0), MB128, MB128);
+    ArchiveBuilder builder(CachePolicy(CachePolicy::Mode::NEVER, 0), 128_mb, 128_mb);
     builder.extractSpecificFilesFromArchive(filepath, folder, index, [this, total](float bytes) {
       printf("extracted %f\n", bytes / float(total));
       this->progress.bar.value( int(bytes / float(total) * 100.0f));
@@ -259,7 +259,7 @@ int mainzzz(int argc, char* argv[])
 {
   if (false)
   {
-    ArchiveBuilder builder(CachePolicy(CachePolicy::Mode::NEVER, 0), MB128, MB128);
+    ArchiveBuilder builder(CachePolicy(CachePolicy::Mode::NEVER, 0), 128_mb, 128_mb);
     std::vector<FileGroup> groups;
 
     groups.push_back(FileGroup::ofSolid(path(R"(C:\Users\Jack\Desktop\patapon\smb3)").contents()));
@@ -267,19 +267,19 @@ int mainzzz(int argc, char* argv[])
     
     auto archive = builder.build(groups);
     memory_buffer sink;
-    archive.options().bufferSize = MB64;
+    archive.options().bufferSize = 64_mb;
     archive.write(sink);
     sink.serialize(file_handle(R"(C:\Users\Jack\Desktop\patapon\whole.box)", file_mode::WRITING));
   }
 
   if (false)
   {
-    ArchiveBuilder builder(CachePolicy(CachePolicy::Mode::NEVER, 0), MB128, MB128);
+    ArchiveBuilder builder(CachePolicy(CachePolicy::Mode::NEVER, 0), 128_mb, 128_mb);
 
     auto sources = builder.buildSourcesFromFolder(R"(C:\Users\Jack\Desktop\patapon\smb3)");
     auto archive = builder.buildSingleStreamSolidArchive(sources);
     memory_buffer sink;
-    archive.options().bufferSize = MB1;
+    archive.options().bufferSize = 1_mb;
     archive.write(sink);
     sink.serialize(file_handle(R"(C:\Users\Jack\Desktop\patapon\smb3.box)", file_mode::WRITING));
   }

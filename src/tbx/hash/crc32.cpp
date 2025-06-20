@@ -65,21 +65,21 @@ namespace hash
     
     size_t fileLength = handle.length();
     size_t current = 0;
-    std::unique_ptr<byte[]> bufferPtr = std::unique_ptr<byte[]>(new byte[KB16]);
+    std::unique_ptr<byte[]> bufferPtr = std::unique_ptr<byte[]>(new byte[16_kb]);
     byte* buffer = bufferPtr.get();
     
     crc32_digester digester;
     
     while (current < fileLength)
     {
-      size_t amountToProcess = std::min(KB16, fileLength - current);
+      size_t amountToProcess = std::min(16_kb, fileLength - current);
       
       if (handle.read(buffer, 1, amountToProcess))
         digester.update(buffer, amountToProcess);
       else
         throw exceptions::error_reading_from_file(path);
       
-      current += KB16;
+      current += 16_kb;
     }
 
     return digester.get();

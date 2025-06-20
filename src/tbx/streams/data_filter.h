@@ -87,7 +87,7 @@ private:
 public:
   data_filter(size_t inBufferSize, size_t outBufferSize) : _in(inBufferSize), _out(outBufferSize), _started(false), _finished(false), _isEnded(false) { }
 
-  data_filter() : data_filter(KB16, KB16) { }
+  data_filter() : data_filter(16_kb, 16_kb) { }
   data_filter(size_t bufferSize) : data_filter(bufferSize, bufferSize) { }
 
   virtual ~data_filter()

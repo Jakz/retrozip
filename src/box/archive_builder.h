@@ -33,7 +33,7 @@ struct BufferSizePolicy
   Mode mode;
   size_t size;
   
-  BufferSizePolicy(Mode mode) : mode(mode), size(MB32) { }
+  BufferSizePolicy(Mode mode) : mode(mode), size(32_mb) { }
   BufferSizePolicy(Mode mode, size_t size) : mode(mode), size(size) { }
   BufferSizePolicy(size_t size) : BufferSizePolicy(Mode::FIXED, size) { }
   

@@ -111,7 +111,7 @@ Archive ArchiveBuilder::buildSingleStreamBaseWithDeltasArchive(const data_source
       data.entries.push_back({ source.name, source, { new builders::lzma_builder(bufferSize) } });
     }
     else
-      data.entries.push_back({ source.name, source, { new builders::xdelta3_builder(bufferSize, sources[baseIndex], MB16, sources[baseIndex]->size()) } });
+      data.entries.push_back({ source.name, source, { new builders::xdelta3_builder(bufferSize, sources[baseIndex], 16_mb, sources[baseIndex]->size()) } });
     
     data.streams.push_back({ { i } });
   }
@@ -124,7 +124,7 @@ Archive ArchiveBuilder::build(const std::vector<FileGroup>& groups)
   TRACE_AB("%p: builder::build()", this);
 
   Archive archive;
-  archive.options().bufferSize = MB64;
+  archive.options().bufferSize = 64_mb;
 
   ArchiveFactory::Data data;
 
@@ -170,7 +170,7 @@ Archive ArchiveBuilder::build(const std::vector<FileGroup>& groups)
             data.entries.push_back({ source.name, source, { new builders::lzma_builder(bufferSize) } });
           }
           else
-            data.entries.push_back({ source.name, source, { new builders::xdelta3_builder(bufferSize, group.sources[group.entry], MB16, group.sources[group.entry]->size()) } });
+            data.entries.push_back({ source.name, source, { new builders::xdelta3_builder(bufferSize, group.sources[group.entry], 16_mb, group.sources[group.entry]->size()) } });
 
           data.streams.push_back({ { e } });
 
@@ -244,7 +244,7 @@ void ArchiveBuilder::extractSpecificFilesFromArchive(const class path& path, con
 
   Archive archive;
   file_data_source source(path);
-  archive.options().bufferSize = MB64;
+  archive.options().bufferSize = 64_mb;
   archive.read(source);
 
   const auto& entry = archive.entries()[index];
@@ -271,7 +271,7 @@ void ArchiveBuilder::extractSpecificFilesFromArchive(const class path& path, con
 
   Archive archive;
   file_data_source source(path);
-  archive.options().bufferSize = MB64;
+  archive.options().bufferSize = 64_mb;
   archive.read(source);
 
   const auto& entry = archive.entries()[index];
@@ -305,7 +305,7 @@ void ArchiveBuilder::extractWholeArchiveIntoFolder(const class path& path, const
   
   Archive archive;
   file_data_source source(path);
-  archive.options().bufferSize = MB64;
+  archive.options().bufferSize = 64_mb;
   archive.read(source);
   
   for (const auto& entry : archive.entries())

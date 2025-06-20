@@ -376,27 +376,11 @@ private:
 ;
 
 #pragma mark powers of two
-constexpr size_t KB8 = 8192;
-constexpr size_t KB16 = 16384;
-constexpr size_t KB32 = 16384 << 1;
-constexpr size_t KB64 = 16384 << 2;
-constexpr size_t KB128 = KB64 << 1;
-constexpr size_t KB256 = KB128 << 1;
-constexpr size_t MB1 = 1 << 20;
-constexpr size_t MB2 = MB1 << 1;
-constexpr size_t MB4 = MB1 << 2;
-constexpr size_t MB8 = MB1 << 3;
-constexpr size_t MB16 = MB8 << 1;
-constexpr size_t MB32 = MB8 << 2;
-constexpr size_t MB64 = MB8 << 3;
-constexpr size_t MB128 = MB8 << 4;
-constexpr size_t MB256 = MB8 << 5;
-constexpr size_t MB512 = MB8 << 6;
-constexpr size_t GB1 = MB8 << 7;
-constexpr size_t GB2 = GB1 << 1;
-constexpr size_t GB4 = GB1 << 2;
-constexpr size_t GB8 = GB1 << 3;
+constexpr size_t operator"" _kb(unsigned long long value) { return value * 1024; }
 
+constexpr size_t operator"" _mb(unsigned long long value) { return value * 1024 * 1024; }
+
+constexpr size_t operator"" _gb(unsigned long long value) { return value * 1024 * 1024 * 1024; }
 
 enum class ZlibResult : int;
 

@@ -157,7 +157,7 @@ struct Options
     size_t digesterBuffer;
   } checksum;
   
-  Options() : bufferSize(16), digest({true, true, true}), checksum({true, MB1}) { }
+  Options() : bufferSize(16), digest({true, true, true}), checksum({true, 1_mb}) { }
   
   bool isMultithreaded() const { return false; }
 };

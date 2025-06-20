@@ -255,7 +255,7 @@ void testing::ArchiveTester::verify(const ArchiveFactory::Data& data, const Arch
 
 void testing::Xdelta3Tester::test(size_t testLength, size_t modificationCount, size_t bufferSize, size_t windowSize, size_t blockSize)
 {
-  assert(windowSize >= KB16 && windowSize <= MB16);
+  assert(windowSize >= 16_kb && windowSize <= 16_mb);
   
   if (useRealTool)
   {

@@ -78,13 +78,13 @@ void Storage::consolidate(const RomHashData* rom, vfs::VirtualFile* file)
     zipClose(zip, nullptr);
   }
 
-  ArchiveBuilder builder(CachePolicy(CachePolicy::Mode::NEVER, 0), MB128, MB128);
+  ArchiveBuilder builder(CachePolicy(CachePolicy::Mode::NEVER, 0), 128_mb, 128_mb);
   memory_buffer* buffer = new memory_buffer(file->_content.data(), file->_content.size(), false);
   data_source_vector sources;
   sources.emplace_back(base.filename(), buffer);
   Archive archive = builder.buildSingleStreamSolidArchive(sources);
   memory_buffer sink;
-  archive.options().bufferSize = MB1;
+  archive.options().bufferSize = 1_mb;
   archive.write(sink);
   sink.serialize(file_handle(base.withExtension("box"), file_mode::WRITING));
   

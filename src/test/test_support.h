@@ -28,7 +28,7 @@ namespace testing
   struct Xdelta3Tester
   {
   public:
-    static constexpr size_t steps[] = { KB16, KB32, KB64, KB256, MB1, MB2 };
+    static constexpr size_t steps[] = { 16_kb, 32_kb, 64_kb, 256_kb, 1_mb, 2_mb };
     static constexpr size_t dsteps[] = { 16000, 32000, 64000, 256000, 1000000, 2000000 };
     static constexpr size_t count = 4;
     

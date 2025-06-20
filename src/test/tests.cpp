@@ -869,18 +869,18 @@ TEST_CASE("file sources/sinks", "[stream]") {
   
   SECTION("paged file source")
   {
-    constexpr size_t LEN = MB1;
+    constexpr size_t LEN = 1_mb;
     constexpr size_t pageSize = 256;
     constexpr size_t maxPages = 16;
     
     memory_buffer source(LEN);
     for (size_t i = 0; i < LEN; ++i)
       source.raw()[i] = rand() % 256;
-    source.advance(MB1);
+    source.advance(1_mb);
     
     {
       file_data_sink sink("test.bin");
-      passthrough_pipe pipe(&source, &sink, KB128);
+      passthrough_pipe pipe(&source, &sink, 128_kb);
       pipe.process();
     }
     
@@ -1547,7 +1547,7 @@ TEST_CASE("empty archive", "[box archive]") {
   Archive source, result;
   
   source.options().checksum.calculateGlobalChecksum = true;
-  source.options().checksum.digesterBuffer = KB16;
+  source.options().checksum.digesterBuffer = 16_kb;
   
   source.write(buffer);
   result.read(buffer);
@@ -1593,7 +1593,7 @@ TEST_CASE("archive (one entry per stream) (no filters)", "[box archive]") {
   
   Archive verify;
   verify.read(output);
-  verify.options().bufferSize = KB16;
+  verify.options().bufferSize = 16_kb;
   testing::ArchiveTester::verify(data, verify, output);
   
   testing::ArchiveTester::release(data);
@@ -1624,7 +1624,7 @@ TEST_CASE("archive (multiple entry per stream)", "[box archive]") {
   
   Archive verify;
   verify.read(output);
-  verify.options().bufferSize = KB16;
+  verify.options().bufferSize = 16_kb;
   testing::ArchiveTester::verify(data, verify, output);
  
   testing::ArchiveTester::release(data);
@@ -1650,17 +1650,17 @@ TEST_CASE("archive (single entry archive with filters)", "[box archive]") {
   }
   
   SECTION("zlib deflate filter on entry") {
-    data.entries.push_back({ "foobar1.bin", testing::randomCompressibleDataSource(KB16), { new builders::deflate_builder(KB16) } });
+    data.entries.push_back({ "foobar1.bin", testing::randomCompressibleDataSource(16_kb), { new builders::deflate_builder(16_kb) } });
     data.streams.push_back({ { 0 }, { } });
   }
   
   SECTION("double filter on entry (deflate + xor)") {
-    data.entries.push_back({ "foobar1.bin", testing::randomCompressibleDataSource(KB16), { new builders::deflate_builder(KB16), new builders::xor_builder(KB16, "foobar") } });
+    data.entries.push_back({ "foobar1.bin", testing::randomCompressibleDataSource(16_kb), { new builders::deflate_builder(16_kb), new builders::xor_builder(16_kb, "foobar") } });
     data.streams.push_back({ { 0 }, { } });
   }
   
   SECTION("double filter on entry (xor + deflate)") {
-    data.entries.push_back({ "foobar1.bin", testing::randomCompressibleDataSource(KB16), { new builders::xor_builder(KB16, "foobar"), new builders::deflate_builder(KB16) } });
+    data.entries.push_back({ "foobar1.bin", testing::randomCompressibleDataSource(16_kb), { new builders::xor_builder(16_kb, "foobar"), new builders::deflate_builder(16_kb) } });
     data.streams.push_back({ { 0 }, { } });
   }
   
@@ -1670,17 +1670,17 @@ TEST_CASE("archive (single entry archive with filters)", "[box archive]") {
   }
   
   SECTION("xor on entry and lzma on stream") {
-    data.entries.push_back({ "entry.bin", testing::randomCompressibleDataSource(KB16), { new builders::xor_builder(32, "foobar") } });
+    data.entries.push_back({ "entry.bin", testing::randomCompressibleDataSource(16_kb), { new builders::xor_builder(32, "foobar") } });
     data.streams.push_back({ { 0 }, { new builders::lzma_builder(32) } });
   }
   
   SECTION("lzma on entry and xor on stream") {
-    data.entries.push_back({ "entry.bin", testing::randomCompressibleDataSource(KB16), { new builders::lzma_builder(32) } });
+    data.entries.push_back({ "entry.bin", testing::randomCompressibleDataSource(16_kb), { new builders::lzma_builder(32) } });
     data.streams.push_back({ { 0 }, { new builders::xor_builder(32, "foobar") } });
   }
   
   SECTION("lzma on entry and deflate on stream") {
-    data.entries.push_back({ "entry.bin", testing::randomCompressibleDataSource(KB16), { new builders::lzma_builder(32) } });
+    data.entries.push_back({ "entry.bin", testing::randomCompressibleDataSource(16_kb), { new builders::lzma_builder(32) } });
     data.streams.push_back({ { 0 }, { new builders::deflate_builder(32) } });
   }
   
@@ -1692,7 +1692,7 @@ TEST_CASE("archive (single entry archive with filters)", "[box archive]") {
   
   Archive verify;
   verify.read(output);
-  verify.options().bufferSize = KB16;
+  verify.options().bufferSize = 16_kb;
   testing::ArchiveTester::verify(data, verify, output);
  
   testing::ArchiveTester::release(data);

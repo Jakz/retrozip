@@ -98,7 +98,7 @@ CommandResult commands::IsoToCso::run(const Parameters& args, Engine* engine)
 
 CommandResult commands::InputToZip::run(const Parameters& args, Engine* engine)
 {
-  size_t bufferSize = MB1;
+  size_t bufferSize = 1_mb;
   std::unique_ptr<uint8_t[]> buffer(new uint8_t[bufferSize]);
 
   Output* output = args.output();

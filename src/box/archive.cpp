@@ -209,7 +209,7 @@ Archive Archive::ofData(const ArchiveFactory::Data& data)
     ++streamIndex;
   }
   
-  archive.options().bufferSize = KB16;
+  archive.options().bufferSize = 16_kb;
   
   return archive;
 }
