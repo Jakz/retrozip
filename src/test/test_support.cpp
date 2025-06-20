@@ -148,24 +148,24 @@ void testing::ArchiveTester::verify(const ArchiveFactory::Data& data, const Arch
   
   if (payloadSizeForStream > 0)
   {
-    REQUIRE(verify.section(box::Section::STREAM_PAYLOAD));
-    REQUIRE(verify.section(box::Section::STREAM_PAYLOAD)->size == payloadSizeForStream);
+    REQUIRE(verify.section(box::Section::StreamPayload));
+    REQUIRE(verify.section(box::Section::StreamPayload)->size == payloadSizeForStream);
   }
   else
-    REQUIRE(verify.section(box::Section::STREAM_PAYLOAD) == nullptr);
+    REQUIRE(verify.section(box::Section::StreamPayload) == nullptr);
 
   
   if (payloadSizeForEntries > 0)
   {
-    REQUIRE(verify.section(box::Section::ENTRY_PAYLOAD));
-    REQUIRE(verify.section(box::Section::ENTRY_PAYLOAD)->size == payloadSizeForEntries);
+    REQUIRE(verify.section(box::Section::EntryPayload));
+    REQUIRE(verify.section(box::Section::EntryPayload)->size == payloadSizeForEntries);
   }
   else
-    REQUIRE(verify.section(box::Section::ENTRY_PAYLOAD) == nullptr);
+    REQUIRE(verify.section(box::Section::EntryPayload) == nullptr);
 
   /* verify entry section header */
   {
-    const auto* entrySection = verify.section(box::Section::ENTRY_TABLE);
+    const auto* entrySection = verify.section(box::Section::EntryTable);
     
     if (data.entries.empty())
       REQUIRE(entrySection == nullptr);
@@ -178,8 +178,8 @@ void testing::ArchiveTester::verify(const ArchiveFactory::Data& data, const Arch
 
   /* verify stream section header */
   {
-    const auto* streamSection = verify.section(box::Section::STREAM_TABLE);
-    const auto* streamDataSection = verify.section(box::Section::STREAM_DATA);
+    const auto* streamSection = verify.section(box::Section::StreamTable);
+    const auto* streamDataSection = verify.section(box::Section::StreamData);
 
     if (data.streams.empty())
     {

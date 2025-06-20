@@ -20,15 +20,15 @@ struct refs
 
 Archive::Archive()
 {
-  _ordering.push_back(box::Section::HEADER);
-  _ordering.push_back(box::Section::SECTION_TABLE);
-  _ordering.push_back(box::Section::ENTRY_TABLE);
-  _ordering.push_back(box::Section::ENTRY_PAYLOAD);
-  _ordering.push_back(box::Section::STREAM_TABLE);
-  _ordering.push_back(box::Section::STREAM_PAYLOAD);
-  _ordering.push_back(box::Section::STREAM_DATA);
-  _ordering.push_back(box::Section::FILE_NAME_TABLE);
-  _ordering.push_back(box::Section::GROUP_TABLE);
+  _ordering.push_back(box::Section::Header);
+  _ordering.push_back(box::Section::SectionTable);
+  _ordering.push_back(box::Section::EntryTable);
+  _ordering.push_back(box::Section::EntryPayload);
+  _ordering.push_back(box::Section::StreamTable);
+  _ordering.push_back(box::Section::StreamPayload);
+  _ordering.push_back(box::Section::StreamData);
+  _ordering.push_back(box::Section::FileNameTable);
+  _ordering.push_back(box::Section::GroupTable);
 }
 
 bool Archive::isValidMagicNumber() const { return _header.magic == std::array<u8, 4>({ 'b', 'o', 'x', '!' }); }
@@ -218,21 +218,21 @@ bool Archive::willSectionBeSerialized(box::Section section) const
 {
   switch (section)
   {
-    case box::Section::HEADER: assert(false); return false;
-    case box::Section::SECTION_TABLE: assert(false); return false;
-    case box::Section::ENTRY_TABLE: return !_entries.empty();
-    case box::Section::COMMENTS_TABLE: return std::any_of(_entries.begin(), _entries.end(), [] (const ArchiveEntry& entry) { return entry.hasComment(); });
-    case box::Section::ENTRY_PAYLOAD: return std::any_of(_entries.begin(), _entries.end(), [] (const ArchiveEntry& entry) { return entry.payloadLength() > 0; });
+    case box::Section::Header: assert(false); return false;
+    case box::Section::SectionTable: assert(false); return false;
+    case box::Section::EntryTable: return !_entries.empty();
+    case box::Section::MetadataTable: return std::any_of(_entries.begin(), _entries.end(), [] (const ArchiveEntry& entry) { return entry.hasMetadata(); });
+    case box::Section::EntryPayload: return std::any_of(_entries.begin(), _entries.end(), [] (const ArchiveEntry& entry) { return entry.payloadLength() > 0; });
     
-    case box::Section::STREAM_TABLE: return !_streams.empty();
-    case box::Section::STREAM_PAYLOAD: return std::any_of(_streams.begin(), _streams.end(), [] (const ArchiveStream& stream) { return stream.payloadLength() > 0; });
+    case box::Section::StreamTable: return !_streams.empty();
+    case box::Section::StreamPayload: return std::any_of(_streams.begin(), _streams.end(), [] (const ArchiveStream& stream) { return stream.payloadLength() > 0; });
       
-    case box::Section::FILE_NAME_TABLE: return !_entries.empty();
-    case box::Section::STREAM_DATA: return !_streams.empty();
+    case box::Section::FileNameTable: return !_entries.empty();
+    case box::Section::StreamData: return !_streams.empty();
       
-    case box::Section::GROUP_TABLE: return !_groups.empty();
+    case box::Section::GroupTable: return !_groups.empty();
       
-    case box::Section::FIRST_FREE_SECTION_IDENT:
+    case box::Section::FirstFreeSectionIdent:
       //TODO: custom section serialization management
       assert(false);
   }
@@ -240,7 +240,7 @@ bool Archive::willSectionBeSerialized(box::Section section) const
 
 void Archive::write(W& w)
 {
-  assert(_ordering.front() == box::Section::HEADER);
+  assert(_ordering.front() == box::Section::Header);
   _ordering.pop_front();
   
   _headers.clear();
@@ -261,14 +261,14 @@ void Archive::write(W& w)
 
     switch (section)
     {
-      case box::Section::HEADER:
+      case box::Section::Header:
         /* already managed */
         
         /* section table must be first section after header */
-        assert(_ordering.front() == box::Section::SECTION_TABLE);
+        assert(_ordering.front() == box::Section::SectionTable);
       break;
         
-      case box::Section::SECTION_TABLE:
+      case box::Section::SectionTable:
       {
         size_t effectiveSections = std::count_if(_ordering.begin(), _ordering.end(), [this] (box::Section section) { return willSectionBeSerialized(section); });
         
@@ -277,13 +277,13 @@ void Archive::write(W& w)
         _header.index.offset = refs.sectionTable;
         _header.index.count = static_cast<box::count_t>(effectiveSections);
         _header.index.size = sizeof(box::SectionHeader)* _header.index.count;
-        _header.index.type = box::Section::SECTION_TABLE;
+        _header.index.type = box::Section::SectionTable;
         
         TRACE_A("%p: archive::write() reserved section table for %lu entries (%lu bytes) at %Xh (%lu)", this, _header.index.count, _header.index.size, _header.index.offset, _header.index.offset);
         break;
       }
         
-      case box::Section::ENTRY_TABLE:
+      case box::Section::EntryTable:
       {
         /* save offset to the entry table and store it into header */
         refs.entryTable = w.reserveArray<box::Entry>(_entries.size());
@@ -296,7 +296,7 @@ void Archive::write(W& w)
         break;
       }
         
-      case box::Section::STREAM_TABLE:
+      case box::Section::StreamTable:
       {
         /* save offset to the stream table and store it into header */
         refs.streamTable = w.reserveArray<box::Stream>(_streams.size());
@@ -309,7 +309,7 @@ void Archive::write(W& w)
         break;
       }
         
-      case box::Section::ENTRY_PAYLOAD:
+      case box::Section::EntryPayload:
       {
         roff_t base = w.tell();
         roff_t length = 0;
@@ -338,7 +338,7 @@ void Archive::write(W& w)
         break;
       }
         
-      case box::Section::STREAM_PAYLOAD:
+      case box::Section::StreamPayload:
       {
         roff_t base = w.tell();
         roff_t length = 0;
@@ -367,7 +367,7 @@ void Archive::write(W& w)
         break;
       }
         
-      case box::Section::FILE_NAME_TABLE:
+      case box::Section::FileNameTable:
       {
         roff_t base = w.tell();
         roff_t offset = w.tell();
@@ -392,7 +392,7 @@ void Archive::write(W& w)
         break;
       }
         
-      case box::Section::GROUP_TABLE:
+      case box::Section::GroupTable:
       {
         roff_t base = w.tell();
         roff_t offset = w.tell();
@@ -416,14 +416,14 @@ void Archive::write(W& w)
         break;
       }
 
-      case box::Section::COMMENTS_TABLE:
+      case box::Section::MetadataTable:
       {
         //TODO: implement
         assert(false);
         break;
       }
         
-      case box::Section::STREAM_DATA:
+      case box::Section::StreamData:
       {
         sectionHeader.offset = w.tell();
         sectionHeader.count = 1;
@@ -460,7 +460,7 @@ void Archive::write(W& w)
       }
     }
     
-    if (section != box::Section::HEADER && section != box::Section::SECTION_TABLE && sectionHeader.size > 0)
+    if (section != box::Section::Header && section != box::Section::SectionTable && sectionHeader.size > 0)
       _headers.emplace(std::make_pair(section, sectionHeader));
   }
   
@@ -496,10 +496,10 @@ void Archive::readSection(R& r, const box::SectionHeader& header)
   
   switch (section)
   {
-    case S::HEADER: /* should never happen */ assert(false); break;
-    case S::SECTION_TABLE: /* should never happen */ assert(false); break;
+    case S::Header: /* should never happen */ assert(false); break;
+    case S::SectionTable: /* should never happen */ assert(false); break;
     
-    case S::ENTRY_TABLE:
+    case S::EntryTable:
     {
       /* read entries */
       for (size_t i = 0; i < header.count; ++i)
@@ -536,7 +536,7 @@ void Archive::readSection(R& r, const box::SectionHeader& header)
       break;
     }
       
-    case S::STREAM_TABLE:
+    case S::StreamTable:
     {
       for (size_t i = 0; i < header.count; ++i)
       {
@@ -561,7 +561,7 @@ void Archive::readSection(R& r, const box::SectionHeader& header)
       break;
     }
       
-    case S::GROUP_TABLE:
+    case S::GroupTable:
     {
       r.seek(header.offset);
       for (size_t i = 0; i < header.count; ++i)
@@ -587,16 +587,16 @@ void Archive::readSection(R& r, const box::SectionHeader& header)
       break;
     }
 
-    case S::COMMENTS_TABLE:
+    case S::MetadataTable:
     {
       //TODO: implement
       assert(false);
       break;
     }
       
-    case S::ENTRY_PAYLOAD:
-    case S::STREAM_PAYLOAD:
-    case S::FILE_NAME_TABLE:
+    case S::EntryPayload:
+    case S::StreamPayload:
+    case S::FileNameTable:
       /* do nothing, these are managed when reading respective parents */
       break;
   }

@@ -23,18 +23,18 @@ namespace box
 
   enum class Section : u32
   {
-    HEADER = 1,
-    SECTION_TABLE,
-    ENTRY_TABLE,
-    COMMENTS_TABLE,
-    ENTRY_PAYLOAD,
-    STREAM_TABLE,
-    STREAM_PAYLOAD,
-    STREAM_DATA,
-    FILE_NAME_TABLE,
-    GROUP_TABLE,
+    Header = 1,
+    SectionTable,
+    EntryTable,
+    MetadataTable,
+    EntryPayload,
+    StreamTable,
+    StreamPayload,
+    StreamData,
+    FileNameTable,
+    GroupTable,
 
-    FIRST_FREE_SECTION_IDENT = 1U << 31
+    FirstFreeSectionIdent = 1U << 31
   };
 
   enum class HeaderFlag : u64
