@@ -40,6 +40,7 @@
     "editor.background": "#071733"
   },
   "cmake.sourceDirectory": "/Users/jack/Documents/Dev/retrozip",
+  "cmake.buildDirectory": "${workspaceFolder}/projects/cmake/build",
   "files.associations": {
     "*.ls": "angelscript",
     "future": "cpp",

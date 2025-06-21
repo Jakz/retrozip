@@ -4,3 +4,4 @@
 *.xcworkspace
 xcuserdata
 build/**
+projects/cmake/build/**
