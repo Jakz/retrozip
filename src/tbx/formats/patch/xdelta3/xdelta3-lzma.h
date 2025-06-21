@@ -20,7 +20,7 @@
 #ifndef _XDELTA3_LZMA_H_
 #define _XDELTA3_LZMA_H_
 
-#include <lzma.h>
+#include "lzma.h"
 
 typedef struct _xd3_lzma_stream xd3_lzma_stream;
 

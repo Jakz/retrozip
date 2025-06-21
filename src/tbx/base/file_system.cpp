@@ -293,7 +293,7 @@ bool FileSystem::createFolder(const path& folder, bool intermediate) const
 
 bool FileSystem::deleteFile(const path& path) const
 {
-  return fs::remove(fs::path(path.data()));
+  return fs::remove_all(fs::path(path.data())) > 0;
 }
 
 bool FileSystem::fallocate(const path& path, size_t size) const

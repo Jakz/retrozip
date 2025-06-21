@@ -175,7 +175,7 @@ public:
 
   data_source* source() const override { return _source; }
   data_sink* sink() const override { return _sink; }
-  virtual size_t size() const { return _sink->capacity(); }
+  virtual size_t size() const override { return _sink->capacity(); }
 
   void prepare() override
   {

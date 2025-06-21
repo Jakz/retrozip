@@ -260,11 +260,13 @@ void Terminal::loop()
       }
       else if (mapping[key] != '\0')
       {
+#ifdef _WIN32
         wchar_t ch = terminal_state(TK_WCHAR);
         std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
         std::string utf8 = converter.to_bytes(ch);
 
         _prompt.insert(_prompt.end() + _caretPosition, utf8.begin(), utf8.end());
+#endif
       }
     }
 

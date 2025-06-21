@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <string>
+#include <vector>
 #include <unordered_set>
 #include <functional>
 #include <memory>
@@ -162,15 +163,6 @@ public:
   
   bool open(const class path& path, file_mode mode)
   {
-#ifdef false && _WIN32
-    const wchar_t* smode = L"rb";
-    if (mode == file_mode::WRITING) smode = L"wb+";
-    else if (mode == file_mode::APPENDING) smode = L"rb+";
-    
-    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> conv;
-    std::wstring wpath = conv.from_bytes(path.c_str());
-    _file = _wfopen(wpath.c_str(), smode);
-#else
     const char* smode = "rb";
     if (mode == file_mode::WRITING) smode = "wb+";
     else if (mode == file_mode::APPENDING) smode = "rb+";
@@ -178,13 +170,10 @@ public:
     assert(!_file);
     _file = fopen(path.c_str() , smode);
     assert(_file);
-#endif
-    
-    //if (!file || ferror(file))
-    //  printf("FILE* %s (mode: %s) error: (%d) %s\n", path.c_str(), smode, errno, strerror(errno));
-    
+
     return _file != nullptr;
   }
+
   bool close() const
   {
     if (_file == nullptr)
@@ -212,6 +201,15 @@ public:
     data.get()[len] = '\0';
     close();
     return std::string(data.get());
+  }
+
+  std::vector<uint8_t> toBytes() const
+  {
+    size_t len = length();
+    std::vector<uint8_t> data(len);
+    read(data.data(), sizeof(uint8_t), len);
+    close();
+    return data;
   }
 
   operator bool() const { return _file != nullptr; }

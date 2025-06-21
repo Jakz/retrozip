@@ -168,10 +168,7 @@ public:
 
 
 #include <cstdio>
-
-#include <io.h>
-#include <sys/stat.h>
-#include <fcntl.h>
+#include <filesystem>
 
 class Hasher
 {
@@ -181,32 +178,17 @@ class Hasher
   hash::sha1_digester sha1;
   hash::md5_digester md5;
 
-  size_t sizeOfFile(fd_t fd)
-  {
-    struct stat statbuf;
-    fstat(fd, &statbuf);
-    return statbuf.st_size;
-  }
-
 public:
 
   HashData compute(const path& path)
   {
-    fd_t fd = _open(path.c_str(), O_RDONLY);
-    size_t size = sizeOfFile(fd);
-
-    byte* buffer = new byte[size];
-    _read(fd, buffer, size);
-
-    //byte* buffer = reinterpret_cast<byte*>(mmap(nullptr, size, PROT_READ, MAP_SHARED, fd, 0));
-    crc.update(buffer, size);
-    md5.update(buffer, size);
-    sha1.update(buffer, size);
-
-    //munmap(buffer, size);
-    delete[] buffer;
-
-    _close(fd);
+    file_handle file(path, file_mode::READING);
+      
+    auto contents = file.toBytes();
+    size_t size = contents.size();
+    crc.update(contents.data(), size);
+    md5.update(contents.data(), size);
+    sha1.update(contents.data(), size);
 
     return get(size);
   }

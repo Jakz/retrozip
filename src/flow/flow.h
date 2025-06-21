@@ -40,7 +40,7 @@ namespace flow
 
   public:
     InputFile(const fs_path& path) : _path(path) { }
-    const fs_path& path() const { return _path; }
+    const fs_path& path() const override { return _path; }
 
     void prepare(InputMode mode) override
     { 
@@ -58,7 +58,7 @@ namespace flow
       return _source->read(dest, amount);
     }
 
-    void finalize()
+    void finalize() override
     {
       _source.reset();
     }
@@ -82,7 +82,7 @@ namespace flow
 
   public:
     OutputFile(const fs_path& path) : _path(path) { }
-    const fs_path& path() const { return _path; }
+    const fs_path& path() const override { return _path; }
 
     void prepare(OutputMode mode) override
     {

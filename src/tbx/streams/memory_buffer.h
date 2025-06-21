@@ -43,8 +43,6 @@ public:
     TRACE_MB("%p: memory_buffer::new(ptr, %lu)", this, length);
   }
   
-
-  
   memory_buffer(byte* data, size_t length, bool copy) : _data(data), _capacity(length), _size(length), _position(0), _dataOwned(copy)
   {
     if (copy)

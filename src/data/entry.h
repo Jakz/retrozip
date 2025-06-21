@@ -89,6 +89,8 @@ struct HashData
         return *reinterpret_cast<const size_t*>(o.md5.inner());
       else if (o.sha1enabled)
         return *reinterpret_cast<const size_t*>(o.sha1.inner());
+      else
+        return 0; // should never happen, but just in case
     }
   };
 };

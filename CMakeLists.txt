@@ -34,11 +34,25 @@ include_directories(${LIBS_DIR}/nana/include)
 include_directories(${LIBS_DIR}/lzma/include)
 include_directories(${LIBS_DIR}/blterm/include)
 include_directories(${CMAKE_SOURCE_DIR}/src)
+include_directories(${CMAKE_SOURCE_DIR}/src/test)
 
 set(SOURCES_MINIZIP
   ${CMAKE_SOURCE_DIR}/src/tbx/formats/minizip/ioapi.c
   ${CMAKE_SOURCE_DIR}/src/tbx/formats/minizip/unzip.c
   ${CMAKE_SOURCE_DIR}/src/tbx/formats/minizip/zip.c
+)
+
+file(GLOB SOURCES_TBX_BASE  ${CMAKE_SOURCE_DIR}/src/tbx/base/*.cpp)
+file(GLOB SOURCES_BOX ${CMAKE_SOURCE_DIR}/src/box/*.cpp)
+file(GLOB SOURCES_FILTERS ${CMAKE_SOURCE_DIR}/src/filters/*.cpp)
+file(GLOB SOURCES_CRYPTO ${CMAKE_SOURCE_DIR}/src/crypto/*.cpp)
+
+file(GLOB SOURCES_TBX_HASH ${CMAKE_SOURCE_DIR}/src/tbx/hash/*.cpp)
+file(GLOB_RECURSE SOURCES_TBX_FORMATS ${CMAKE_SOURCE_DIR}/src/tbx/formats/*.cpp)
+
+# Add all sources from src/test to SOURCES_TEST using file(GLOB) recursively
+file(GLOB_RECURSE SOURCES_TEST
+  ${CMAKE_SOURCE_DIR}/src/test/*.cpp
 )
 
 # Add CLI target
@@ -49,7 +63,29 @@ add_executable(cli
   src/tbx/base/file_system.cpp
   src/tbx/base/strings.cpp
   ${SOURCES_MINIZIP}
+  ${SOURCES_TBX_HASH}
 )
+
+# Add test target
+add_executable(tests
+  ${SOURCES_TEST}
+  ${SOURCES_TBX_HASH}
+  ${SOURCES_TBX_BASE}
+  ${SOURCES_TBX_FORMATS}
+  ${SOURCES_BOX}
+  ${SOURCES_FILTERS}
+  ${SOURCES_CRYPTO}
+)
+
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/projects/cmake/catch")
+include(Catch)
+
+
+# add zlib libraries to all targets by looping targets
+foreach(target cli tests)
+  target_link_libraries(${target} PRIVATE ${ZLIB_LIBRARIES})
+  target_link_libraries(${target} PRIVATE ${LIBS_DIR}/lzma/lib/macos/liblzma.a)
+endforeach()
 
 if(APPLE)
   target_link_libraries(cli PRIVATE ${LIBS_DIR}/blterm/lib/macos/libBearLibTerminal.dylib)
@@ -67,3 +103,6 @@ if(APPLE)
     ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
   )
 endif()
+
+enable_testing()
+catch_discover_tests(tests)

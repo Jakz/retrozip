@@ -139,7 +139,7 @@ Archive ArchiveBuilder::build(const std::vector<FileGroup>& groups)
         group.sources = buildSources(group.files);
         size_t bufferSize = filterBufferSizeForPolicy(group.sources);
 
-        data.streams.push_back(ArchiveFactory::Stream({ }, { new builders::lzma_builder(bufferSize) }));
+        data.streams.push_back({ {}, { new builders::lzma_builder(bufferSize) } });
 
         for (const auto& source : group.sources)
         {

@@ -623,21 +623,21 @@ int main(int argc, const char* argv[])
   {
     path path = R"(F:\Misc\retrozip\smash\supermono)";
 
-    ArchiveBuilder builder(CachePolicy(CachePolicy::Mode::NEVER, 0), MB128, MB128);
+    ArchiveBuilder builder(CachePolicy(CachePolicy::Mode::NEVER, 0), 128_mb, 128_mb);
 
     auto sources = builder.buildSourcesFromFolder(path);
     std::cout << "Found " << sources.size() << " files to archive." << std::endl;
 
     archive = builder.buildSingleStreamBaseWithDeltasArchive(sources, 0);// builder.buildSingleStreamSolidArchive(sources);
     memory_buffer sink;
-    archive.options().bufferSize = MB1;
+    archive.options().bufferSize = 1_mb;
     archive.write(sink);
     sink.serialize(file_handle(output, file_mode::WRITING));
   }
   else if (false)
   {    
     file_data_source source("output.box");
-    archive.options().bufferSize = MB256;
+    archive.options().bufferSize = 256_mb;
     archive.read(source);
 
     memory_buffer sink;
@@ -674,14 +674,14 @@ int disabled(int argc, const char* argv[])
     return -1;
   }
   
-  ArchiveBuilder builder(CachePolicy(CachePolicy::Mode::ALWAYS, 0), MB16, MB16);
+  ArchiveBuilder builder(CachePolicy(CachePolicy::Mode::ALWAYS, 0), 16_mb, 16_mb);
   
   auto sources = builder.buildSourcesFromFolder(path);
   std::cout << "Found " << sources.size() << " files to archive." << std::endl;
   
   Archive archive = builder.buildSingleStreamBaseWithDeltasArchive(sources, 0);
   memory_buffer sink;
-  archive.options().bufferSize = MB32;
+  archive.options().bufferSize = 32_mb;
   archive.write(sink);
   sink.serialize(file_handle("output.box", file_mode::WRITING));
   

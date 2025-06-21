@@ -44,5 +44,8 @@
     "*.ls": "angelscript",
     "future": "cpp",
     "vector": "cpp"
-  }
+  },
+
+  "testMate.cpp.test.executables": "/Users/jack/Documents/Dev/retrozip/build/out/tests",
+  "testMate.cpp.catch2.enable": true
 }

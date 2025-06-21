@@ -458,6 +458,12 @@ void Archive::write(W& w)
         
         break;
       }
+
+      case box::Section::FirstFreeSectionIdent:
+      {
+        //TODO: can this happen?
+        break;
+      }
     }
     
     if (section != box::Section::Header && section != box::Section::SectionTable && sectionHeader.size > 0)
