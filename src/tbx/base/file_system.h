@@ -14,7 +14,7 @@ public:
   static const FileSystem* i();
   
   void scanFolder(const path& root, const std::function<void(bool, const path& path)>& lambda, bool recursive = true);
-  std::vector<path> contentsOfFolder(const path& folder, bool recursive = true, predicate<path> exclude = [](const path&){ return false; }) const;
+  std::vector<path> contentsOfFolder(const path& folder, bool recursive = true, predicate<path> include = [](const path&){ return true; }) const;
   
   bool existsAsFolder(const path& path) const;
   bool existsAsFile(const path& path) const;

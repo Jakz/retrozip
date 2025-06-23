@@ -29,6 +29,7 @@ Archive::Archive()
   _ordering.push_back(box::Section::StreamData);
   _ordering.push_back(box::Section::FileNameTable);
   _ordering.push_back(box::Section::GroupTable);
+  _ordering.push_back(box::Section::MetadataTable);
 }
 
 bool Archive::isValidMagicNumber() const { return _header.magic == std::array<u8, 4>({ 'b', 'o', 'x', '!' }); }
@@ -276,7 +277,7 @@ void Archive::write(W& w)
 
         _header.index.offset = refs.sectionTable;
         _header.index.count = static_cast<box::count_t>(effectiveSections);
-        _header.index.size = sizeof(box::SectionHeader)* _header.index.count;
+        _header.index.size = sizeof(box::SectionHeader) * _header.index.count;
         _header.index.type = box::Section::SectionTable;
         
         TRACE_A("%p: archive::write() reserved section table for %lu entries (%lu bytes) at %Xh (%lu)", this, _header.index.count, _header.index.size, _header.index.offset, _header.index.offset);
@@ -377,7 +378,7 @@ void Archive::write(W& w)
         /* write NUL terminated name */
         for (const ArchiveEntry& entry : _entries)
         {
-          TRACE_A2("%p: archive::write() writing entry name '%s' at %Xh (%lu)", this, entry.name().c_str(), offset, offset);
+          TRACE_A2("%p: archive::write() writing entry name '%s' at %Xh (%lu)", this, entry.name(), offset, offset);
           
           entry.binary().entryNameOffset = offset;
           w.write(entry.name().c_str(), 1, entry.name().length());
@@ -418,8 +419,30 @@ void Archive::write(W& w)
 
       case box::Section::MetadataTable:
       {
-        //TODO: implement
-        assert(false);
+        roff_t base = w.tell();
+        roff_t offset = w.tell();
+        
+        sectionHeader.offset = w.tell();
+        
+        size_t idx = 0;
+        for (const ArchiveEntry& entry : _entries)
+        {
+          if (entry.hasMetadata())
+          {
+            for (const auto& mentry : entry.metadata())
+            {
+              TRACE_A2("%p: archive::write() writing entry metadata '%lu:%s' at %Xh (%lu)", this, idx, mentry.key(), offset, offset);
+              mentry.serialize(&w);
+            }
+
+            offset = w.tell();
+            ++idx;
+          }
+        }
+        
+        sectionHeader.size = static_cast<box::count_t>(offset - base);
+        
+        TRACE_A("%p: archive::write() written name table of %lu bytes at %Xh (%lu)", this, sectionHeader.size, sectionHeader.offset, sectionHeader.offset);
         break;
       }
         
@@ -931,6 +954,32 @@ data_source* ArchiveReadHandle::source(bool total)
   return source;
 }
 
+
+size_t box::MetadataEntry::sizeInBytes() const
+{
+  if (_key.empty() && _data.empty())
+    return 0;
+  else
+    return sizeof(MetadataType) + sizeof(key_len_t) + _key.size() + sizeof(data_len_t) + _data.size();
+}
+
+
+void box::MetadataEntry::serialize(data_sink* sink) const
+{
+  auto esink = enriched_data_sink(sink);
+  esink.write<key_len_t>(_key);
+  esink.write(data_len_t(_data.size()));
+  esink.write(_data.data(), _data.size());
+}
+
+void box::MetadataEntry::unserialize(data_source* source)
+{
+  auto esource = enriched_data_source(source);
+  esource.readString<key_len_t>(_key);
+  auto length = esource.read<data_len_t>();
+  _data.resize(length);
+  esource.read(_data.data(), length);
+}
 
 
 

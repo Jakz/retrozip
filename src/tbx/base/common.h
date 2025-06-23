@@ -26,6 +26,9 @@ using s64 = int64_t;
 
 using roff_t = int64_t;
 
+struct data_sink;
+struct data_source;
+
 static constexpr bool IS_LITTLE_ENDIAN_ = true;//std::endian::native == std::endian::little;
 
 /*
@@ -233,43 +236,6 @@ using u16se = std::conditional<IS_LITTLE_ENDIAN_, u16le, u16be>::type;
 using u16de = std::conditional<IS_LITTLE_ENDIAN_, u16be, u16le>::type;
 using u32se = std::conditional<IS_LITTLE_ENDIAN_, u32le, u32be>::type;
 using u32de = std::conditional<IS_LITTLE_ENDIAN_, u32be, u32le>::type;
-
-template<typename T>
-struct optional
-{
-private:
-  T _data;
-  bool _isPresent;
-  
-public:
-  optional(T data) : _data(data), _isPresent(true) { }
-  optional() : _data(), _isPresent(false) { }
-  
-  bool isPresent() const { return _isPresent; }
-  void set(T data) { this->_data = data; _isPresent = true; }
-  void clear() { _isPresent = false; }
-  
-  T get() const { assert(_isPresent); return _data; }
-};
-
-
-template<>
-struct optional<u32>
-{
-private:
-  static constexpr u64 EMPTY_VALUE = 0xFFFFFFFFFFFFFFFFLL;
-  u64 _data;
-  
-public:
-  optional<u32>() : _data(EMPTY_VALUE) { }
-  optional<u32>(u32 data) : _data(data) { }
-  
-  bool isPresent() const { return ((_data >> 32) & 0xFFFFFFFF) == 0; }
-  void set(u32 data) { this->_data = data; }
-  void clear() { this->_data = EMPTY_VALUE; }
-  
-  u32 get() const { return _data & 0xFFFFFFFF; }
-};
 
 struct enum_hash
 {

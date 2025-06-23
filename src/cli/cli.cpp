@@ -461,7 +461,7 @@ void cli::createArchive(const std::vector<path>& sources, const path& dest, cons
   {
     if (source.isFolder())
     {
-      auto sfiles = FileSystem::i()->contentsOfFolder(source, options.recursiveScan, [&options] (const path& p) { return !options.filter(p); });
+      auto sfiles = FileSystem::i()->contentsOfFolder(source, options.recursiveScan, [&options] (const path& p) { return options.filter(p); });
       files.insert(begin(sfiles), end(sfiles), end(files));
     }
   }

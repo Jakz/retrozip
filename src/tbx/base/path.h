@@ -35,6 +35,9 @@ public:
 
   std::vector<path> contents() const;
   static path current();
+  
+  static std::function<bool(path)> onlyFiles() { return [](const path& p) { return p.existsAsFile(); }; }
+  static std::function<bool(path)> onlyFolders() { return [](const path& p) { return p.isFolder(); }; }
 
   bool isFolder() const;
   bool exists() const;

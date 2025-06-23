@@ -3,7 +3,6 @@
 #include "tbx/streams/memory_buffer.h"
 #include "tbx/formats/patch/ips.h"
 
-#define CATCH_CONFIG_MAIN
 #include "catch2/catch_all.hpp"
 
 TEST_CASE("classes.PatchUps.writeVariableInt")

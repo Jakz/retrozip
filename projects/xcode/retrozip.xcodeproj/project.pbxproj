@@ -161,6 +161,7 @@
 		045F78162E07645F00F45ACC /* strings.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 045F78142E07645F00F45ACC /* strings.cpp */; };
 		045F781A2E0765F700F45ACC /* liblzma.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 045F78192E0765F700F45ACC /* liblzma.a */; };
 		045F781B2E07713000F45ACC /* strings.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 045F78142E07645F00F45ACC /* strings.cpp */; };
+		045F781D2E0A054300F45ACC /* tests_entry_metadata.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 045F781C2E0A054300F45ACC /* tests_entry_metadata.cpp */; };
 		046B66D81FB2B76E007B58BD /* deflate_filter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 046B66D51FB2B76E007B58BD /* deflate_filter.cpp */; };
 		046B66D91FB2B76E007B58BD /* deflate_filter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 046B66D51FB2B76E007B58BD /* deflate_filter.cpp */; };
 		04821C831FC88413004B27B4 /* args.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 04821C811FC88413004B27B4 /* args.cpp */; };
@@ -542,6 +543,7 @@
 		045F78152E07645F00F45ACC /* strings.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = strings.h; sourceTree = "<group>"; };
 		045F78172E07658100F45ACC /* liblzma2.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = liblzma2.a; path = ../../libs/lzma/lib/macos/liblzma2.a; sourceTree = "<group>"; };
 		045F78192E0765F700F45ACC /* liblzma.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = liblzma.a; path = ../../libs/lzma/lib/macos/liblzma.a; sourceTree = "<group>"; };
+		045F781C2E0A054300F45ACC /* tests_entry_metadata.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = tests_entry_metadata.cpp; sourceTree = "<group>"; };
 		046B66D51FB2B76E007B58BD /* deflate_filter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = deflate_filter.cpp; sourceTree = "<group>"; };
 		046B66D61FB2B76E007B58BD /* deflate_filter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = deflate_filter.h; sourceTree = "<group>"; };
 		046B66D71FB2B76E007B58BD /* filters.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = filters.h; sourceTree = "<group>"; };
@@ -601,6 +603,7 @@
 			children = (
 				045F76842E0763FD00F45ACC /* catch2 */,
 				045F76382E07195F00F45ACC /* tests_hash.cpp */,
+				045F781C2E0A054300F45ACC /* tests_entry_metadata.cpp */,
 				045F76352E07195F00F45ACC /* tests_patch_ups.cpp */,
 				045F76362E07195F00F45ACC /* tests_vector_stream.cpp */,
 				045F76372E07195F00F45ACC /* tests.cpp */,
@@ -1355,6 +1358,7 @@
 				045F780C2E0763FD00F45ACC /* catch_interfaces_testcase.cpp in Sources */,
 				045F767B2E071B7300F45ACC /* md5.cpp in Sources */,
 				045F78072E0763FD00F45ACC /* catch_reporter_compact.cpp in Sources */,
+				045F781D2E0A054300F45ACC /* tests_entry_metadata.cpp in Sources */,
 				045F77F82E0763FD00F45ACC /* catch_tostring.cpp in Sources */,
 				045F767C2E071B7300F45ACC /* crc32.cpp in Sources */,
 				045F767D2E071B7300F45ACC /* sha1.cpp in Sources */,

@@ -115,6 +115,7 @@ namespace box
     
     timestamp_t timestamp;
     offset_t entryNameOffset;
+    offset_t metadataOffset;
     
     Entry() :
       filteredSize(0), digest(), timestamp(0),
@@ -145,6 +146,33 @@ namespace box
   {
     count_t size;
   } PACKED_ATTRIBUTE;
+
+  enum class MetadataType : uint8_t { Binary, String };
+
+  struct MetadataEntry
+  {
+    using key_len_t = tlength_t;
+    using data_len_t = slength_t;
+    
+  protected:
+    std::string _key;
+    std::vector<uint8_t> _data;
+    MetadataType _type;
+    
+  public:
+    MetadataEntry() = default;
+    MetadataEntry(std::string_view key, std::string_view data) : _key(key), _data(data.begin(), data.end()), _type(MetadataType::String) { }
+    MetadataEntry(std::string_view key, const std::vector<uint8_t>& data) : _key(key), _data(data), _type(MetadataType::Binary) { }
+    
+    const std::string& key() const { return _key; }
+    const std::vector<uint8_t>& data() const { return _data; }
+    MetadataType type() const { return _type; }
+    
+    size_t sizeInBytes() const;
+    
+    void serialize(data_sink* sink) const;
+    void unserialize(data_source* source);
+  };
 
   STRUCT_PACKING_POP
 }

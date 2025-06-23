@@ -1,6 +1,5 @@
 #include "tbx/streams/vector_stream.h"
 
-#define CATCH_CONFIG_MAIN
 #include "catch2/catch_all.hpp"
 
 TEST_CASE("classes.WeakVectorSink.write")

@@ -101,8 +101,8 @@ TEST_CASE("file system operations", "[base]") {
   
   REQUIRE(fs->createFolder(sub));
   
-  /* root folder should still contain just one file */
-  files = fs->contentsOfFolder(base);
+  /* root folder should contain just one file */
+  files = fs->contentsOfFolder(base, true, path::onlyFiles());
   REQUIRE(files.size() == 1);
   REQUIRE(files[0] == base + "foobar.bin");
   
@@ -114,15 +114,15 @@ TEST_CASE("file system operations", "[base]") {
   REQUIRE(fs->existsAsFile(sub + "subfoo.bin"));
   
   /* still just one file if scan is non recursive */
-  files = fs->contentsOfFolder(base, false);
+  files = fs->contentsOfFolder(base, false, path::onlyFiles());
   REQUIRE(files.size() == 1);
   REQUIRE(files[0] == base + "foobar.bin");
   
   /* both files is scan is recursive */
-  files = fs->contentsOfFolder(base);
+  files = fs->contentsOfFolder(base, true, path::onlyFiles());
   REQUIRE(files.size() == 2);
-  REQUIRE(files[0] == base + "foobar.bin");
-  REQUIRE(files[1] == sub + "subfoo.bin");
+  REQUIRE(files[1] == base + "foobar.bin");
+  REQUIRE(files[0] == sub + "subfoo.bin");
   
   /* delete subfolder */
   REQUIRE(fs->deleteFile(sub));
@@ -143,21 +143,6 @@ TEST_CASE("file system operations", "[base]") {
   
   fs->deleteFile(base);
 
-}
-
-TEST_CASE("optional", "[base]") {
-  SECTION("u32") {
-    constexpr u32 VALUE = 0x12345678;
-    
-    optional<u32> value;
-    REQUIRE(!value.isPresent());
-    value.set(VALUE);
-    REQUIRE(value.isPresent());
-    REQUIRE(value.get() == VALUE);
-    value.clear();
-    REQUIRE(!value.isPresent());
-
-  }
 }
 
 TEST_CASE("biendian integers", "[base]") {

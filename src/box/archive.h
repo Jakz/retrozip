@@ -52,6 +52,23 @@ public:
   const filter_builder_queue& filters() const { return _filters; }
 };
 
+
+struct Metadata
+{
+protected:
+  std::vector<box::MetadataEntry> _entries;
+  
+public:
+  auto begin() const { return _entries.begin(); }
+  auto end() const { return _entries.end(); }
+  auto size() const { return _entries.size(); }
+  auto empty() const { return _entries.empty(); }
+  
+  void add(const box::MetadataEntry& entry) { _entries.push_back(entry); }
+  
+  //size_t sizeInBytes() const { }
+};
+
 class ArchiveEntry : public FilteredEntry<archive_environment>
 {
 public:
@@ -63,6 +80,7 @@ private:
   /* TODO: manage data ownership */
   data_source* _source;
   std::string _name;
+  Metadata _metadata;
 
 public:
   ArchiveEntry(const std::string& name, const box::Entry& binary, const std::vector<byte>& payload) : FilteredEntry<archive_environment>(payload),
@@ -77,7 +95,8 @@ public:
   void setName(const std::string& name) { this->_name = name; }
   const std::string& name() const { return _name; }
 
-  bool hasMetadata() const { return false; }
+  const auto& metadata() const { return _metadata; }
+  bool hasMetadata() const { return !_metadata.empty(); }
   
   const decltype(_source)& source() { return _source; }
 

@@ -43,7 +43,7 @@ void scanFolder(const path& root, const std::function<void(const path& path)>& l
     throw exceptions::file_not_found(root);
 }
 
-std::vector<path> FileSystem::contentsOfFolder(const path& base, bool recursive, predicate<path> excludePredicate) const
+std::vector<path> FileSystem::contentsOfFolder(const path& base, bool recursive, predicate<path> includePredicate) const
 {
   std::vector<path> files;
   
@@ -59,11 +59,11 @@ std::vector<path> FileSystem::contentsOfFolder(const path& base, bool recursive,
     {
       path name = path(dir->d_name);
       
-      if (name == "." || name == ".." || name == ".DS_Store" || excludePredicate(name))
+      if (name == "." || name == ".." || name == ".DS_Store" || !includePredicate(name))
         continue;
       else if (dir->d_type == DT_DIR && recursive)
       {
-        auto rfiles = contentsOfFolder(base.append(name), recursive, excludePredicate);
+        auto rfiles = contentsOfFolder(base.append(name), recursive, includePredicate);
         files.reserve(files.size() + rfiles.size());
         std::move(rfiles.begin(), rfiles.end(), std::back_inserter(files));
       }
@@ -232,7 +232,7 @@ void scanFolder(const path& root, const std::function<void(bool, const path& pat
   }
 }
 
-std::vector<path> FileSystem::contentsOfFolder(const path& folder, bool recursive, predicate<path> exclude) const
+std::vector<path> FileSystem::contentsOfFolder(const path& folder, bool recursive, predicate<path> include) const
 {
   std::vector<path> result;
   
@@ -246,7 +246,7 @@ std::vector<path> FileSystem::contentsOfFolder(const path& folder, bool recursiv
       auto path = entry.path().string();
       std::replace(path.begin(), path.end(), '\\', '/');
       
-      if (!exclude(path))
+      if (include(path))
         result.push_back(path);
     }
   }
@@ -257,7 +257,7 @@ std::vector<path> FileSystem::contentsOfFolder(const path& folder, bool recursiv
       auto path = entry.path().string();
       std::replace(path.begin(), path.end(), '\\', '/');
 
-      if (!exclude(path))
+      if (include(path))
         result.push_back(path);
     }
   }

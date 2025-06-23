@@ -1,9 +1,7 @@
-#include "tbx/hash/hash.h"
-#include "test_support.h"
-
-#define CATCH_CONFIG_MAIN
 #include "catch2/catch_all.hpp"
 
+#include "tbx/hash/hash.h"
+#include "test_support.h"
 
 #pragma mark hashes/crypto
 TEST_CASE("algorithms.checksum-crc32::first")

@@ -289,3 +289,47 @@ public:
     return _source->read(dest, amount);
   }
 };
+
+class enriched_data_sink : public data_sink
+{
+protected:
+  /* unowned */
+  data_sink* _sink;
+  
+public:
+  enriched_data_sink(data_sink* sink) : _sink(sink) { }
+  
+  template<typename LEN_T> void write(const std::string& value)
+  {
+    LEN_T len = LEN_T(value.size());
+    _sink->write((byte*)&len, sizeof(LEN_T));
+    _sink->write((byte*)value.data(), value.size());
+  }
+
+  template<typename T> size_t write(const T& value) { return write((const byte*)&value, sizeof(T)); }
+  size_t write(const byte* src, size_t amount) override { return _sink->write(src, amount); }
+};
+
+class enriched_data_source : public data_source
+{
+protected:
+  /* unowned */
+  data_source* _source;
+
+public:
+  enriched_data_source(data_source* source) : _source(source) { }
+
+  template<typename T> T read() { T value; read(value); return value; }
+  template<typename T> size_t read(T& value) { return _source->read(reinterpret_cast<byte*>(&value), sizeof(T)); }
+  
+  template<typename LENT> size_t readString(std::string& value)
+  {
+    LENT len;
+    read(len);
+    value.resize(len);
+    return _source->read((byte*)value.data(), len);
+  }
+  
+  size_t read(byte* dest, size_t amount) override { return _source->read(dest, amount); }
+
+};
