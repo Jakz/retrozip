@@ -299,6 +299,7 @@ protected:
 public:
   enriched_data_sink(data_sink* sink) : _sink(sink) { }
   
+  void writeLEB128(uint64_t value);
   template<typename LEN_T> void write(const std::string& value)
   {
     LEN_T len = LEN_T(value.size());
@@ -308,6 +309,8 @@ public:
 
   template<typename T> size_t write(const T& value) { return write((const byte*)&value, sizeof(T)); }
   size_t write(const byte* src, size_t amount) override { return _sink->write(src, amount); }
+  
+  
 };
 
 class enriched_data_source : public data_source
@@ -322,6 +325,7 @@ public:
   template<typename T> T read() { T value; read(value); return value; }
   template<typename T> size_t read(T& value) { return _source->read(reinterpret_cast<byte*>(&value), sizeof(T)); }
   
+  uint64_t readLEB128();
   template<typename LENT> size_t readString(std::string& value)
   {
     LENT len;
@@ -330,6 +334,47 @@ public:
     return _source->read((byte*)value.data(), len);
   }
   
+  
   size_t read(byte* dest, size_t amount) override { return _source->read(dest, amount); }
 
 };
+
+inline void enriched_data_sink::writeLEB128(uint64_t value)
+{
+  while (true)
+  {
+    uint8_t byte = value & 0x7F;
+    bool last = ((value >> 7) == 0);
+    
+    if (last)
+    {
+      write(byte);
+      return;
+    }
+    else
+      write(byte | 0x80);
+    
+    value >>= 7;
+  }
+}
+
+inline uint64_t enriched_data_source::readLEB128()
+{
+  uint64_t result = 0;
+  uint64_t shift = 0;
+
+  
+  while (true)
+  {
+    uint8_t byte;
+    read(byte);
+    result += ((byte & 0x7f) << shift);
+    
+    if (!(byte & 0x80))
+      break;
+    else
+      shift += 7;
+  }
+  
+  return result;
+}
