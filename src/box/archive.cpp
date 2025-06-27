@@ -258,7 +258,7 @@ void Archive::write(W& w)
     box::Section section = _ordering.front();
     _ordering.pop_front();
     
-    box::SectionHeader sectionHeader { 0, 0, section, 0 };
+    box::SectionHeader sectionHeader = box::SectionHeader(section);
 
     switch (section)
     {
@@ -323,7 +323,7 @@ void Archive::write(W& w)
         {
           box::count_t payloadLength = entry.payloadLength();
           box::Entry& tentry = entry.binary();
-          tentry.payload = payloadLength > 0 ? (base + length) : 0;
+          tentry.payloadOffset = payloadLength > 0 ? (base + length) : 0;
           tentry.payloadLength = payloadLength;
           
           length += tentry.payloadLength;
@@ -489,6 +489,7 @@ void Archive::write(W& w)
       }
     }
     
+    /* if section is not the header or the section table and it has elements we prepare it to be serialized */
     if (section != box::Section::Header && section != box::Section::SectionTable && sectionHeader.size > 0)
       _headers.emplace(std::make_pair(section, sectionHeader));
   }
@@ -555,7 +556,7 @@ void Archive::readSection(R& r, const box::SectionHeader& header)
         if (entry.payloadLength > 0)
         {
           payload.resize(entry.payloadLength);
-          r.seek(entry.payload);
+          r.seek(entry.payloadOffset);
           r.read(payload.data(), entry.payloadLength);
         }
         
@@ -845,7 +846,7 @@ void Archive::writeEntryPayloads(W& w)
     entry.serializePayload(env);
     const memory_buffer& payload = entry.payload();
     
-    w.seek(entry.binary().payload);
+    w.seek(entry.binary().payloadOffset);
     w.write(payload.raw(), 1, payload.size());
   }
 }
@@ -957,29 +958,58 @@ data_source* ArchiveReadHandle::source(bool total)
 
 size_t box::MetadataEntry::sizeInBytes() const
 {
-  if (_key.empty() && _data.empty())
-    return 0;
-  else
-    return sizeof(MetadataType) + sizeof(key_len_t) + _key.size() + sizeof(data_len_t) + _data.size();
+  size_t size = 0;
+
+  return sizeof(MetadataType) + 
+    (isStringKey() ? (enriched_data_sink::sizeofLEB128(_key.size()) + _key.size()) : enriched_data_sink::sizeofLEB128(_uid))
+    + enriched_data_sink::sizeofLEB128(_data.size()) + _data.size();
 }
 
 
-void box::MetadataEntry::serialize(data_sink* sink) const
+size_t box::MetadataEntry::serialize(data_sink* sink) const
 {
   auto esink = enriched_data_sink(sink);
-  esink.write<key_len_t>(_key);
-  esink.write(data_len_t(_data.size()));
-  esink.write(_data.data(), _data.size());
+  esink.write<MetadataType>(_type);
+  esink.writeLEB128(isStringKey() ? _key.length() : _uid);
+  esink.writeLEB128(_data.size());
+
+  /* is key is of string type then write the string */
+  if (isStringKey())
+    esink.write(_key.c_str(), _key.length());
+
+  /* write data */
+  esink.write(_data.data(), _data.size());  
+
+  return sizeInBytes();
 }
 
 void box::MetadataEntry::unserialize(data_source* source)
 {
   auto esource = enriched_data_source(source);
-  esource.readString<key_len_t>(_key);
-  auto length = esource.read<data_len_t>();
-  _data.resize(length);
-  esource.read(_data.data(), length);
+  /* read type*/
+  _type = esource.read<MetadataType>();
+  /* read key */
+  uint64_t key = esource.readLEB128();
+  /* read data length */
+  uint64_t dataLen = esource.readLEB128();
+
+  /* now if key is of string type read key otherwise set uid */
+  if (isStringKey())
+  {
+    _key.resize(key);
+    esource.read(_key.data(), key);
+  }
+  else
+    _uid = key;
+
+  /* read data */
+  _data.resize(dataLen);
+  esource.read(_data.data(), dataLen);
 }
 
+bool box::MetadataEntry::operator==(const MetadataEntry& other) const
+{
+  return _type == other._type && _data == other._data && _uid == other._uid && _key == other._key;
+}
 
 

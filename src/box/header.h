@@ -56,6 +56,9 @@ namespace box
     length_t size;
     Section type;
     count_t count;
+
+    SectionHeader() : SectionHeader(Section::Header) { }
+    SectionHeader(Section type) : offset(0), size(0), type(type), count(0) { }
     
   } PACKED_ATTRIBUTE;
   
@@ -110,7 +113,7 @@ namespace box
     index_t stream;
     index_t indexInStream;
     
-    offset_t payload;
+    offset_t payloadOffset;
     count_t payloadLength;
     
     timestamp_t timestamp;
@@ -147,31 +150,53 @@ namespace box
     count_t size;
   } PACKED_ATTRIBUTE;
 
-  enum class MetadataType : uint8_t { Binary, String };
+  enum MetadataType : uint8_t
+  { 
+    StringKeyMask   = 0b00010000,
+    StringValueMask = 0b00000001,
+    
+    NumericalBinary = 0b00000000,
+    NumericalString = 0b00000001,
+    StringBinary = 0b00010000,
+    StringString = 0b00010001,
+  };
 
   struct MetadataEntry
   {
-    using key_len_t = tlength_t;
-    using data_len_t = slength_t;
-    
+
   protected:
     std::string _key;
+    uint64_t _uid;
+
     std::vector<uint8_t> _data;
     MetadataType _type;
     
   public:
-    MetadataEntry() = default;
-    MetadataEntry(std::string_view key, std::string_view data) : _key(key), _data(data.begin(), data.end()), _type(MetadataType::String) { }
-    MetadataEntry(std::string_view key, const std::vector<uint8_t>& data) : _key(key), _data(data), _type(MetadataType::Binary) { }
+    MetadataEntry() : _uid(0), _type(MetadataType::StringString) { }
     
-    const std::string& key() const { return _key; }
+    /* string key constructors */
+    MetadataEntry(std::string_view key, std::string_view data) : _key(key), _uid(0), _data(data.begin(), data.end()), _type(MetadataType::StringString) { }
+    MetadataEntry(std::string_view key, const std::vector<uint8_t>& data) : _key(key), _uid(0), _data(data), _type(MetadataType::StringBinary) { }
+    /* numerical key constructors */
+    MetadataEntry(uint64_t uid, std::string_view data) : _uid(uid), _data(data.begin(), data.end()), _type(MetadataType::NumericalString) { }
+    MetadataEntry(uint64_t uid, const std::vector<uint8_t>& data) : _uid(uid), _data(data), _type(MetadataType::NumericalBinary) { }
+    
+    const std::string& key() const { assert(isStringKey());  return _key; }
+    uint64_t uid() const { assert(!isStringKey());  return _uid; }
+
     const std::vector<uint8_t>& data() const { return _data; }
     MetadataType type() const { return _type; }
     
     size_t sizeInBytes() const;
+
+    bool isStringKey() const { return (_type & MetadataType::StringKeyMask) == MetadataType::StringKeyMask; }
+    bool isBinaryValue() const { return (_type & MetadataType::StringValueMask) == MetadataType::StringValueMask; }
     
-    void serialize(data_sink* sink) const;
+    size_t serialize(data_sink* sink) const;
     void unserialize(data_source* source);
+
+    bool operator==(const MetadataEntry& other) const;
+    bool operator!=(const MetadataEntry& other) const { return !(*this == other); }
   };
 
   STRUCT_PACKING_POP
