@@ -1,5 +1,6 @@
 #include "catch2/catch_all.hpp"
 
+#include "box/archive.h"
 #include "tbx/streams/memory_buffer.h"
 #include "tbx/streams/data_source.h"
 #include "box/header.h"

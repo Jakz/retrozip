@@ -105,7 +105,6 @@ namespace box
   
   struct Entry
   {
-    //length_t originalSize; //TODO moved to DigestInfo
     length_t filteredSize;
     
     DigestInfo digest;
@@ -118,7 +117,9 @@ namespace box
     
     timestamp_t timestamp;
     offset_t entryNameOffset;
+
     offset_t metadataOffset;
+    count_t metadataCount;
     
     Entry() :
       filteredSize(0), digest(), timestamp(0),

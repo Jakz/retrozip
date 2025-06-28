@@ -52,13 +52,17 @@ public:
   const filter_builder_queue& filters() const { return _filters; }
 };
 
+using metadata_list_t = std::vector<box::MetadataEntry>;
 
 struct Metadata
 {
 protected:
-  std::vector<box::MetadataEntry> _entries;
+  metadata_list_t _entries;
   
 public:
+  Metadata() = default;
+  Metadata(const metadata_list_t& entries) : _entries(entries) { }
+
   auto begin() const { return _entries.begin(); }
   auto end() const { return _entries.end(); }
   auto size() const { return _entries.size(); }
@@ -83,8 +87,8 @@ private:
   Metadata _metadata;
 
 public:
-  ArchiveEntry(const std::string& name, const box::Entry& binary, const std::vector<byte>& payload) : FilteredEntry<archive_environment>(payload),
-    _name(name), _source(nullptr), _binary(binary)
+  ArchiveEntry(const std::string& name, const box::Entry& binary, const std::vector<byte>& payload, const metadata_list_t& metadata = {}) : FilteredEntry<archive_environment>(payload),
+    _name(name), _source(nullptr), _binary(binary), _metadata(metadata)
   {
 
   }

@@ -429,6 +429,10 @@ void Archive::write(W& w)
         {
           if (entry.hasMetadata())
           {
+            /* set metadata info in entry header */
+            entry.binary().metadataOffset = w.tell();
+            entry.binary().metadataCount = entry.metadata().size();
+            
             for (const auto& mentry : entry.metadata())
             {
               TRACE_A2("%p: archive::write() writing entry metadata '%lu:%s' at %Xh (%lu)", this, idx, mentry.key(), offset, offset);
@@ -437,6 +441,12 @@ void Archive::write(W& w)
 
             offset = w.tell();
             ++idx;
+          }
+          else
+          {
+            /* if no metadata we set offset to 0 and count to 0 */
+            entry.binary().metadataOffset = 0;
+            entry.binary().metadataCount = 0;
           }
         }
         
@@ -559,8 +569,20 @@ void Archive::readSection(R& r, const box::SectionHeader& header)
           r.seek(entry.payloadOffset);
           r.read(payload.data(), entry.payloadLength);
         }
+
+        /* read metadata */
+        metadata_list_t metadata;
+        if (entry.metadataCount > 0)
+        {
+          r.seek(entry.metadataOffset);
+          for (size_t j = 0; j < entry.metadataCount; ++j)
+          {
+            metadata.push_back(box::MetadataEntry());
+            r.read(metadata.back());
+          }
+        }
         
-        _entries.emplace_back(name, entry, payload);
+        _entries.emplace_back(name, entry, payload, metadata);
       }
 
       break;
@@ -617,16 +639,10 @@ void Archive::readSection(R& r, const box::SectionHeader& header)
       break;
     }
 
-    case S::MetadataTable:
-    {
-      //TODO: implement
-      assert(false);
-      break;
-    }
-      
     case S::EntryPayload:
     case S::StreamPayload:
     case S::FileNameTable:
+    case S::MetadataTable:
       /* do nothing, these are managed when reading respective parents */
       break;
   }
