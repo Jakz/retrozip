@@ -48,7 +48,7 @@ ArchiveSizeInfo Archive::sizeInfo() const
   const size_t entriesPayload = std::accumulate(_entries.begin(), _entries.end(), 0UL, [] (size_t count, const ArchiveEntry& entry) {
     return count + entry.binary().payloadLength;
   });
-  
+
   const size_t streamsPayload = std::accumulate(_streams.begin(), _streams.end(), 0UL, [] (size_t count, const ArchiveStream& stream) {
     return count + stream.binary().payloadLength;
   });
@@ -190,7 +190,7 @@ Archive Archive::ofData(const ArchiveFactory::Data& data)
   archive._entries.reserve(data.entries.size());
   
   for (const auto& entry : data.entries)
-    archive._entries.emplace_back(entry.name, entry.source, entry.filters);
+    archive._entries.emplace_back(entry.name, entry.source, entry.filters, entry.metadata);
   
   for (const auto& stream : data.streams)
     archive._streams.emplace_back(stream.entries, stream.filters);
@@ -578,7 +578,7 @@ void Archive::readSection(R& r, const box::SectionHeader& header)
           for (size_t j = 0; j < entry.metadataCount; ++j)
           {
             metadata.push_back(box::MetadataEntry());
-            r.read(metadata.back());
+            metadata.back().unserialize(&r);
           }
         }
         

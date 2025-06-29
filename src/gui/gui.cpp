@@ -255,9 +255,9 @@ void GUI::loadFile(const path& filename)
 
 #include "flow/flow.h"
 
-int mainzzz(int argc, char* argv[])
+int main(int argc, char* argv[])
 {
-  if (false)
+  if (true)
   {
     ArchiveBuilder builder(CachePolicy(CachePolicy::Mode::NEVER, 0), 128_mb, 128_mb);
     std::vector<FileGroup> groups;

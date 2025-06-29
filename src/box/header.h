@@ -72,9 +72,10 @@ namespace box
     SectionHeader index;
     
     length_t fileLength;
+    u32 custom;
     checksum_t fileChecksum;
 
-    Header() : magic({{'b','o','x','!'}}) { }
+    Header() : magic({{'b','o','x','!'}}), custom(0) { }
     
     bool hasFlag(HeaderFlag flag) const { return flags && flag; }
     
@@ -102,7 +103,7 @@ namespace box
   
   enum class StorageMode : u32;
   enum class StorageSubmode : u32;
-  
+
   struct Entry
   {
     length_t filteredSize;
@@ -113,14 +114,15 @@ namespace box
     index_t indexInStream;
     
     offset_t payloadOffset;
-    count_t payloadLength;
     
     timestamp_t timestamp;
     offset_t entryNameOffset;
 
     offset_t metadataOffset;
+
     count_t metadataCount;
-    
+    count_t payloadLength;
+
     Entry() :
       filteredSize(0), digest(), timestamp(0),
       stream(INVALID_INDEX), indexInStream(INVALID_INDEX) { }
@@ -132,17 +134,17 @@ namespace box
     
     offset_t offset;
     length_t length;
-    checksum_t checksum;
     
     offset_t payload;
     count_t payloadLength;
     
+    checksum_t checksum;
   } PACKED_ATTRIBUTE;
   
   struct Payload
   {
-    payload_uid identifier;
     length_t length;
+    payload_uid identifier;
     u32 hasNext; /* to pad to 16 bytes */
   } PACKED_ATTRIBUTE;
   

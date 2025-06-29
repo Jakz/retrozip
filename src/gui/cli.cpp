@@ -344,7 +344,7 @@ void Terminal::deinit()
 
 #include "tbx/formats/patch/ips.h"
 
-int main(int argc, char* argv[])
+int maizzzn(int argc, char* argv[])
 {
   patch::ups::Patch::test();
   

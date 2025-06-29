@@ -68,6 +68,7 @@ size_t ArchiveBuilder::filterBufferSizeForPolicy(const data_source_vector& sourc
   {
     case BufferSizePolicy::Mode::FIXED: return _filterBufferPolicy.size;
     case BufferSizePolicy::Mode::AS_LARGE_AS_SOURCE: return maxBufferSize(sources);
+    default: assert(false);
   }
 }
 

@@ -81,15 +81,20 @@ void filter_builder_queue::unserialize(const archive_environment& env, memory_bu
       throw exceptions::unserialization_exception("error in payload, header is not long enough"); //TODO improve
     else
     {
+      /* read header */
       const box::Payload* header = reinterpret_cast<const box::Payload*>(data.direct());
 
+      /* if we expect more data which is not available something is wrong */
       if (header->length > data.toRead() + sizeof(box::Payload))
         throw exceptions::unserialization_exception("error in payload, data is not long enough"); //TODO improve
 
       hasNext = header->hasNext;
       
+      /* create filter according to payload and identifier */
       box::payload_uid identifier = header->identifier;
       add(filter_repository::instance()->generate(identifier, data.direct(), env));
+
+      /* seek to next payload*/
       data.seek(header->length, Seek::CUR);
     }
   }

@@ -54,6 +54,28 @@ void Patch::writeVariableInt(data_sink* sink, uint64_t value)
   }
 }
 
+Status Patch::write(data_sink* base)
+{
+  auto digester = unbuffered_sink_filter<filters::crc32_filter>(base);
+
+  enriched_data_sink sink(&digester);
+  
+  /* write header */
+  sink.write(_header.magic, 4);
+  writeVariableInt(&sink, _header.inputSize);
+  writeVariableInt(&sink, _header.outputSize);
+  
+  /* write data */
+  sink.write(_data.data(), _data.size());
+
+  /* write checksums */
+  sink.write((const byte*)&_checksum.inputChecksum, sizeof(uint32_t));
+  sink.write((const byte*)&_checksum.outputChecksum, sizeof(uint32_t));
+  _checksum.patchChecksum = digester.filter().get();
+  sink.write((const byte*)&_checksum.patchChecksum, sizeof(uint32_t));
+  return Status::Ok;
+}
+
 Status Patch::load(seekable_data_source* source)
 {
   static_assert(sizeof(Checksum) == sizeof(uint32_t) * 3);
@@ -105,6 +127,22 @@ Status Patch::apply(seekable_data_source* source, data_sink* sink) const
   if (source->size() != _header.inputSize)
     return Status::InvalidSourceSize;
 
+  /* special case: empty patch */
+  if (_data.empty())
+  {
+    size_t finalSize = _header.outputSize;
+    size_t toBeCopied = std::min(_header.inputSize, _header.outputSize);
+    buffer.ensure_capacity(finalSize);
+
+    source->read(buffer.direct(), toBeCopied);
+    
+    if (toBeCopied < finalSize)
+      memset(buffer.direct() + toBeCopied, 0, finalSize - toBeCopied);
+
+    sink->write(buffer.direct(), finalSize);
+    return Status::Ok;
+  }
+
   while (data < dataEnd)
   {
     /* read offset */
@@ -127,8 +165,6 @@ Status Patch::apply(seekable_data_source* source, data_sink* sink) const
 
     written += amountToCopy;
     sourceOffset += amountToCopy;
-
-    assert(((file_data_sink*)sink)->tell() == written);
 
     size_t before = written;
 
@@ -175,39 +211,64 @@ Status Patch::apply(seekable_data_source* source, data_sink* sink) const
   return Status::Ok;
 }
 
-Status Patch::generate(seekable_data_source* source, seekable_data_source* patched)
+Status Patch::generate(seekable_data_source* sourcer, seekable_data_source* patchedr)
 {  
-  size_t relative = 0;
-  size_t streak = 0;
-
   auto wrapped = weak_vector_sink(_data);
   
   bool finished = false;
 
-  while (!finished)
+  auto source = unbuffered_source_filter<filters::crc32_filter>(sourcer);
+  auto patched = unbuffered_source_filter<filters::crc32_filter>(patchedr);
+
+  size_t totalOutput = std::max(sourcer->size(), patchedr->size());
+  size_t offset = 0;
+  size_t relative = 0;
+
+
+  std::memcpy(_header.magic, "UPS1", 4);
+  _header.inputSize = sourcer->size();
+  _header.outputSize = patchedr->size();
+
+  while (offset < totalOutput)
   {
     uint8_t sbyte, pbyte;
     
-    auto ss = source->read(&sbyte, 1);
-    auto ps = patched->read(&pbyte, 1);
+    source.read(&sbyte, 1);
+    patched.read(&pbyte, 1);
 
-    if (ss == ps)
-      ++streak;
+    if (sbyte == pbyte)
+      ++offset;
     else
     {
-      writeVariableInt(&wrapped, streak - relative);
-      _data.push_back(ss ^ ps);
+      writeVariableInt(&wrapped, offset - relative);
+      _data.push_back(sbyte ^ pbyte);
+      ++offset;
 
       while (true)
       {
-        
-        ss = source->read(&sbyte, 1);
-        ps = patched->read(&pbyte, 1);
+        if (offset >= totalOutput)
+        {
+          _data.push_back(0x00);
+          break;
+        }
 
-        _data.push_back(ss ^ ps);
+        source.read(&sbyte, 1);
+        patched.read(&pbyte, 1);
+        ++offset;
+
+        _data.push_back(sbyte ^ pbyte);
+
+        if (sbyte == pbyte)
+          break;
       }
+
+      relative = offset;
     }
   }
+
+  _checksum.inputChecksum = source.filter().get();
+  _checksum.outputChecksum = patched.filter().get();
+  /* patch checksum is written when serializing */
 
   return Status::Ok;
 }

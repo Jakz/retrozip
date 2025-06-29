@@ -1,5 +1,7 @@
 #include "catch2/catch_all.hpp"
 
+#include "test/test_support.h"
+
 #include "box/archive.h"
 #include "tbx/streams/memory_buffer.h"
 #include "tbx/streams/data_source.h"
@@ -64,4 +66,35 @@ TEST_CASE("features.MetadataEntry.serialize(uid+string)")
   entry2.unserialize(&buffer);
 
   REQUIRE(entry == entry2);
+}
+
+TEST_CASE("features.MetadataEntry.entryWithSingleMetadata")
+{
+  ArchiveFactory::Data data;
+
+  ArchiveFactory::Entry entry = { "entry.bin", testing::randomDataSource(testing::random(32) + 32) };
+  entry.metadata.emplace_back("foo", "bar");
+
+  data.entries.push_back(entry);
+  data.streams.push_back({ { 0 }, { } });
+
+  Archive archive = Archive::ofData(data);
+
+  REQUIRE(archive.entries()[0].metadata().size() == 1);
+  REQUIRE(archive.entries()[0].metadata(0) == box::MetadataEntry("foo", "bar"));
+
+  memory_buffer output;
+  archive.write(output);
+  output.rewind();
+
+  Archive verify;
+  verify.read(output);
+
+  REQUIRE(verify.entries()[0].metadata().size() == 1);
+  REQUIRE(verify.entries()[0].metadata(0) == box::MetadataEntry("foo", "bar"));
+
+  verify.options().bufferSize = 16_kb;
+  testing::ArchiveTester::verify(data, verify, output);
+
+  testing::ArchiveTester::release(data);
 }

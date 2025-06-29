@@ -67,8 +67,10 @@ public:
   auto end() const { return _entries.end(); }
   auto size() const { return _entries.size(); }
   auto empty() const { return _entries.empty(); }
+  const auto& operator[](size_t index) const { return _entries[index]; }
   
   void add(const box::MetadataEntry& entry) { _entries.push_back(entry); }
+  template<typename... Args> void add(Args&&... args) { _entries.emplace_back(std::forward<Args>(args)...); }
   
   //size_t sizeInBytes() const { }
 };
@@ -93,13 +95,15 @@ public:
 
   }
   
-  ArchiveEntry(const std::string& name, data_source* source, const std::vector<filter_builder*>& filters) : FilteredEntry<archive_environment>(filters), _source(source), _name(name) { }
+  ArchiveEntry(const std::string& name, data_source* source, const std::vector<filter_builder*>& filters, const metadata_list_t& metadata = {}) : FilteredEntry<archive_environment>(filters), _source(source), _name(name), _metadata(metadata) { }
   ArchiveEntry(const std::string& name, data_source* source) : _source(source), _name(name) { }
   
   void setName(const std::string& name) { this->_name = name; }
   const std::string& name() const { return _name; }
 
+  auto& metadata() { return _metadata; }
   const auto& metadata() const { return _metadata; }
+  const auto& metadata(size_t index) const { return _metadata[index]; }
   bool hasMetadata() const { return !_metadata.empty(); }
   
   const decltype(_source)& source() { return _source; }
@@ -215,6 +219,7 @@ struct ArchiveFactory
     std::string name;
     data_source* source;
     std::vector<filter_builder*> filters;
+    metadata_list_t metadata;
   };
   
   struct Stream

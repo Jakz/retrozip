@@ -83,15 +83,45 @@ public:
     return *this;
   }
   
-  memory_buffer(const memory_buffer&) = delete;
+  memory_buffer(const memory_buffer& other) : 
+    _dataOwned(other._dataOwned), _position(0), _size(other._size), _capacity(other._capacity)
+  {
+    /* if data is owned we need to copy it */
+    if (other._dataOwned)
+    {
+      _data = new byte[other._capacity];
+      std::copy(other._data, other._data + other._size, _data);
+    }
+    else
+      _data = other._data;
+  }
                 
-  memory_buffer& operator=(memory_buffer&) = delete;
+  memory_buffer& operator=(memory_buffer& other)
+  {
+    /* if data is owned we need to copy it */
+    if (other._dataOwned)
+    {
+      _data = new byte[other._capacity];
+      std::copy(other._data, other._data + other._size, _data);
+    }
+    else
+      _data = other._data;
+
+    /* copied buffer should start from 0 */
+    _dataOwned = other._dataOwned;
+    _position = 0;
+    _size = other._size;
+    _capacity = other._capacity;
+
+    return *this;
+  }
 
   
   ~memory_buffer() { if (_dataOwned) delete [] _data; }
   
   byte operator[](size_t index) const { return _data[index]; }
-  
+  byte& operator[](size_t index) { return _data[index]; }
+
   bool operator==(const memory_buffer& other) const { return _size == other._size && std::equal(_data, _data+_size, other._data); }
   bool operator!=(const memory_buffer& other) { return !operator==(other); }
   
