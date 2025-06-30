@@ -4,7 +4,7 @@
 
 #include <vector>
 
-struct weak_data_source : public data_source
+struct weak_data_source : public seekable_data_source
 {
 protected:
   const std::vector<uint8_t>& _data;
@@ -24,6 +24,10 @@ public:
     _position += effective;
     return effective;
   }
+  
+  void seek(roff_t position) override { _position = position; }
+  size_t size() const override { return _data.size(); }
+  roff_t tell() const override { return _position; }
 };
 
 struct weak_vector_sink : public data_sink

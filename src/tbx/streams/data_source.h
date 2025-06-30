@@ -25,6 +25,7 @@ struct seekable
   virtual void seek(roff_t position) = 0;
   virtual roff_t tell() const = 0;
   virtual size_t size() const = 0;
+  virtual bool eos() const { return tell() >= size(); }
   
   void rewind() { seek(0); }
 };

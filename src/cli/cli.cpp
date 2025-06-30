@@ -608,9 +608,39 @@ int mainzzz(int argc, const char* argv[])
   return 0;
 }
 
+#include "tbx/formats/patch/ips.h"
+#define REQUIRE assert
+
 #include "box/archive_builder.h"
 int main(int argc, const char* argv[])
 {
+  {
+    memory_buffer source;
+    for (size_t i = 0; i < 256; ++i)
+      source.write(uint8_t(rand() % 256));
+    source.rewind();
+    
+    memory_buffer source2 = source;
+    source[128] = 0xAB;
+    source2[128] = 0x00;
+
+    patch::ups::Patch patch;
+    patch.generate(&source, &source2);
+
+    memory_buffer buffer;
+    patch.write(&buffer);
+    buffer.rewind();
+
+    patch::ups::Patch parsed;
+    REQUIRE(parsed.load(&buffer) == patch::ups::Status::Ok);
+
+    memory_buffer patched;
+    source.rewind();
+    parsed.apply(&source, &patched);
+  }
+  
+  
+  return 0;
   //auto session = Catch::Session();
   //return session.run(argc, argv);
 

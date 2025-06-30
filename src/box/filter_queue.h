@@ -128,7 +128,7 @@ public:
       
       memory_buffer current = builder->payload();
       
-      box::Payload payload = { builder->identifier(), current.size() + sizeof(box::Payload), it != _builders.end() - 1 };
+      box::Payload payload = box::Payload(builder->identifier(), current.size() + sizeof(box::Payload), it != _builders.end() - 1);
       
       total.write(payload);
       total.write(current.data(), 1, current.size());

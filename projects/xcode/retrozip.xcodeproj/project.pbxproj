@@ -162,6 +162,11 @@
 		045F781A2E0765F700F45ACC /* liblzma.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 045F78192E0765F700F45ACC /* liblzma.a */; };
 		045F781B2E07713000F45ACC /* strings.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 045F78142E07645F00F45ACC /* strings.cpp */; };
 		045F781D2E0A054300F45ACC /* tests_entry_metadata.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 045F781C2E0A054300F45ACC /* tests_entry_metadata.cpp */; };
+		045F78222E1204F800F45ACC /* tests_archive.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 045F781E2E1204F800F45ACC /* tests_archive.cpp */; };
+		045F78232E1204F800F45ACC /* tests_patch_ups.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 045F781F2E1204F800F45ACC /* tests_patch_ups.cpp */; };
+		045F78242E1204F800F45ACC /* tests_enriched_stream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 045F78202E1204F800F45ACC /* tests_enriched_stream.cpp */; };
+		045F78252E1204F800F45ACC /* tests_crypto.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 045F78212E1204F800F45ACC /* tests_crypto.cpp */; };
+		045F78262E120CF600F45ACC /* ups.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 045F76782E0719AD00F45ACC /* ups.cpp */; };
 		046B66D81FB2B76E007B58BD /* deflate_filter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 046B66D51FB2B76E007B58BD /* deflate_filter.cpp */; };
 		046B66D91FB2B76E007B58BD /* deflate_filter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 046B66D51FB2B76E007B58BD /* deflate_filter.cpp */; };
 		04821C831FC88413004B27B4 /* args.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 04821C811FC88413004B27B4 /* args.cpp */; };
@@ -544,6 +549,10 @@
 		045F78172E07658100F45ACC /* liblzma2.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = liblzma2.a; path = ../../libs/lzma/lib/macos/liblzma2.a; sourceTree = "<group>"; };
 		045F78192E0765F700F45ACC /* liblzma.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = liblzma.a; path = ../../libs/lzma/lib/macos/liblzma.a; sourceTree = "<group>"; };
 		045F781C2E0A054300F45ACC /* tests_entry_metadata.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = tests_entry_metadata.cpp; sourceTree = "<group>"; };
+		045F781E2E1204F800F45ACC /* tests_archive.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = tests_archive.cpp; sourceTree = "<group>"; };
+		045F781F2E1204F800F45ACC /* tests_patch_ups.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = tests_patch_ups.cpp; sourceTree = "<group>"; };
+		045F78202E1204F800F45ACC /* tests_enriched_stream.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = tests_enriched_stream.cpp; sourceTree = "<group>"; };
+		045F78212E1204F800F45ACC /* tests_crypto.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = tests_crypto.cpp; sourceTree = "<group>"; };
 		046B66D51FB2B76E007B58BD /* deflate_filter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = deflate_filter.cpp; sourceTree = "<group>"; };
 		046B66D61FB2B76E007B58BD /* deflate_filter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = deflate_filter.h; sourceTree = "<group>"; };
 		046B66D71FB2B76E007B58BD /* filters.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = filters.h; sourceTree = "<group>"; };
@@ -604,7 +613,11 @@
 				045F76842E0763FD00F45ACC /* catch2 */,
 				045F76382E07195F00F45ACC /* tests_hash.cpp */,
 				045F781C2E0A054300F45ACC /* tests_entry_metadata.cpp */,
+				045F78212E1204F800F45ACC /* tests_crypto.cpp */,
+				045F78202E1204F800F45ACC /* tests_enriched_stream.cpp */,
 				045F76352E07195F00F45ACC /* tests_patch_ups.cpp */,
+				045F781E2E1204F800F45ACC /* tests_archive.cpp */,
+				045F781F2E1204F800F45ACC /* tests_patch_ups.cpp */,
 				045F76362E07195F00F45ACC /* tests_vector_stream.cpp */,
 				045F76372E07195F00F45ACC /* tests.cpp */,
 				0420E0A21FC9E151008C8418 /* test_support.h */,
@@ -1271,6 +1284,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				045F78262E120CF600F45ACC /* ups.cpp in Sources */,
 				045F781B2E07713000F45ACC /* strings.cpp in Sources */,
 				042421172BCB31EB0014A2A7 /* dll.cpp in Sources */,
 				04821C831FC88413004B27B4 /* args.cpp in Sources */,
@@ -1321,6 +1335,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				045F78132E07642100F45ACC /* xdelta3.cpp in Sources */,
+				045F78242E1204F800F45ACC /* tests_enriched_stream.cpp in Sources */,
 				045F77EF2E0763FD00F45ACC /* catch_matchers.cpp in Sources */,
 				045F78102E0763FD00F45ACC /* catch_interfaces_registry_hub.cpp in Sources */,
 				045F77C62E0763FD00F45ACC /* catch_fatal_condition_handler.cpp in Sources */,
@@ -1330,6 +1345,7 @@
 				045F77DF2E0763FD00F45ACC /* catch_textflow.cpp in Sources */,
 				045F767E2E071B8B00F45ACC /* common.cpp in Sources */,
 				045F780F2E0763FD00F45ACC /* catch_interfaces_generatortracker.cpp in Sources */,
+				045F78252E1204F800F45ACC /* tests_crypto.cpp in Sources */,
 				045F77B42E0763FD00F45ACC /* catch_test_spec.cpp in Sources */,
 				045F77B62E0763FD00F45ACC /* catch_section.cpp in Sources */,
 				045F77CB2E0763FD00F45ACC /* catch_polyfills.cpp in Sources */,
@@ -1433,11 +1449,13 @@
 				045F77C82E0763FD00F45ACC /* catch_list.cpp in Sources */,
 				045F763C2E07195F00F45ACC /* tests_hash.cpp in Sources */,
 				045F77C42E0763FD00F45ACC /* catch_singletons.cpp in Sources */,
+				045F78232E1204F800F45ACC /* tests_patch_ups.cpp in Sources */,
 				045F77B12E0763FD00F45ACC /* catch_test_case_info.cpp in Sources */,
 				045F77E72E0763FD00F45ACC /* catch_translate_exception.cpp in Sources */,
 				0420E0A31FC9E151008C8418 /* test_support.cpp in Sources */,
 				045F77C32E0763FD00F45ACC /* catch_tag_alias_registry.cpp in Sources */,
 				045F77D42E0763FD00F45ACC /* catch_xmlwriter.cpp in Sources */,
+				045F78222E1204F800F45ACC /* tests_archive.cpp in Sources */,
 				045F77C02E0763FD00F45ACC /* catch_enforce.cpp in Sources */,
 				045F77D12E0763FD00F45ACC /* catch_source_line_info.cpp in Sources */,
 				045F77E42E0763FD00F45ACC /* catch_output_redirect.cpp in Sources */,

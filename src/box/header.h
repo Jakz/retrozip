@@ -146,6 +146,10 @@ namespace box
     length_t length;
     payload_uid identifier;
     u32 hasNext; /* to pad to 16 bytes */
+    
+    Payload() : length(0), identifier(0), hasNext(0) { }
+    Payload(payload_uid identifier, length_t length, bool hasNext = false) :
+      length(length), identifier(identifier), hasNext(hasNext ? 1 : 0) { }
   } PACKED_ATTRIBUTE;
   
   struct Group

@@ -195,7 +195,7 @@ namespace filters
           effective = _in.used();
           _in.consume(_in.used());
           
-          TRACE_IF(effective > 0, "%p: skip_filter::process() BLA BLA skipping %lu bytes", this, effective);
+          TRACE_IF(effective > 0, "%p: skip_filter::process() skipping %lu bytes", this, effective);
           markFinished(_out.empty() && ended());
         }
         else

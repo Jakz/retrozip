@@ -113,9 +113,6 @@ Status Patch::apply(seekable_data_source* source, data_sink* sink) const
   bool verifyOutput = true;
   
   bool finished = false;
-  const uint8_t* data = _data.data();
-  const uint8_t* dataStart = data;
-  const uint8_t* dataEnd = data + _data.size();
 
   weak_data_source weakData = weak_data_source(_data);
 
@@ -143,17 +140,17 @@ Status Patch::apply(seekable_data_source* source, data_sink* sink) const
     return Status::Ok;
   }
 
-  while (data < dataEnd)
+  while (!weakData.eos())
   {
     /* read offset */
-    auto* dataBefore = data;
+    size_t dataBefore = weakData.tell();
     size_t amountToCopy = readVariableInt(&weakData);
     size_t offset = 0;
     //offset += sourceOffset;
 
     /* copy bytes until offset is correct */
     //size_t amountToCopy = offset - sourceOffset;
-    TRACE("%p: Patch::apply: %08x  sourceOffset = %08x -> %08x, amountToCopy = %lu", this, _header.headerSizeInBytes + dataBefore - dataStart, sourceOffset, sourceOffset + amountToCopy, amountToCopy);
+    TRACE("%p: Patch::apply: %08x sourceOffset = %08x -> %08x, amountToCopy = %lu", this, _header.headerSizeInBytes + dataBefore, sourceOffset, sourceOffset + amountToCopy, amountToCopy);
 
     buffer.ensure_capacity(amountToCopy + 1);
     buffer.seek(0);
@@ -171,8 +168,10 @@ Status Patch::apply(seekable_data_source* source, data_sink* sink) const
     /* now keep xoring until a byte it's equal both on source and patch */
     do
     {
-      dataBefore = data;
-      uint8_t patchByte = *data++;
+      dataBefore = weakData.tell();
+      uint8_t patchByte;
+      weakData.read(&patchByte, 1);
+      
       uint8_t sourceByte = 0;
 
       if (sourceOffset < source->size())
@@ -187,11 +186,11 @@ Status Patch::apply(seekable_data_source* source, data_sink* sink) const
 
       if (patchByte == 0)
       {
-        TRACE("%p: Patch::apply: %08x written = %lu, sourceOffset = %08x", this, _header.headerSizeInBytes + dataBefore - dataStart, written - before, sourceOffset);
+        TRACE("%p: Patch::apply: %08x written = %lu, sourceOffset = %08x", this, _header.headerSizeInBytes + dataBefore, written - before, sourceOffset);
         break;
       }
 
-      if (data >= dataEnd)
+      if (weakData.eos())
         break;
 
     } while (true);
@@ -224,7 +223,6 @@ Status Patch::generate(seekable_data_source* sourcer, seekable_data_source* patc
   size_t offset = 0;
   size_t relative = 0;
 
-
   std::memcpy(_header.magic, "UPS1", 4);
   _header.inputSize = sourcer->size();
   _header.outputSize = patchedr->size();
@@ -233,14 +231,20 @@ Status Patch::generate(seekable_data_source* sourcer, seekable_data_source* patc
   {
     uint8_t sbyte, pbyte;
     
+    /* read one byte from source and patched */
     source.read(&sbyte, 1);
     patched.read(&pbyte, 1);
 
+    /* they're equal = skip */
     if (sbyte == pbyte)
       ++offset;
     else
     {
+      /* fist byte different, we need to generate a xor block */
+
+      TRACE("%p: Patch::generate: %08x -> %08x copied = %lu", this, relative, offset, offset - relative);
       writeVariableInt(&wrapped, offset - relative);
+      relative = offset;
       _data.push_back(sbyte ^ pbyte);
       ++offset;
 
@@ -252,6 +256,7 @@ Status Patch::generate(seekable_data_source* sourcer, seekable_data_source* patc
           break;
         }
 
+        /* keep going on xor block until we find to bytes equal */
         source.read(&sbyte, 1);
         patched.read(&pbyte, 1);
         ++offset;
@@ -259,7 +264,10 @@ Status Patch::generate(seekable_data_source* sourcer, seekable_data_source* patc
         _data.push_back(sbyte ^ pbyte);
 
         if (sbyte == pbyte)
+        {
+          TRACE("%p: Patch::generate: %08x -> %08x xored = %lu", this, relative, offset, offset - relative);
           break;
+        }
       }
 
       relative = offset;

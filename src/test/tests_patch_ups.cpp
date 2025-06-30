@@ -79,6 +79,8 @@ TEST_CASE("classes.PatchUps.patchEmpty")
   REQUIRE(source2 == patched);
 }
 
+
+#ifdef _WIN32
 #include <cstdio>
 #include <sstream>
 char tmp_filename[L_tmpnam];
@@ -116,6 +118,8 @@ std::string releaseStdout()
 
   return output.str();
 }
+
+#endif
 
 TEST_CASE("classes.PatchUps.patchSingleByteDifferenceInTheMiddle")
 {

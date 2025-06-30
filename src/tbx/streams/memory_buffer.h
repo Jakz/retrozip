@@ -171,6 +171,28 @@ public:
       this->_capacity = capacity;
     }
   }
+  
+
+  void fill(size_t length, byte value = 0)
+  {
+    ensure_capacity(_position + length);
+    std::fill(_data + _position, _data + _position + length, value);
+    _size = _position + length;
+    _position = length;
+  }
+
+  void fill(size_t offset, size_t length, byte value = 0)
+  {
+    TRACE_MB("%p: memory_buffer::fill(%lu, %lu, %02x)", this, offset, length, value);
+    ensure_capacity(offset + length);
+    std::fill(_data + offset, _data + offset + length, value);
+
+    if (offset + length > _size)
+    {
+      _size = offset + length;
+      _position = _size;
+    }
+  }
 
   template<typename T> data_reference<T> reserve();
   template<typename T> array_reference<T> reserveArray(size_t size);
