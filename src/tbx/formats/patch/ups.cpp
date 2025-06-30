@@ -196,15 +196,39 @@ Status Patch::apply(seekable_data_source* source, data_sink* sink) const
     } while (true);
   }
 
-  /* if patch didn't produce enough bytes just fill with zeros */
+  /* if patch didn't produce enough bytes just copy source and then fill with zeroes */
   if (written < _header.outputSize)
   {
+    /* remaining bytes to write */
     size_t remaining = _header.outputSize - written;
-    buffer.ensure_capacity(remaining);
-    buffer.seek(0);
-    memset(buffer.direct(), 0, remaining);
-    sink->write(buffer.direct(), remaining);
-    written += remaining;
+    
+    /* remaining source bytes */
+    size_t availableToCopy = source->size() - source->tell();
+    
+    if (availableToCopy > 0)
+    {
+      availableToCopy = std::min(availableToCopy, remaining);
+      buffer.ensure_capacity(availableToCopy);
+      source->read(buffer.direct(), availableToCopy);
+      sink->write(buffer.direct(), availableToCopy);
+
+      TRACE("%p: Patch::apply: %08x trailCopy = %lu, sourceOffset = %08x", this, _data.size(), availableToCopy, sourceOffset);
+      
+      written += availableToCopy;
+      remaining -= availableToCopy;
+    }
+    
+    /* fill with zero otherwise */
+    if (remaining > 0)
+    {
+      TRACE("%p: Patch::apply: %08x trailZeroes = %lu", this, _data.size(), remaining);
+      
+      buffer.ensure_capacity(remaining);
+      buffer.seek(0);
+      memset(buffer.direct(), 0, remaining);
+      sink->write(buffer.direct(), remaining);
+      written += remaining;
+    }
   }
 
   return Status::Ok;
