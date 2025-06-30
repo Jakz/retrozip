@@ -171,6 +171,16 @@ public:
       this->_capacity = capacity;
     }
   }
+
+  /* appends count bytes at the end of the buffer (after size elements) */
+  memory_buffer& append(size_t count, byte value)
+  {
+    TRACE_MB("%p: memory_buffer::append(%lu, %02x)", this, count, value);
+    ensure_capacity(_size + count);
+    std::fill(_data + _size, _data + _size + count, value);
+    _size = _size + count;
+    return *this;
+  }
   
 
   void fill(size_t length, byte value = 0)
@@ -232,6 +242,19 @@ public:
     std::copy(_data + _position, _data + _position + available, (byte*)data);
     _position += available;
     return available;
+  }
+
+  /* truncate the size of the buffer, do nothing on allocation */
+  memory_buffer& truncate(size_t size)
+  {
+    if (size < _size)
+    {
+      TRACE_MB("%p: memory_buffer::truncate(%lu)", this, size);
+      _size = size;
+      _position = std::min(_position, roff_t(_size));
+    }
+
+    return *this;
   }
   
   memory_buffer& trim()

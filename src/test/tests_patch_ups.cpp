@@ -121,26 +121,74 @@ std::string releaseStdout()
 
 #endif
 
+void generateAndVerifyUpsPatch(memory_buffer& source, memory_buffer& patched)
+{
+  /* generate patch */
+  patch::ups::Patch patcher;
+  patcher.generate(&source, &patched);
+
+  /* write patch to buffer */
+  memory_buffer patch;
+  patcher.write(&patch);
+  patch.rewind();
+
+  /* parse patch from buffer */
+  patch::ups::Patch parsed;
+  REQUIRE(parsed.load(&patch) == patch::ups::Status::Ok);
+
+  /* apply patch */
+  memory_buffer patchedResult;
+  source.rewind();
+  parsed.apply(&source, &patchedResult);
+
+  /* verify */
+  REQUIRE(patched.size() == patchedResult.size());
+  for (size_t i = 0; i < patched.size(); ++i)
+  {
+    CAPTURE(i);
+    REQUIRE(patched[i] == patchedResult[i]);
+  }
+}
+
 TEST_CASE("classes.PatchUps.patchSingleByteDifferenceInTheMiddle")
 {
   memory_buffer source = testing::randomStackDataSource(256);
   memory_buffer source2 = source;
   source[128] = 0xAB;
   source2[128] = 0x00;
+  generateAndVerifyUpsPatch(source, source2);
+}
 
-  patch::ups::Patch patch;
-  patch.generate(&source, &source2);
+TEST_CASE("classes.PatchUps.patchSingleByteDifferenceAtBeginning")
+{
+  memory_buffer source = testing::randomStackDataSource(256);
+  memory_buffer source2 = source;
+  source[0] = 0xAB;
+  source2[0] = 0x00;
+  generateAndVerifyUpsPatch(source, source2);
+}
 
-  memory_buffer buffer;
-  patch.write(&buffer);
-  buffer.rewind();
+TEST_CASE("classes.PatchUps.patchSingleByteDifferenceAtTheEnd")
+{
+  memory_buffer source = testing::randomStackDataSource(256);
+  memory_buffer source2 = source;
+  source[255] = 0xAB;
+  source2[255] = 0x00;
+  generateAndVerifyUpsPatch(source, source2);
+}
 
-  patch::ups::Patch parsed;
-  REQUIRE(parsed.load(&buffer) == patch::ups::Status::Ok);
+TEST_CASE("classes.PatchUps.patchTruncateSource")
+{
+  memory_buffer source = testing::randomStackDataSource(256);
+  memory_buffer source2 = source;
+  source2.truncate(128);
+  generateAndVerifyUpsPatch(source, source2);
+}
 
-  memory_buffer patched;
-  source.rewind();
-  parsed.apply(&source, &patched);
-
-  REQUIRE(source2 == patched);
+TEST_CASE("classes.PatchUps.patchExtendSourceWithZeroes")
+{
+  memory_buffer source = testing::randomStackDataSource(256);
+  memory_buffer source2 = source;
+  source2.append(128, 0x00);
+  generateAndVerifyUpsPatch(source, source2);
 }

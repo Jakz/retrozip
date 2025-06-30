@@ -243,7 +243,7 @@ Status Patch::generate(seekable_data_source* sourcer, seekable_data_source* patc
   auto source = unbuffered_source_filter<filters::crc32_filter>(sourcer);
   auto patched = unbuffered_source_filter<filters::crc32_filter>(patchedr);
 
-  size_t totalOutput = std::max(sourcer->size(), patchedr->size());
+  size_t totalOutput = patchedr->size();
   size_t offset = 0;
   size_t relative = 0;
 
