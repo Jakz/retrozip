@@ -123,6 +123,8 @@ std::string releaseStdout()
 
 void generateAndVerifyUpsPatch(memory_buffer& source, memory_buffer& patched)
 {
+  captureStdout();
+  
   /* generate patch */
   patch::ups::Patch patcher;
   patcher.generate(&source, &patched);
@@ -140,6 +142,8 @@ void generateAndVerifyUpsPatch(memory_buffer& source, memory_buffer& patched)
   memory_buffer patchedResult;
   source.rewind();
   parsed.apply(&source, &patchedResult);
+
+  INFO(releaseStdout());
 
   /* verify */
   REQUIRE(patched.size() == patchedResult.size());
@@ -190,5 +194,16 @@ TEST_CASE("classes.PatchUps.patchExtendSourceWithZeroes")
   memory_buffer source = testing::randomStackDataSource(256);
   memory_buffer source2 = source;
   source2.append(128, 0x00);
+
+  generateAndVerifyUpsPatch(source, source2);
+}
+
+TEST_CASE("classes.PatchUps.patchExtendSourceWithRandomValues")
+{
+  memory_buffer source = testing::randomStackDataSource(256);
+  memory_buffer source2 = source;
+  for (size_t i = 0; i < 128; ++i)
+    source2.append(testing::randomByte());
+
   generateAndVerifyUpsPatch(source, source2);
 }

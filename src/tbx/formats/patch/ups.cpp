@@ -114,7 +114,7 @@ Status Patch::apply(seekable_data_source* source, data_sink* sink) const
   
   bool finished = false;
 
-  weak_data_source weakData = weak_data_source(_data);
+  weak_data_source data = weak_data_source(_data);
 
   size_t sourceOffset = 0;
   size_t written = 0;
@@ -124,27 +124,11 @@ Status Patch::apply(seekable_data_source* source, data_sink* sink) const
   if (source->size() != _header.inputSize)
     return Status::InvalidSourceSize;
 
-  /* special case: empty patch */
-  if (_data.empty())
-  {
-    size_t finalSize = _header.outputSize;
-    size_t toBeCopied = std::min(_header.inputSize, _header.outputSize);
-    buffer.ensure_capacity(finalSize);
-
-    source->read(buffer.direct(), toBeCopied);
-    
-    if (toBeCopied < finalSize)
-      memset(buffer.direct() + toBeCopied, 0, finalSize - toBeCopied);
-
-    sink->write(buffer.direct(), finalSize);
-    return Status::Ok;
-  }
-
-  while (!weakData.eos())
+  while (!data.eos() && written < _header.outputSize)
   {
     /* read offset */
-    size_t dataBefore = weakData.tell();
-    size_t amountToCopy = readVariableInt(&weakData);
+    size_t dataBefore = data.tell();
+    size_t amountToCopy = readVariableInt(&data);
     size_t offset = 0;
     //offset += sourceOffset;
 
@@ -168,9 +152,9 @@ Status Patch::apply(seekable_data_source* source, data_sink* sink) const
     /* now keep xoring until a byte it's equal both on source and patch */
     do
     {
-      dataBefore = weakData.tell();
+      dataBefore = data.tell();
       uint8_t patchByte;
-      weakData.read(&patchByte, 1);
+      data.read(&patchByte, 1);
       
       uint8_t sourceByte = 0;
 
@@ -190,7 +174,7 @@ Status Patch::apply(seekable_data_source* source, data_sink* sink) const
         break;
       }
 
-      if (weakData.eos())
+      if (data.eos() || written == _header.outputSize)
         break;
 
     } while (true);
@@ -256,7 +240,11 @@ Status Patch::generate(seekable_data_source* sourcer, seekable_data_source* patc
     uint8_t sbyte, pbyte;
     
     /* read one byte from source and patched */
-    source.read(&sbyte, 1);
+    if (offset < _header.inputSize)
+      source.read(&sbyte, 1);
+    else
+      sbyte = 0x00;
+
     patched.read(&pbyte, 1);
 
     /* they're equal = skip */

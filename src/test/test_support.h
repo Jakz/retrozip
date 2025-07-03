@@ -10,6 +10,7 @@
 namespace testing
 {
   u32 random(u32 modulo);
+  inline byte randomByte() { return static_cast<byte>(random(256)); }
   
   memory_buffer randomStackDataSource(size_t size);
   

@@ -181,6 +181,14 @@ public:
     _size = _size + count;
     return *this;
   }
+
+  memory_buffer& append(byte value)
+  {
+    TRACE_MB("%p: memory_buffer::append(%02x)", this, value);
+    ensure_capacity(_size + 1);
+    _data[_size++] = value;
+    return *this;
+  }
   
 
   void fill(size_t length, byte value = 0)
