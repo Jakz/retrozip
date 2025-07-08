@@ -257,7 +257,7 @@ void GUI::loadFile(const path& filename)
 
 int main(int argc, char* argv[])
 {
-  if (true)
+  if (false)
   {
     ArchiveBuilder builder(CachePolicy(CachePolicy::Mode::NEVER, 0), 128_mb, 128_mb);
     std::vector<FileGroup> groups;
@@ -270,6 +270,7 @@ int main(int argc, char* argv[])
     archive.options().bufferSize = 64_mb;
     archive.write(sink);
     sink.serialize(file_handle(R"(C:\Users\Jack\Desktop\patapon\whole.box)", file_mode::WRITING));
+    return 0;
   }
 
   if (false)

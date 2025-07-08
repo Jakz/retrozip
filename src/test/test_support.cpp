@@ -80,6 +80,21 @@ void testing::ArchiveTester::verifyFilters(const std::vector<filter_builder*>& o
   }
 }
 
+void testing::ArchiveTester::verify(const ArchiveFactory::Data& data)
+{
+  Archive archive = Archive::ofData(data);
+  memory_buffer output;
+  archive.write(output);
+  output.rewind();
+
+  Archive verify;
+  verify.read(output);
+  verify.options().bufferSize = 16_kb;
+
+  testing::ArchiveTester::verify(data, verify, output);
+  release(data);
+}
+
 void testing::ArchiveTester::verify(const ArchiveFactory::Data& data, const Archive& verify, memory_buffer& buffer)
 {
   /* magic number and checksum */
@@ -91,6 +106,8 @@ void testing::ArchiveTester::verify(const ArchiveFactory::Data& data, const Arch
   /* amount of entries / streams */
   REQUIRE(data.entries.size() == verify.entries().size());
   REQUIRE(data.streams.size() == verify.streams().size());
+
+  bool hasAnyFilter = false;
   
   /* basic entry data */
   for (size_t i = 0; i < data.entries.size(); ++i)
@@ -102,6 +119,7 @@ void testing::ArchiveTester::verify(const ArchiveFactory::Data& data, const Arch
     REQUIRE(((memory_buffer*)dentry.source)->size() == entry.binary().digest.size); /* uncompressed size match */
     
     REQUIRE(dentry.filters.size() == entry.filters().size()); /* filter count match */
+    hasAnyFilter |= !entry.filters().empty();
     
     /* each filter must match */
     verifyFilters(dentry.filters, entry.filters());
@@ -197,6 +215,14 @@ void testing::ArchiveTester::verify(const ArchiveFactory::Data& data, const Arch
         return count + stream.binary().length;
       }));
 
+      /* if archive has no filter stream data section amount should correspond to sum of all entries */
+      if (!hasAnyFilter)
+      {
+        size_t totalStreamData = 0;
+        for (const auto& entry : data.entries)
+          totalStreamData += static_cast<const memory_buffer*>(entry.source)->size();
+        REQUIRE(streamDataSection->size == totalStreamData);
+      }
     }
   }
   

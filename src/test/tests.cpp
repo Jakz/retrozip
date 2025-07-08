@@ -1241,35 +1241,6 @@ TEST_CASE("payload generation", "[box archive]")
 
 #pragma mark Box Archive
 
-TEST_CASE("archive (multiple entry per stream)", "[box archive]") {
-  ArchiveFactory::Data data;
-  
-  SECTION("two entries no filters") {
-    data.entries.push_back({ "foobar1.bin", testing::randomDataSource(256) });
-    data.entries.push_back({ "foobar2.bin", testing::randomDataSource(512) });
-
-    data.streams.push_back({ { 0, 1 }, { } });
-  }
-  
-  SECTION("two entries through a single stream filter") {
-    data.entries.push_back({ "foobar1.bin", testing::randomDataSource(256) });
-    data.entries.push_back({ "foobar2.bin", testing::randomDataSource(512) });
-    
-    data.streams.push_back({ { 0, 1 }, { new builders::deflate_builder(256) } });
-  }
-  
-  Archive archive = Archive::ofData(data);
-  memory_buffer output;
-  archive.write(output);
-  output.rewind();
-  
-  Archive verify;
-  verify.read(output);
-  verify.options().bufferSize = 16_kb;
-  testing::ArchiveTester::verify(data, verify, output);
- 
-  testing::ArchiveTester::release(data);
-}
 
 TEST_CASE("archive (single entry archive with filters)", "[box archive]") {
   ArchiveFactory::Data data;

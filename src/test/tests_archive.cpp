@@ -31,23 +31,20 @@ TEST_CASE("features.Archive.singleEntryPerStreamWithNoFilter")
   ArchiveFactory::Data data;
 
   SECTION("single entry") {
-    data.entries.push_back({ "entry.bin", testing::randomDataSource(testing::random(512) + 512) });
-    data.streams.push_back({ { 0 }, { } });
+    data.addRaw("entry.bin", testing::randomDataSource(testing::random(512) + 512));
   }
 
   SECTION("two entries") {
     for (size_t i = 0; i < 2; ++i)
     {
-      data.entries.push_back({ fmt::format("entry{}.bin", i), testing::randomDataSource(testing::random(512) + 512) });
-      data.streams.push_back({ { static_cast<int>(i) }, { } });
+      data.addRaw(fmt::format("entry{}.bin", i), testing::randomDataSource(testing::random(512) + 512));
     }
   }
 
   SECTION("ten entries") {
     for (size_t i = 0; i < 10; ++i)
     {
-      data.entries.push_back({ fmt::format("entry{}.bin", i), testing::randomDataSource(testing::random(512) + 512) });
-      data.streams.push_back({ { static_cast<int>(i) }, { } });
+      data.addRaw(fmt::format("entry{}.bin", i), testing::randomDataSource(testing::random(512) + 512));
     }
   }
 
@@ -62,4 +59,22 @@ TEST_CASE("features.Archive.singleEntryPerStreamWithNoFilter")
   testing::ArchiveTester::verify(data, verify, output);
 
   testing::ArchiveTester::release(data);
+}
+
+TEST_CASE("features.Archive.multipleEntriesPerStreamWithNoFilter") {
+  ArchiveFactory::Data data;
+  data.entries.push_back({ "foobar1.bin", testing::randomDataSource(256) });
+  data.entries.push_back({ "foobar2.bin", testing::randomDataSource(512) });
+  data.streams.push_back({ { 0, 1 }, { } });
+
+  testing::ArchiveTester::verify(data);
+}
+
+TEST_CASE("features.Archive.multipleEntriesPerStreamWithDeflate") {
+  ArchiveFactory::Data data;
+  data.entries.push_back({ "foobar1.bin", testing::randomDataSource(256) });
+  data.entries.push_back({ "foobar2.bin", testing::randomDataSource(512) });
+  data.streams.push_back({ { 0, 1 }, { new builders::deflate_builder(256) } });
+
+  testing::ArchiveTester::verify(data);
 }

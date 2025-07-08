@@ -232,6 +232,12 @@ struct ArchiveFactory
   {
     std::vector<Stream> streams;
     std::vector<Entry> entries;
+
+    void addRaw(const std::string& name, data_source* source)
+    {
+      entries.push_back({ name, source });
+      streams.push_back({ { static_cast<ArchiveEntry::ref>(entries.size() - 1) }, { } });
+    }
   };
 };
 

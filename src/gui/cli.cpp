@@ -346,7 +346,7 @@ void Terminal::deinit()
 
 int maizzzn(int argc, char* argv[])
 {
-  patch::ups::Patch::test();
+  //patch::ups::Patch::test();
   
   //Terminal terminal;
   //terminal.init();

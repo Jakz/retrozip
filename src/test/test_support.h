@@ -24,6 +24,7 @@ namespace testing
     static void release(const ArchiveFactory::Data& data);
     static void verifyFilters(const std::vector<filter_builder*>& original, const filter_builder_queue& match);
     static void verify(const ArchiveFactory::Data& data, const Archive& verify, memory_buffer& buffer);
+    static void verify(const ArchiveFactory::Data& data);
   };
   
   struct Xdelta3Tester
