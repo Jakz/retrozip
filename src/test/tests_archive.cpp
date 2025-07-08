@@ -78,3 +78,61 @@ TEST_CASE("features.Archive.multipleEntriesPerStreamWithDeflate") {
 
   testing::ArchiveTester::verify(data);
 }
+
+TEST_CASE("features.Archive.singleEntryWithFilters")
+{
+  ArchiveFactory::Data data;
+
+  SECTION("no filters") {
+    data.entries.push_back({ "foobar1.bin", testing::randomDataSource(256) });
+    data.streams.push_back({ { 0 }, { } });
+
+  }
+
+  SECTION("xor filter on entry") {
+    data.entries.push_back({ "foobar1.bin", testing::randomDataSource(256), { new builders::xor_builder(256, "foobar") } });
+    data.streams.push_back({ { 0 }, { } });
+  }
+
+  SECTION("xor filter on stream") {
+    data.entries.push_back({ "foobar1.bin", testing::randomDataSource(256), { } });
+    data.streams.push_back({ { 0 }, { new builders::xor_builder(256, "foobar") } });
+  }
+
+  SECTION("zlib deflate filter on entry") {
+    data.entries.push_back({ "foobar1.bin", testing::randomCompressibleDataSource(16_kb), { new builders::deflate_builder(16_kb) } });
+    data.streams.push_back({ { 0 }, { } });
+  }
+
+  SECTION("double filter on entry (deflate + xor)") {
+    data.entries.push_back({ "foobar1.bin", testing::randomCompressibleDataSource(16_kb), { new builders::deflate_builder(16_kb), new builders::xor_builder(16_kb, "foobar") } });
+    data.streams.push_back({ { 0 }, { } });
+  }
+
+  SECTION("double filter on entry (xor + deflate)") {
+    data.entries.push_back({ "foobar1.bin", testing::randomCompressibleDataSource(16_kb), { new builders::xor_builder(16_kb, "foobar"), new builders::deflate_builder(16_kb) } });
+    data.streams.push_back({ { 0 }, { } });
+  }
+
+  SECTION("double xor on entry and then on stream") {
+    data.entries.push_back({ "entry.bin", testing::randomDataSource(256), { new builders::xor_builder(32, "foobar") } });
+    data.streams.push_back({ { 0 }, { new builders::xor_builder(32, "lorem") } });
+  }
+
+  SECTION("xor on entry and lzma on stream") {
+    data.entries.push_back({ "entry.bin", testing::randomCompressibleDataSource(16_kb), { new builders::xor_builder(32, "foobar") } });
+    data.streams.push_back({ { 0 }, { new builders::lzma_builder(32) } });
+  }
+
+  SECTION("lzma on entry and xor on stream") {
+    data.entries.push_back({ "entry.bin", testing::randomCompressibleDataSource(16_kb), { new builders::lzma_builder(32) } });
+    data.streams.push_back({ { 0 }, { new builders::xor_builder(32, "foobar") } });
+  }
+
+  SECTION("lzma on entry and deflate on stream") {
+    data.entries.push_back({ "entry.bin", testing::randomCompressibleDataSource(16_kb), { new builders::lzma_builder(32) } });
+    data.streams.push_back({ { 0 }, { new builders::deflate_builder(32) } });
+  }
+
+  testing::ArchiveTester::verify(data);
+}

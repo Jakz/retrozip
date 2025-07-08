@@ -119,10 +119,10 @@ void testing::ArchiveTester::verify(const ArchiveFactory::Data& data, const Arch
     REQUIRE(((memory_buffer*)dentry.source)->size() == entry.binary().digest.size); /* uncompressed size match */
     
     REQUIRE(dentry.filters.size() == entry.filters().size()); /* filter count match */
-    hasAnyFilter |= !entry.filters().empty();
     
     /* each filter must match */
     verifyFilters(dentry.filters, entry.filters());
+    hasAnyFilter |= !entry.filters().empty();
   }
   
   for (size_t i = 0; i < data.streams.size(); ++i)
@@ -157,6 +157,7 @@ void testing::ArchiveTester::verify(const ArchiveFactory::Data& data, const Arch
     
     /* each filter must match */
     verifyFilters(dstream.filters, stream.filters());
+    hasAnyFilter |= !stream.filters().empty();
   }
   
   const auto& sizeInfo = verify.sizeInfo();
