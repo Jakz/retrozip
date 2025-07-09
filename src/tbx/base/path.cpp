@@ -20,6 +20,15 @@ path::path(const char* data) : _data(data)
     _data.pop_back();
 }
 
+path::path(std::string_view data) : _data(data)
+{
+  /* replace windows separator to other separator */
+  std::replace(_data.begin(), _data.end(), '\\', SEPARATOR);
+
+  if (_data.length() > 1 && _data.back() == SEPARATOR)
+    _data.pop_back();
+}
+
 path::path(const std::string& data) : path(data.c_str())
 {
 

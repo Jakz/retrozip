@@ -31,8 +31,6 @@ namespace box
     StreamTable,
     StreamPayload,
     StreamData,
-    FileNameTable,
-    GroupTable,
 
     FirstFreeSectionIdent = 1U << 31
   };
@@ -113,14 +111,11 @@ namespace box
     index_t stream;
     index_t indexInStream;
     
-    offset_t payloadOffset;
-    
     timestamp_t timestamp;
-    offset_t entryNameOffset;
 
     offset_t metadataOffset;
 
-    count_t metadataCount;
+    offset_t payloadOffset;
     count_t payloadLength;
 
     Entry() :
@@ -158,14 +153,45 @@ namespace box
   } PACKED_ATTRIBUTE;
 
   enum MetadataType : uint8_t
-  { 
-    StringKeyMask   = 0b00010000,
-    StringValueMask = 0b00000001,
+  {
+    ValueTypeMask  = 0b00000011,
     
-    NumericalBinary = 0b00000000,
-    NumericalString = 0b00000001,
-    StringBinary = 0b00010000,
-    StringString = 0b00010001,
+    ValueNone      = 0b00000000,
+    ValueString    = 0b00000001,
+    ValueBinary    = 0b00000010,
+    ValueNumber    = 0b00000011,
+
+    KeyTypeMask    = 0b00000100,
+    KeyString      = 0b00000100,
+    KeyUid         = 0b00000000,
+
+    StringString = KeyString | ValueString,
+    StringBinary = KeyString | ValueBinary,
+    UidString    = KeyUid | ValueString,
+    UidBinary    = KeyUid | ValueBinary,
+
+    PredefinedMask = 0b10000000,
+    PredefinedName = PredefinedMask | (0b00001 << 2) | ValueString,
+    PredefinedFilterPayload = PredefinedMask | (0b00010 << 2) | ValueBinary,
+    PredefinedComment = PredefinedMask | (0b00011 << 2) | ValueString,
+    PredefinedGroup = PredefinedMask | (0b00100 << 2) | ValueString,
+  };
+
+  enum class MetadataValueType
+  {
+    None = ValueNone,
+    String = ValueString,
+    Binary = ValueBinary,
+    Number = ValueNumber,
+    
+  };
+
+  enum class KnownMetadata : uint8_t
+  {
+    None = 0,
+    Name = PredefinedName,
+    Comment = PredefinedComment,
+    FilterPayload = PredefinedFilterPayload,
   };
 
   struct MetadataEntry
@@ -185,19 +211,37 @@ namespace box
     MetadataEntry(std::string_view key, std::string_view data) : _key(key), _uid(0), _data(data.begin(), data.end()), _type(MetadataType::StringString) { }
     MetadataEntry(std::string_view key, const std::vector<uint8_t>& data) : _key(key), _uid(0), _data(data), _type(MetadataType::StringBinary) { }
     /* numerical key constructors */
-    MetadataEntry(uint64_t uid, std::string_view data) : _uid(uid), _data(data.begin(), data.end()), _type(MetadataType::NumericalString) { }
-    MetadataEntry(uint64_t uid, const std::vector<uint8_t>& data) : _uid(uid), _data(data), _type(MetadataType::NumericalBinary) { }
+    MetadataEntry(uint64_t uid, std::string_view data) : _uid(uid), _data(data.begin(), data.end()), _type(MetadataType::UidString) { }
+    MetadataEntry(uint64_t uid, const std::vector<uint8_t>& data) : _uid(uid), _data(data), _type(MetadataType::UidBinary) { }
     
+    MetadataEntry(KnownMetadata key, std::string_view data) : _key(), _uid(0), _data(data.begin(), data.end()), _type(static_cast<MetadataType>(int(key) | int(ValueString))) { }
+
+    std::string_view literal() const
+    { 
+      assert(valueType() == MetadataValueType::String); 
+      return std::string_view(reinterpret_cast<const char*>(_data.data()), _data.size()); 
+    }
+
     const std::string& key() const { assert(isStringKey());  return _key; }
     uint64_t uid() const { assert(!isStringKey());  return _uid; }
 
+    std::string keyMnemonic() const;
+
     const std::vector<uint8_t>& data() const { return _data; }
     MetadataType type() const { return _type; }
+    MetadataValueType valueType() const { return static_cast<MetadataValueType>(_type & ValueTypeMask); }
+    KnownMetadata knownType() const { return static_cast<KnownMetadata>(_type); }
+    
+    void setValue(std::string_view value) 
+    { 
+      assert(valueType() == MetadataValueType::String); 
+      _data.assign(value.begin(), value.end()); 
+    }
     
     size_t sizeInBytes() const;
 
-    bool isStringKey() const { return (_type & MetadataType::StringKeyMask) == MetadataType::StringKeyMask; }
-    bool isBinaryValue() const { return (_type & MetadataType::StringValueMask) == MetadataType::StringValueMask; }
+    bool isPredefinedKey() const { return _type & MetadataType::PredefinedMask; }
+    bool isStringKey() const { return !isPredefinedKey() && (_type & MetadataType::KeyTypeMask) == MetadataType::KeyString; }
     
     size_t serialize(data_sink* sink) const;
     void unserialize(data_source* source);

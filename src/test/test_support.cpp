@@ -115,7 +115,7 @@ void testing::ArchiveTester::verify(const ArchiveFactory::Data& data, const Arch
     const auto& dentry = data.entries[i];
     const auto& entry = verify.entries()[i];
     
-    REQUIRE(dentry.name == entry.name()); /* name match */
+    REQUIRE(dentry.metadata[box::KnownMetadata::Name]->literal() == entry.name()); /* name match */
     REQUIRE(((memory_buffer*)dentry.source)->size() == entry.binary().digest.size); /* uncompressed size match */
     
     REQUIRE(dentry.filters.size() == entry.filters().size()); /* filter count match */
@@ -226,21 +226,33 @@ void testing::ArchiveTester::verify(const ArchiveFactory::Data& data, const Arch
       }
     }
   }
+
+  size_t metadataSize = 0;
+  for (const auto& entry : data.entries)
+  {
+    if (!entry.metadata.empty())
+    {
+      metadataSize += enriched_data_sink::sizeofLEB128(entry.metadata.size());
+      for (const auto& metadata : entry.metadata)
+        metadataSize += metadata.sizeInBytes();
+    }
+  }
   
   
   /* size of archive must match, header + entry*entries + stream*streams + entry names */
   size_t archiveSize = sizeof(box::Header)
   + sizeof(box::Entry) * data.entries.size()
   + sizeof(box::Stream) * data.streams.size()
-  + ((!data.entries.empty() && !data.streams.empty()) ? sizeof(box::SectionHeader)*4 : 0) /* entry table, stream table, stream data, entry names section headers */
+  + ((!data.entries.empty() && !data.streams.empty()) ? sizeof(box::SectionHeader)*4 : 0) /* entry table, stream table, stream data, metadata table headers */
   + (payloadSizeForEntries > 0 ? sizeof(box::SectionHeader) : 0)
   + (payloadSizeForStream > 0 ? sizeof(box::SectionHeader) : 0)
   + std::accumulate(verify.streams().begin(), verify.streams().end(), 0UL, [] (size_t count, const ArchiveStream& entry) { return entry.binary().length + count; })
-  + std::accumulate(data.entries.begin(), data.entries.end(), 0UL, [] (size_t count, const ArchiveFactory::Entry& entry) { return entry.name.length() + 1 + count; })
-  + payloadSizeForEntries + payloadSizeForStream;
+  + payloadSizeForEntries + payloadSizeForStream
+  + metadataSize
+    ;
   
   REQUIRE(buffer.size() == archiveSize);
-  
+
   /* size of archive must be header + section header * sections + section size for each section */
   size_t archiveSizeBySections = sizeof(box::Header)
   + sizeof(box::SectionHeader) * verify.header().index.count

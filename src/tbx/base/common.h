@@ -89,14 +89,17 @@ extern void debugnnprintf(const char* str, ...);
 
 #define TRACE_MEMORY_BUFFERS 0
 #define TRACE_PIPES 0
-#define TRACE_ARCHIVE 0
+#define TRACE_ARCHIVE 2
 #define TRACE_ARCHIVE_BUILDER 0
 #define TRACE_ENABLED 1
 #define TRACE_FILES 0
 #define TRACE_FILE_SYSTEM 0
 
-#define TRACE_FORCE_DISABLE 0
+#define TRACE_FORCE_DISABLE 1
 
+#if defined(TRACE_ENABLED)
+  #define DEBUG
+#endif
 
 #if defined(TRACE_FORCE_DISABLE) && TRACE_FORCE_DISABLE == 1
 #define TRACEL(...) do { } while (false)

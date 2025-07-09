@@ -85,7 +85,7 @@ Archive ArchiveBuilder::buildSingleStreamSolidArchive(const data_source_vector& 
   for (const auto& source : sources)
   {
     source->rewind();
-    data.entries.push_back({ source.name, source, { } });
+    data.entries.emplace_back(source.name, source);
   }
   
   ArchiveEntry::ref base = 0;
@@ -109,10 +109,10 @@ Archive ArchiveBuilder::buildSingleStreamBaseWithDeltasArchive(const data_source
     source->rewind();
     if (i == baseIndex)
     {
-      data.entries.push_back({ source.name, source, { new builders::lzma_builder(bufferSize) } });
+      data.entries.emplace_back(source.name, source, filter_builder_list_t{ new builders::lzma_builder(bufferSize) });
     }
     else
-      data.entries.push_back({ source.name, source, { new builders::xdelta3_builder(bufferSize, sources[baseIndex], 16_mb, sources[baseIndex]->size()) } });
+      data.entries.emplace_back(source.name, source, filter_builder_list_t{ new builders::xdelta3_builder(bufferSize, sources[baseIndex], 16_mb, sources[baseIndex]->size()) });
     
     data.streams.push_back({ { i } });
   }

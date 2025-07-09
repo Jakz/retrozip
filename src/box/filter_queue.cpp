@@ -217,7 +217,7 @@ void builders::xdelta3_builder::unsetup(const archive_environment& env)
     /* we found a matching source */
     if (entry.binary().digest == _sourceDigest)
     {
-      TRACE_A("%p: xdelta3_builder::unsetup() found matching source %s", this, entry.name().c_str());
+      TRACE_A("%p: xdelta3_builder::unsetup() found matching source %s", this, std::string(entry.name()).c_str());
 
       /* prepare extraction of source task and add it */
       xdelta3_prepare_task* task = new xdelta3_prepare_task(this, &env, &entry);

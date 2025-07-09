@@ -302,7 +302,8 @@ public:
   
   void writeU8(uint8_t value) { write(value); }
   void writeLEB128(uint64_t value);
-
+  
+  static void writeLEB128(data_sink* sink, uint64_t value) { enriched_data_sink(sink).writeLEB128(value); }
   static size_t sizeofLEB128(uint64_t value);
 
   template<typename T> size_t write(const T& value) { return write((const byte*)&value, sizeof(T)); }
@@ -332,6 +333,8 @@ public:
     return _source->read((byte*)value.data(), len);
   }
   
+  static uint64_t readLEB128(data_source* source) { return enriched_data_source(source).readLEB128(); }
+
   
   size_t read(byte* dest, size_t amount) override { return _source->read(dest, amount); }
   size_t read(char* dest, size_t amount) { return _source->read(reinterpret_cast<byte*>(dest), amount); }

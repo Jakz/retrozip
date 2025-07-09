@@ -30,6 +30,7 @@ public:
   
   path() { }
   path(const char* data);
+  path(std::string_view data);
   path(const std::string& data);
   path(const std::filesystem::path& path);
 

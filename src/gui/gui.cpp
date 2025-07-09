@@ -141,7 +141,7 @@ void GUI::init()
   contextMenu.append("Copy Filename", [this](nana::menu::item_proxy item) {
     auto selection = table.selected();
     auto index = selection.begin()->item;
-    nana::system::dataexch().set(archive.entries()[index].name());
+    nana::system::dataexch().set(std::string(archive.entries()[index].name()));
   });
   contextMenu.append("Copy CRC32", [this](nana::menu::item_proxy item) {
     auto selection = table.selected();
@@ -233,7 +233,7 @@ void GUI::loadFile(const path& filename)
     else
       mode = fmt::format("{}({})", streamMode, entryMode);
 
-    table.at(0)->append({ entry.name(), filteredSize, size, entryInfo, crc32, sha1, mode });
+    table.at(0)->append({ std::string(entry.name()), filteredSize, size, entryInfo, crc32, sha1, mode });
 
     for (size_t j = 1; j < table.at(0)->columns(); ++j)
     {
@@ -255,8 +255,50 @@ void GUI::loadFile(const path& filename)
 
 #include "flow/flow.h"
 
+
+#include "test/test_support.h"
+memory_buffer* testing::randomDataSource(size_t size)
+{
+  memory_buffer* buffer = new memory_buffer(size);
+  for (size_t i = 0; i < size; ++i)
+    buffer->raw()[i] = rand() % 256;
+  buffer->advance(size);
+  return buffer;
+}
+
 int main(int argc, char* argv[])
 {
+  if (true)
+  {   
+    ArchiveFactory::Data data;
+    data.entries.push_back({ "foobar1.bin", testing::randomDataSource(256) });
+    data.entries.push_back({ "foobar2.bin", testing::randomDataSource(512) });
+    data.streams.push_back({ { 0, 1 }, { new builders::deflate_builder(256) } });
+
+    Archive archive = Archive::ofData(data);
+    memory_buffer buffer;
+    archive.write(buffer);
+    buffer.rewind();
+
+    Archive verify;
+    verify.read(buffer);
+    verify.options().bufferSize = 16_kb;
+
+    for (size_t i = 0; i < data.entries.size(); ++i)
+    {
+      const auto& entry = verify.entries()[i];
+      ArchiveReadHandle handle(buffer, verify, entry);
+
+      data_source* source = handle.source(true);
+
+      memory_buffer sink;
+      passthrough_pipe pipe(source, &sink, entry.binary().digest.size);
+      pipe.process();
+    }
+
+    return 0;
+  }
+  
   if (false)
   {
     ArchiveBuilder builder(CachePolicy(CachePolicy::Mode::NEVER, 0), 128_mb, 128_mb);

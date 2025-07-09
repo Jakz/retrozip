@@ -27,8 +27,6 @@ Archive::Archive()
   _ordering.push_back(box::Section::StreamTable);
   _ordering.push_back(box::Section::StreamPayload);
   _ordering.push_back(box::Section::StreamData);
-  _ordering.push_back(box::Section::FileNameTable);
-  _ordering.push_back(box::Section::GroupTable);
   _ordering.push_back(box::Section::MetadataTable);
 }
 
@@ -190,7 +188,7 @@ Archive Archive::ofData(const ArchiveFactory::Data& data)
   archive._entries.reserve(data.entries.size());
   
   for (const auto& entry : data.entries)
-    archive._entries.emplace_back(entry.name, entry.source, entry.filters, entry.metadata);
+    archive._entries.emplace_back(entry.source, entry.filters, entry.metadata);
   
   for (const auto& stream : data.streams)
     archive._streams.emplace_back(stream.entries, stream.filters);
@@ -222,17 +220,14 @@ bool Archive::willSectionBeSerialized(box::Section section) const
     case box::Section::Header: assert(false); return false;
     case box::Section::SectionTable: assert(false); return false;
     case box::Section::EntryTable: return !_entries.empty();
-    case box::Section::MetadataTable: return std::any_of(_entries.begin(), _entries.end(), [] (const ArchiveEntry& entry) { return entry.hasMetadata(); });
+    case box::Section::MetadataTable: return std::any_of(_entries.begin(), _entries.end(), [] (const ArchiveEntry& entry) { return entry.shouldSerializeMetadata(); });
     case box::Section::EntryPayload: return std::any_of(_entries.begin(), _entries.end(), [] (const ArchiveEntry& entry) { return entry.payloadLength() > 0; });
     
     case box::Section::StreamTable: return !_streams.empty();
     case box::Section::StreamPayload: return std::any_of(_streams.begin(), _streams.end(), [] (const ArchiveStream& stream) { return stream.payloadLength() > 0; });
       
-    case box::Section::FileNameTable: return !_entries.empty();
     case box::Section::StreamData: return !_streams.empty();
-      
-    case box::Section::GroupTable: return !_groups.empty();
-      
+            
     case box::Section::FirstFreeSectionIdent:
       //TODO: custom section serialization management
       assert(false);
@@ -368,55 +363,6 @@ void Archive::write(W& w)
         break;
       }
         
-      case box::Section::FileNameTable:
-      {
-        roff_t base = w.tell();
-        roff_t offset = w.tell();
-        
-        sectionHeader.offset = w.tell();
-        
-        /* write NUL terminated name */
-        for (const ArchiveEntry& entry : _entries)
-        {
-          TRACE_A2("%p: archive::write() writing entry name '%s' at %Xh (%lu)", this, entry.name(), offset, offset);
-          
-          entry.binary().entryNameOffset = offset;
-          w.write(entry.name().c_str(), 1, entry.name().length());
-          w.write((char)'\0');
-          
-          offset = w.tell();
-        }
-        
-        sectionHeader.size = static_cast<box::count_t>(offset - base);
-        
-        TRACE_A("%p: archive::write() written name table of %lu bytes at %Xh (%lu)", this, sectionHeader.size, sectionHeader.offset, sectionHeader.offset);
-        break;
-      }
-        
-      case box::Section::GroupTable:
-      {
-        roff_t base = w.tell();
-        roff_t offset = w.tell();
-        
-        sectionHeader.offset = base;
-        sectionHeader.count = static_cast<box::count_t>(_groups.size());
-        
-        for (const auto& group : _groups)
-        {
-          /* write group size, then indices, then name */
-          w.write(static_cast<box::count_t>(group.size()));
-          w.write(group.entries().data(), sizeof(ArchiveEntry::ref), group.size());
-          w.write(group.name().c_str(), 1, group.name().length());
-          w.write((char)'\0');
-        }
-        
-        sectionHeader.size = static_cast<box::count_t>(offset - base);
-        
-        if (sectionHeader.size > 0)
-          TRACE_A("%p: archive::write() written group table of %lu bytes at %Xh (%lu)", this, sectionHeader.count, sectionHeader.offset, sectionHeader.offset);
-        break;
-      }
-
       case box::Section::MetadataTable:
       {
         roff_t base = w.tell();
@@ -427,15 +373,17 @@ void Archive::write(W& w)
         size_t idx = 0;
         for (const ArchiveEntry& entry : _entries)
         {
-          if (entry.hasMetadata())
+          /* entry has metadata or has a name */
+          if (entry.shouldSerializeMetadata())
           {
             /* set metadata info in entry header */
             entry.binary().metadataOffset = w.tell();
-            entry.binary().metadataCount = entry.metadata().size();
+
+            enriched_data_sink::writeLEB128(&w, entry.metadata().size());
             
             for (const auto& mentry : entry.metadata())
             {
-              TRACE_A2("%p: archive::write() writing entry metadata '%lu:%s' at %Xh (%lu)", this, idx, mentry.key(), offset, offset);
+              TRACE_A2("%p: archive::write() writing entry metadata '%lu:%s' at %Xh (%lu)", this, idx, mentry.keyMnemonic().c_str(), offset, offset);
               mentry.serialize(&w);
             }
 
@@ -446,13 +394,12 @@ void Archive::write(W& w)
           {
             /* if no metadata we set offset to 0 and count to 0 */
             entry.binary().metadataOffset = 0;
-            entry.binary().metadataCount = 0;
           }
         }
         
         sectionHeader.size = static_cast<box::count_t>(offset - base);
         
-        TRACE_A("%p: archive::write() written name table of %lu bytes at %Xh (%lu)", this, sectionHeader.size, sectionHeader.offset, sectionHeader.offset);
+        TRACE_A("%p: archive::write() written metadata table of %lu bytes at %Xh (%lu)", this, sectionHeader.size, sectionHeader.offset, sectionHeader.offset);
         break;
       }
         
@@ -549,18 +496,7 @@ void Archive::readSection(R& r, const box::SectionHeader& header)
         /* read entry */
         box::Entry entry;
         r.read(entry);
-        
-        /* read entry name */
-        r.seek(entry.entryNameOffset);
-        //TODO: ugly
-        std::string name;
-        char c;
-        r.read(c);
-        while (c) {
-          name += c;
-          r.read(c);
-        }
-        
+
         /* load payload */
         std::vector<byte> payload;
         if (entry.payloadLength > 0)
@@ -572,17 +508,21 @@ void Archive::readSection(R& r, const box::SectionHeader& header)
 
         /* read metadata */
         metadata_list_t metadata;
-        if (entry.metadataCount > 0)
+        if (entry.metadataOffset) //TODO: using != 0 to guarantee presence of metadata but it's fragile (0 is still a valid offset)
         {
+          
           r.seek(entry.metadataOffset);
-          for (size_t j = 0; j < entry.metadataCount; ++j)
+          auto count = enriched_data_source::readLEB128(&r);
+          TRACE_A2("%p: archive::readEntryTable() seeking to read %lu metadata at %Xh (%lu)", this, count, entry.metadataOffset, entry.metadataOffset);
+
+          for (size_t j = 0; j < count; ++j)
           {
             metadata.push_back(box::MetadataEntry());
             metadata.back().unserialize(&r);
           }
         }
         
-        _entries.emplace_back(name, entry, payload, metadata);
+        _entries.emplace_back(entry, payload, metadata);
       }
 
       break;
@@ -613,35 +553,8 @@ void Archive::readSection(R& r, const box::SectionHeader& header)
       break;
     }
       
-    case S::GroupTable:
-    {
-      r.seek(header.offset);
-      for (size_t i = 0; i < header.count; ++i)
-      {
-        box::count_t size;
-        r.read(size);
-        
-        std::vector<ArchiveEntry::ref> indices(size);
-        r.read((byte*)indices.data(), sizeof(ArchiveEntry::ref) * size);
-        
-        //TODO: ugly
-        std::string name;
-        char c;
-        r.read(c);
-        while (c) {
-          name += c;
-          r.read(c);
-        }
-        
-        _groups.emplace_back(name, indices);
-      }
-      
-      break;
-    }
-
     case S::EntryPayload:
     case S::StreamPayload:
-    case S::FileNameTable:
     case S::MetadataTable:
       /* do nothing, these are managed when reading respective parents */
       break;
@@ -812,7 +725,7 @@ void Archive::writeStream(W& w, ArchiveStream& stream)
     auto it = std::find_if(sources.begin(), sources.end(), [source](const data_source_helper& helper) { return helper.source == source; });
     assert(it != sources.end());
     auto& entry = it->entry;
-    TRACE_A("%p: archive::write() preparing to write entry %s", this, entry.name().c_str());
+    TRACE_A("%p: archive::write() preparing to write entry %s", this, std::string(entry.name()).c_str());
   });
 #endif
 
@@ -972,13 +885,73 @@ data_source* ArchiveReadHandle::source(bool total)
 }
 
 
+
+void Metadata::serialize(data_sink* sink) const
+{
+  /* write count */
+  enriched_data_sink::writeLEB128(sink, _entries.size());
+  /* write each entry */
+  for (const auto& entry : _entries)
+    entry.serialize(sink);
+}
+
+void Metadata::unserialize(data_source* source)
+{
+  /* read count */
+  uint64_t count = enriched_data_source::readLEB128(source);
+  _entries.clear();
+  _entries.resize(count);
+  /* read each entry */
+  for (uint64_t i = 0; i < count; ++i)
+    _entries[i].unserialize(source);
+}
+
+
+std::string box::MetadataEntry::keyMnemonic() const
+{
+  if (isPredefinedKey())
+  {
+    switch (KnownMetadata(_type))
+    {
+      case KnownMetadata::Name: return "[k]name";
+      case KnownMetadata::Comment : return "[k]comment";
+      default: return "[k]";
+    }
+  }
+  else if (isStringKey())
+    return _key;
+  else
+    return std::to_string(_uid);
+}
+
 size_t box::MetadataEntry::sizeInBytes() const
 {
-  size_t size = 0;
+  size_t size = sizeof(MetadataType);
 
-  return sizeof(MetadataType) + 
-    (isStringKey() ? (enriched_data_sink::sizeofLEB128(_key.size()) + _key.size()) : enriched_data_sink::sizeofLEB128(_uid))
-    + enriched_data_sink::sizeofLEB128(_data.size()) + _data.size();
+  /* compute key size */
+  if (isPredefinedKey())
+    ; // predefined keys have no size, they are specified in the metadata type field
+  else if (isStringKey())
+    /* lbe of key length + key data */
+    size += _key.size() + enriched_data_sink::sizeofLEB128(_key.size());
+  else
+    /* lbe of uid length */
+    size += enriched_data_sink::sizeofLEB128(_uid);
+
+  /* compute value size */
+  switch (valueType())
+  {
+    case MetadataValueType::None: break;
+    case MetadataValueType::Number: assert(false); break;
+    case MetadataValueType::Binary:
+    case MetadataValueType::String:
+      size += enriched_data_sink::sizeofLEB128(_data.size()) + _data.size();
+      break;
+    default:
+      break;
+  }
+
+  return size;
 }
 
 
@@ -986,7 +959,11 @@ size_t box::MetadataEntry::serialize(data_sink* sink) const
 {
   auto esink = enriched_data_sink(sink);
   esink.write<MetadataType>(_type);
-  esink.writeLEB128(isStringKey() ? _key.length() : _uid);
+
+  /* write key length (or uid) only if not predefined key */
+  if (!isPredefinedKey())
+    esink.writeLEB128(isStringKey() ? _key.length() : _uid);
+  /* write value length */
   esink.writeLEB128(_data.size());
 
   /* is key is of string type then write the string */
@@ -1004,8 +981,11 @@ void box::MetadataEntry::unserialize(data_source* source)
   auto esource = enriched_data_source(source);
   /* read type*/
   _type = esource.read<MetadataType>();
-  /* read key */
-  uint64_t key = esource.readLEB128();
+  /* read key if present */
+  uint64_t key = 0;
+  if (!isPredefinedKey())
+    key = esource.readLEB128();
+
   /* read data length */
   uint64_t dataLen = esource.readLEB128();
 

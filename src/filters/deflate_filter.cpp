@@ -110,7 +110,10 @@ void zlib_filter<computer, finalizer, OPTIONS>::process()
   /* TODO: this is a sort of hack which relies on the fact that once reached end of the stream 
      the source will be reseeked for next operations */
   if (_result == Z_STREAM_END)
+  {
     _in.consume(_in.size());
+    markEnded();
+  }
   
   if (finished())
     finalizer(&_stream);

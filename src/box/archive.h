@@ -58,10 +58,11 @@ struct Metadata
 {
 protected:
   metadata_list_t _entries;
-  
+
 public:
   Metadata() = default;
   Metadata(const metadata_list_t& entries) : _entries(entries) { }
+  template<typename... Args> Metadata(Args&&... args) : _entries({ std::forward<Args>(args)... }) { }
 
   auto begin() const { return _entries.begin(); }
   auto end() const { return _entries.end(); }
@@ -71,8 +72,42 @@ public:
   
   void add(const box::MetadataEntry& entry) { _entries.push_back(entry); }
   template<typename... Args> void add(Args&&... args) { _entries.emplace_back(std::forward<Args>(args)...); }
-  
-  //size_t sizeInBytes() const { }
+
+  void addKnown(box::KnownMetadata key, std::string_view value) 
+  { 
+    auto* existing = this->operator[](key);
+    if (existing)
+      existing->setValue(value);
+    else
+      _entries.emplace_back(key, value); 
+  }
+
+  box::MetadataEntry* operator[](box::KnownMetadata key) 
+  {
+    for (auto& entry : _entries)
+      if (entry.knownType() == key)
+        return &entry;
+    return nullptr;
+  }
+
+  const box::MetadataEntry* operator[](box::KnownMetadata key) const
+  {
+    for (const auto& entry : _entries)
+      if (entry.knownType() == key)
+        return &entry;
+    return nullptr;
+  }
+
+  void serialize(data_sink* sink) const;
+  void unserialize(data_source* source);
+
+  size_t sizeInBytes() const
+  {
+    size_t size = enriched_data_sink::sizeofLEB128(_entries.size());
+    for (const auto& entry : _entries)
+      size += entry.sizeInBytes();
+    return size;
+  }
 };
 
 class ArchiveEntry : public FilteredEntry<archive_environment>
@@ -85,26 +120,36 @@ private:
   
   /* TODO: manage data ownership */
   data_source* _source;
-  std::string _name;
   Metadata _metadata;
 
 public:
-  ArchiveEntry(const std::string& name, const box::Entry& binary, const std::vector<byte>& payload, const metadata_list_t& metadata = {}) : FilteredEntry<archive_environment>(payload),
-    _name(name), _source(nullptr), _binary(binary), _metadata(metadata)
+  /* called while unserializing: name is already present in metadata */
+  ArchiveEntry(const box::Entry& binary, const std::vector<byte>& payload, const Metadata& metadata = Metadata()) : FilteredEntry<archive_environment>(payload),
+    _source(nullptr), _binary(binary), _metadata(metadata)
   {
 
   }
   
-  ArchiveEntry(const std::string& name, data_source* source, const std::vector<filter_builder*>& filters, const metadata_list_t& metadata = {}) : FilteredEntry<archive_environment>(filters), _source(source), _name(name), _metadata(metadata) { }
-  ArchiveEntry(const std::string& name, data_source* source) : _source(source), _name(name) { }
+  ArchiveEntry(data_source* source, const std::vector<filter_builder*>& filters, const Metadata& metadata = Metadata()) : FilteredEntry<archive_environment>(filters), _source(source), _metadata(metadata)
+  {
+  }
+
+  ArchiveEntry(const std::string& name, data_source* source) : _source(source) 
+  { 
+    _metadata.addKnown(box::KnownMetadata::Name, name);
+  }
   
-  void setName(const std::string& name) { this->_name = name; }
-  const std::string& name() const { return _name; }
+  std::string_view name() const
+  {
+    auto data = _metadata[box::KnownMetadata::Name];
+    return data ? data->literal() : "";
+  }
 
   auto& metadata() { return _metadata; }
   const auto& metadata() const { return _metadata; }
   const auto& metadata(size_t index) const { return _metadata[index]; }
   bool hasMetadata() const { return !_metadata.empty(); }
+  bool shouldSerializeMetadata() const { return hasMetadata(); }
   
   const decltype(_source)& source() { return _source; }
 
@@ -212,20 +257,27 @@ public:
   //size_t read(byte* dest, size_t amount) { return _source->read(dest, amount); }
 };
 
+using filter_builder_list_t = std::vector<filter_builder*>;
+
 struct ArchiveFactory
 {
   struct Entry
   {
-    std::string name;
     data_source* source;
-    std::vector<filter_builder*> filters;
-    metadata_list_t metadata;
+    filter_builder_list_t filters;
+    Metadata metadata;
+
+    Entry(data_source* source) : source(source) { }
+    Entry(std::string_view name, data_source* source, const filter_builder_list_t& filters = {}) : source(source), filters(filters)
+    {
+      metadata.addKnown(box::KnownMetadata::Name, name);
+    }
   };
   
   struct Stream
   {
     std::vector<ArchiveEntry::ref> entries;
-    std::vector<filter_builder*> filters;
+    filter_builder_list_t filters;
   };
   
   struct Data
@@ -235,7 +287,8 @@ struct ArchiveFactory
 
     void addRaw(const std::string& name, data_source* source)
     {
-      entries.push_back({ name, source });
+      entries.push_back({ source });
+      entries.back().metadata.addKnown(box::KnownMetadata::Name, name);
       streams.push_back({ { static_cast<ArchiveEntry::ref>(entries.size() - 1) }, { } });
     }
   };

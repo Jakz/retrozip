@@ -121,8 +121,7 @@ TEST_CASE("file system operations", "[base]") {
   /* both files is scan is recursive */
   files = fs->contentsOfFolder(base, true, path::onlyFiles());
   REQUIRE(files.size() == 2);
-  REQUIRE(files[1] == base + "foobar.bin");
-  REQUIRE(files[0] == sub + "subfoo.bin");
+  REQUIRE(std::unordered_set<path, path::hash>(files.begin(), files.end()) == std::unordered_set<path, path::hash>({ base + "foobar.bin", sub + "subfoo.bin" }));
   
   /* delete subfolder */
   REQUIRE(fs->deleteFile(sub));
