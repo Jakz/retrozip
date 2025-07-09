@@ -149,7 +149,7 @@ public:
   const auto& metadata() const { return _metadata; }
   const auto& metadata(size_t index) const { return _metadata[index]; }
   bool hasMetadata() const { return !_metadata.empty(); }
-  bool shouldSerializeMetadata() const { return hasMetadata(); }
+  bool shouldSerializeMetadata() const { return hasMetadata() || payloadLength() > 0; }
   
   const decltype(_source)& source() { return _source; }
 
@@ -327,7 +327,6 @@ protected:
   bool willSectionBeSerialized(box::Section section) const;
   
   void writeStream(W& w, ArchiveStream& stream);
-  void writeEntryPayloads(W& w);
   void writeStreamPayloads(W& w);
   
   void readSection(R& r, const box::SectionHeader& header);

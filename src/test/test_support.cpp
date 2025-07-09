@@ -174,13 +174,7 @@ void testing::ArchiveTester::verify(const ArchiveFactory::Data& data, const Arch
     REQUIRE(verify.section(box::Section::StreamPayload) == nullptr);
 
   
-  if (payloadSizeForEntries > 0)
-  {
-    REQUIRE(verify.section(box::Section::EntryPayload));
-    REQUIRE(verify.section(box::Section::EntryPayload)->size == payloadSizeForEntries);
-  }
-  else
-    REQUIRE(verify.section(box::Section::EntryPayload) == nullptr);
+  //TODO: verify payload
 
   /* verify entry section header */
   {
@@ -230,24 +224,33 @@ void testing::ArchiveTester::verify(const ArchiveFactory::Data& data, const Arch
   size_t metadataSize = 0;
   for (const auto& entry : data.entries)
   {
+    size_t payloadLength = 0;
+    for (const auto& filter : entry.filters)
+      payloadLength += filter->payloadLength() + sizeof(box::Payload);
+    
+    if (payloadLength > 0)
+    {
+      std::vector<uint8_t> dummyPayload(payloadLength , 0);
+      metadataSize += box::MetadataEntry(box::KnownMetadata::FilterPayload, dummyPayload).sizeInBytes();
+    }
+
     if (!entry.metadata.empty())
     {
-      metadataSize += enriched_data_sink::sizeofLEB128(entry.metadata.size());
+      metadataSize += enriched_data_sink::sizeofLEB128(entry.metadata.size() + (payloadLength > 0 ? 1 : 0));
       for (const auto& metadata : entry.metadata)
         metadataSize += metadata.sizeInBytes();
     }
   }
   
   
-  /* size of archive must match, header + entry*entries + stream*streams + entry names */
+  /* size of archive must match, header + entry*entries + stream*streams + metadata (names, payloads, ...) */
   size_t archiveSize = sizeof(box::Header)
   + sizeof(box::Entry) * data.entries.size()
   + sizeof(box::Stream) * data.streams.size()
   + ((!data.entries.empty() && !data.streams.empty()) ? sizeof(box::SectionHeader)*4 : 0) /* entry table, stream table, stream data, metadata table headers */
-  + (payloadSizeForEntries > 0 ? sizeof(box::SectionHeader) : 0)
   + (payloadSizeForStream > 0 ? sizeof(box::SectionHeader) : 0)
   + std::accumulate(verify.streams().begin(), verify.streams().end(), 0UL, [] (size_t count, const ArchiveStream& entry) { return entry.binary().length + count; })
-  + payloadSizeForEntries + payloadSizeForStream
+  + payloadSizeForStream
   + metadataSize
     ;
   

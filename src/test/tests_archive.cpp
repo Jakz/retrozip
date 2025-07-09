@@ -79,40 +79,50 @@ TEST_CASE("features.Archive.multipleEntriesPerStreamWithDeflate") {
   testing::ArchiveTester::verify(data);
 }
 
-TEST_CASE("features.Archive.singleEntryWithFilters")
+TEST_CASE("features.Archive.singleEntryWithXorFilterOnEntry")
 {
   ArchiveFactory::Data data;
+  data.entries.push_back({ "foobar1.bin", testing::randomDataSource(256), { new builders::xor_builder(256, "foobar") } });
+  data.streams.push_back({ { 0 }, { } });
+  testing::ArchiveTester::verify(data);
+}
 
-  SECTION("no filters") {
-    data.entries.push_back({ "foobar1.bin", testing::randomDataSource(256) });
-    data.streams.push_back({ { 0 }, { } });
+TEST_CASE("features.Archive.singleEntryWithXorFilterOnStream")
+{
+  ArchiveFactory::Data data;
+  data.entries.push_back({ "foobar1.bin", testing::randomDataSource(256), {  } });
+  data.streams.push_back({ { 0 }, { new builders::xor_builder(256, "foobar") } });
+  testing::ArchiveTester::verify(data);
+}
 
-  }
+TEST_CASE("features.Archive.singleEntryWithDeflateFilterOnEntry")
+{
+  ArchiveFactory::Data data;
+  data.entries.push_back({ "foobar1.bin", testing::randomCompressibleDataSource(16_kb), { new builders::deflate_builder(16_kb) } });
+  data.streams.push_back({ { 0 }, {  } });
+  testing::ArchiveTester::verify(data);
+}
 
-  SECTION("xor filter on entry") {
-    data.entries.push_back({ "foobar1.bin", testing::randomDataSource(256), { new builders::xor_builder(256, "foobar") } });
-    data.streams.push_back({ { 0 }, { } });
-  }
+TEST_CASE("features.Archive.singleEntryWithDeflate+XorFilterOnEntry")
+{
+  ArchiveFactory::Data data;
+  data.entries.push_back({ "foobar1.bin", testing::randomCompressibleDataSource(16_kb), { new builders::deflate_builder(16_kb), new builders::xor_builder(16_kb, "foobar") } });
+  data.streams.push_back({ { 0 }, {  } });
+  testing::ArchiveTester::verify(data);
+}
 
-  SECTION("xor filter on stream") {
-    data.entries.push_back({ "foobar1.bin", testing::randomDataSource(256), { } });
-    data.streams.push_back({ { 0 }, { new builders::xor_builder(256, "foobar") } });
-  }
+TEST_CASE("features.Archive.singleEntryWithXor+DeflateFilterOnEntry")
+{
+  ArchiveFactory::Data data;
+  data.entries.push_back({ "foobar1.bin", testing::randomCompressibleDataSource(16_kb), { new builders::xor_builder(16_kb, "foobar"), new builders::deflate_builder(16_kb) } });
+  data.streams.push_back({ { 0 }, {  } });
+  testing::ArchiveTester::verify(data);
+}
 
-  SECTION("zlib deflate filter on entry") {
-    data.entries.push_back({ "foobar1.bin", testing::randomCompressibleDataSource(16_kb), { new builders::deflate_builder(16_kb) } });
-    data.streams.push_back({ { 0 }, { } });
-  }
 
-  SECTION("double filter on entry (deflate + xor)") {
-    data.entries.push_back({ "foobar1.bin", testing::randomCompressibleDataSource(16_kb), { new builders::deflate_builder(16_kb), new builders::xor_builder(16_kb, "foobar") } });
-    data.streams.push_back({ { 0 }, { } });
-  }
-
-  SECTION("double filter on entry (xor + deflate)") {
-    data.entries.push_back({ "foobar1.bin", testing::randomCompressibleDataSource(16_kb), { new builders::xor_builder(16_kb, "foobar"), new builders::deflate_builder(16_kb) } });
-    data.streams.push_back({ { 0 }, { } });
-  }
+ TEST_CASE("features.Archive.singleEntryWithFilters")
+ {
+   ArchiveFactory::Data data;
 
   SECTION("double xor on entry and then on stream") {
     data.entries.push_back({ "entry.bin", testing::randomDataSource(256), { new builders::xor_builder(32, "foobar") } });

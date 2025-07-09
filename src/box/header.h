@@ -27,7 +27,6 @@ namespace box
     SectionTable,
     EntryTable,
     MetadataTable,
-    EntryPayload,
     StreamTable,
     StreamPayload,
     StreamData,
@@ -112,11 +111,7 @@ namespace box
     index_t indexInStream;
     
     timestamp_t timestamp;
-
     offset_t metadataOffset;
-
-    offset_t payloadOffset;
-    count_t payloadLength;
 
     Entry() :
       filteredSize(0), digest(), timestamp(0),
@@ -215,6 +210,7 @@ namespace box
     MetadataEntry(uint64_t uid, const std::vector<uint8_t>& data) : _uid(uid), _data(data), _type(MetadataType::UidBinary) { }
     
     MetadataEntry(KnownMetadata key, std::string_view data) : _key(), _uid(0), _data(data.begin(), data.end()), _type(static_cast<MetadataType>(int(key) | int(ValueString))) { }
+    MetadataEntry(KnownMetadata key, const std::vector<uint8_t>& data) : _key(), _uid(0), _data(data), _type(static_cast<MetadataType>(int(key) | int(ValueBinary))) { }
 
     std::string_view literal() const
     { 
