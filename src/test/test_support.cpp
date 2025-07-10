@@ -161,20 +161,8 @@ void testing::ArchiveTester::verify(const ArchiveFactory::Data& data, const Arch
   }
   
   const auto& sizeInfo = verify.sizeInfo();
-  
-  const size_t payloadSizeForEntries = sizeInfo.entriesPayload;
-  const size_t payloadSizeForStream = sizeInfo.streamsPayload;
-  
-  if (payloadSizeForStream > 0)
-  {
-    REQUIRE(verify.section(box::Section::StreamPayload));
-    REQUIRE(verify.section(box::Section::StreamPayload)->size == payloadSizeForStream);
-  }
-  else
-    REQUIRE(verify.section(box::Section::StreamPayload) == nullptr);
 
-  
-  //TODO: verify payload
+  //TODO: verify payload stream / entry
 
   /* verify entry section header */
   {
@@ -241,16 +229,26 @@ void testing::ArchiveTester::verify(const ArchiveFactory::Data& data, const Arch
         metadataSize += metadata.sizeInBytes();
     }
   }
-  
+
+  for (const auto& stream : data.streams)
+  {
+    size_t payloadLength = 0;
+    for (const auto& filter : stream.filters)
+      payloadLength += filter->payloadLength() + sizeof(box::Payload);
+
+    if (payloadLength > 0)
+    {
+      std::vector<uint8_t> dummyPayload(payloadLength, 0);
+      metadataSize += box::MetadataEntry(box::KnownMetadata::FilterPayload, dummyPayload).sizeInBytes();
+    }
+  }
   
   /* size of archive must match, header + entry*entries + stream*streams + metadata (names, payloads, ...) */
   size_t archiveSize = sizeof(box::Header)
   + sizeof(box::Entry) * data.entries.size()
   + sizeof(box::Stream) * data.streams.size()
   + ((!data.entries.empty() && !data.streams.empty()) ? sizeof(box::SectionHeader)*4 : 0) /* entry table, stream table, stream data, metadata table headers */
-  + (payloadSizeForStream > 0 ? sizeof(box::SectionHeader) : 0)
   + std::accumulate(verify.streams().begin(), verify.streams().end(), 0UL, [] (size_t count, const ArchiveStream& entry) { return entry.binary().length + count; })
-  + payloadSizeForStream
   + metadataSize
     ;
   

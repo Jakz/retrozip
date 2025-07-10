@@ -23,9 +23,8 @@ Archive::Archive()
   _ordering.push_back(box::Section::Header);
   _ordering.push_back(box::Section::SectionTable);
   _ordering.push_back(box::Section::EntryTable);
-  _ordering.push_back(box::Section::MetadataTable);
   _ordering.push_back(box::Section::StreamTable);
-  _ordering.push_back(box::Section::StreamPayload);
+  _ordering.push_back(box::Section::MetadataTable);
   _ordering.push_back(box::Section::StreamData);
 }
 
@@ -45,8 +44,9 @@ ArchiveSizeInfo Archive::sizeInfo() const
   const size_t entriesPayload = std::accumulate(_entries.begin(), _entries.end(), 0UL, [](size_t count, const ArchiveEntry& entry) {
     return count + entry.payloadLength();
     });
+
   const size_t streamsPayload = std::accumulate(_streams.begin(), _streams.end(), 0UL, [] (size_t count, const ArchiveStream& stream) {
-    return count + stream.binary().payloadLength;
+    return count + stream.payloadLength();
   });
   
   const size_t streamData = std::accumulate(_streams.begin(), _streams.end(), 0UL, [] (size_t count, const ArchiveStream& stream) {
@@ -217,11 +217,12 @@ bool Archive::willSectionBeSerialized(box::Section section) const
     case box::Section::Header: assert(false); return false;
     case box::Section::SectionTable: assert(false); return false;
     case box::Section::EntryTable: return !_entries.empty();
-    case box::Section::MetadataTable: return std::any_of(_entries.begin(), _entries.end(), [] (const ArchiveEntry& entry) { return entry.shouldSerializeMetadata(); });
-    
     case box::Section::StreamTable: return !_streams.empty();
-    case box::Section::StreamPayload: return std::any_of(_streams.begin(), _streams.end(), [] (const ArchiveStream& stream) { return stream.payloadLength() > 0; });
-      
+
+    case box::Section::MetadataTable: return 
+      std::any_of(_entries.begin(), _entries.end(), [](const ArchiveEntry& entry) { return entry.shouldSerializeMetadata(); }) ||
+      std::any_of(_streams.begin(), _streams.end(), [](const ArchiveStream& stream) { return !stream.filters().empty(); });
+    
     case box::Section::StreamData: return !_streams.empty();
             
     case box::Section::FirstFreeSectionIdent:
@@ -301,35 +302,6 @@ void Archive::write(W& w)
         break;
       }
  
-      case box::Section::StreamPayload:
-      {
-        roff_t base = w.tell();
-        roff_t length = 0;
-        
-        /* for each entry we get the payload length to compute each payload
-         offset inside the file, we also compute the total entry payload
-         length to reserve it
-         */
-        for (const ArchiveStream& stream : _streams)
-        {
-          box::count_t payloadLength = stream.payloadLength();
-          box::Stream& sentry = stream.binary();
-          sentry.payload = payloadLength > 0 ? (base + length) : 0;
-          sentry.payloadLength = payloadLength;
-          
-          length += sentry.payloadLength;
-        }
-        
-        if (length > 0)
-          TRACE_A("%p: archive::write() reserved stream payload of %lu bytes at %Xh (%lu)", this, length, w.tell(), w.tell());
-        
-        sectionHeader.offset = w.tell();
-        sectionHeader.size = length;
-        
-        w.reserve(length);
-        break;
-      }
-        
       case box::Section::MetadataTable:
       {
         roff_t base = w.tell();
@@ -338,6 +310,7 @@ void Archive::write(W& w)
         sectionHeader.offset = w.tell();
         
         size_t idx = 0;
+        /* store metadata for entries */
         for (const ArchiveEntry& entry : _entries)
         {
           /* entry has metadata or has a name or payload */
@@ -358,12 +331,13 @@ void Archive::write(W& w)
             ++idx;
 
             /* entry has payload, write it as a byte blob */
-            if (entry.payloadLength() > 0)
+            if (!entry.filters().empty())
             {
               entry.serializePayload(env);
               const memory_buffer& payloadBuffer = entry.payload();
               std::vector<uint8_t> payload(payloadBuffer.raw(), payloadBuffer.raw() + payloadBuffer.size());
               box::MetadataEntry(box::KnownMetadata::FilterPayload, payload).serialize(&w);
+              TRACE_A2("%p: archive::write() writing entry %lu:%lu payload of %lu bytes at %Xh (%lu)", this, entry.binary().stream, entry.binary().indexInStream, payload.size(), offset, offset);
               offset = w.tell();
             }
           }
@@ -372,6 +346,23 @@ void Archive::write(W& w)
             /* if no metadata we set offset to 0 and count to 0 */
             entry.binary().metadataOffset = 0;
           }
+        }
+
+        /* store metadata for streams, which is just payload */
+        idx = 0;
+        for (const ArchiveStream& stream : _streams)
+        {
+          if (!stream.filters().empty())
+          {            
+            stream.binary().payloadOffset = offset;
+            stream.serializePayload(env);
+            const memory_buffer& payloadBuffer = stream.payload();
+            std::vector<uint8_t> payload(payloadBuffer.raw(), payloadBuffer.raw() + payloadBuffer.size());
+            box::MetadataEntry(box::KnownMetadata::FilterPayload, payload).serialize(&w);
+            TRACE_A2("%p: archive::write() writing stream %lu payload of %lu bytes at %Xh (%lu)", this, idx, payload.size(), offset, offset);
+            offset = w.tell();
+          }
+          ++idx;
         }
         
         sectionHeader.size = static_cast<box::count_t>(offset - base);
@@ -427,9 +418,7 @@ void Archive::write(W& w)
     if (section != box::Section::Header && section != box::Section::SectionTable && sectionHeader.size > 0)
       _headers.emplace(std::make_pair(section, sectionHeader));
   }
-  
-  writeStreamPayloads(w);
-  
+    
   /* when we arrive here we suppose all streams have been written and all data
      in Stream and Entry has been prepared and filled */
   
@@ -514,23 +503,25 @@ void Archive::readSection(R& r, const box::SectionHeader& header)
         /* read stream header */
         box::Stream stream;
         r.read(stream);
-        
-        /* load payload */
+
         std::vector<byte> payload;
-        if (stream.payloadLength > 0)
+
+        /* load stream payload if present */
+        if (stream.payloadOffset > 0) //TODO: 0 is not a nice value, we should need an optional offset (use s64 with negative as non present?)
         {
-          payload.resize(stream.payloadLength);
-          r.seek(stream.payload);
-          r.read(payload.data(), stream.payloadLength);
+          r.seek(stream.payloadOffset);
+          box::MetadataEntry payloadMetadata;
+          payloadMetadata.unserialize(&r);
+          assert(payloadMetadata.knownType() == box::KnownMetadata::FilterPayload && payloadMetadata.valueType() == box::MetadataValueType::Binary);
+          payload = payloadMetadata.data();
         }
-        
+
         _streams.emplace_back(stream, payload);
       }
       
       break;
     }
       
-    case S::StreamPayload:
     case S::MetadataTable:
       /* do nothing, these are managed when reading respective parents */
       break;
@@ -741,19 +732,6 @@ void Archive::writeStream(W& w, ArchiveStream& stream)
   }
   
   stream.binary().length = wholeCounter.filter().count();
-}
-
-/* precondition: payload offset has been set for streams */
-void Archive::writeStreamPayloads(W& w)
-{
-  for (const ArchiveStream& stream : _streams)
-  {
-    stream.serializePayload(env);
-    const memory_buffer& payload = stream.payload();
-    
-    w.seek(stream.binary().payload);
-    w.write(payload.raw(), 1, payload.size());
-  }
 }
 
 void ArchiveReadHandle::prepareWorkflow(data_sink* sink)

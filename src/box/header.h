@@ -28,7 +28,6 @@ namespace box
     EntryTable,
     MetadataTable,
     StreamTable,
-    StreamPayload,
     StreamData,
 
     FirstFreeSectionIdent = 1U << 31
@@ -124,11 +123,12 @@ namespace box
     
     offset_t offset;
     length_t length;
-    
-    offset_t payload;
-    count_t payloadLength;
-    
+    offset_t payloadOffset;
+
     checksum_t checksum;
+
+    Stream() : flags(), offset(0), length(0), payloadOffset(0), checksum(0) { }
+
   } PACKED_ATTRIBUTE;
   
   struct Payload

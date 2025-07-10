@@ -268,7 +268,7 @@ memory_buffer* testing::randomDataSource(size_t size)
 
 int main(int argc, char* argv[])
 {
-  if (true)
+  if (false)
   {   
     ArchiveFactory::Data data;
     data.entries.push_back({ "foobar1.bin", testing::randomDataSource(256) });

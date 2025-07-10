@@ -47,7 +47,7 @@ public:
   virtual data_source* apply(data_source* source) const = 0;
   virtual data_source* unapply(data_source* source) const = 0;
   virtual box::payload_uid identifier() const = 0;
-  
+ 
   virtual memory_buffer payload() const = 0;
   virtual size_t payloadLength() const = 0;
   
