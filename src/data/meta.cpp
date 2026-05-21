@@ -35,6 +35,7 @@ Repository::Repository()
     Company("nintendo", "Nintendo"),
     Company("sega", "Sega"),
     Company("commodore", "Commodore"),
+	Company("arcade", "Arcade"),
   };
   
   _systems = {
@@ -46,5 +47,7 @@ Repository::Repository()
     System("md", SystemType::Console, company("sega"), "MD", "Sega MegaDrive/Genesis"),
 
     System("a500", SystemType::Computer, company("commodore"), "A500", "Amiga 500"),
+
+	System("arcade", SystemType::Arcade, company("arcade"), "Arcade", "Arcade")
   };
 }

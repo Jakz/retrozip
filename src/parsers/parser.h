@@ -47,7 +47,7 @@ namespace parsing
   class ClrMameProParser : public Parser
   {
   private:
-    enum class Scope { Root, Game, Rom };
+    enum class Scope { Root, Game, Rom, Clrmamepro };
 
     bool started;
     Scope _scope;

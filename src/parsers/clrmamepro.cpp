@@ -257,6 +257,9 @@ namespace parsing
   
   void ClrMameProParser::pair(const std::string& k, const std::string& v)
   {
+    if (!started && _scope == Scope::Clrmamepro && k == "description" && strings::containsIgnoreCase(v, "gba"))
+      result.system = meta::Repository::i()->system("gba");
+    
     if (!started)
       return;
 
@@ -320,9 +323,12 @@ namespace parsing
         _game = ParseGame();
       }
     }
-    else if (isEnd && k == "clrmamepro")
+    else if (k == "clrmamepro")
     {
-      started = true;
+      _scope = isEnd ? Scope::Root : Scope::Clrmamepro;
+
+      if (isEnd)
+        started = true;
     }
   }
 }

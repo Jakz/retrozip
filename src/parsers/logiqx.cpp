@@ -31,6 +31,8 @@ namespace parsing
 
       if (strings::contains(system, "game boy advance"))
         result.system = meta::Repository::i()->system("gba");
+	  if (strings::contains(system, "mame"))
+		result.system = meta::Repository::i()->system("arcade");
       //else if (strings::contains(system, "nintendo switch"))
       //  result.system = meta::Repository::i()->system("ns");
 

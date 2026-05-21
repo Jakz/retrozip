@@ -99,22 +99,22 @@ void UserInterface::init()
       {
         if (dat.second.system == system)
         {
-          tree.insert(systemItem, systemItem.key() + "/" + dat.second.name, dat.second.name);
+          auto datItem = tree.insert(systemItem, systemItem.key() + "/" + dat.second.name, dat.second.name);
 
           for (const auto& game : dat.second.games)
           {
             if (game.hasSingleRom())
             {
               /* directly add rom instead that nest it into game */
-              auto romItem = tree.insert(systemItem, systemItem.key() + "/" + dat.second.name + "/" + game.name, game[0].name);
+              auto romItem = tree.insert(datItem, systemItem.key() + "/" + dat.second.name + "/" + game.name, game[0].name);
             }
             else
             {
-              auto gameItem = tree.insert(systemItem, systemItem.key() + "/" + dat.second.name + "/" + game.name, game.name);
+              auto gameItem = tree.insert(datItem, systemItem.key() + "/" + dat.second.name + "/" + game.name, game.name);
 
               for (const auto& rom : game.roms)
               {
-                tree.insert(gameItem, gameItem.key() + "/" + rom.name, rom.name);
+				tree.insert(gameItem, gameItem.key() + "/" + rom.name, fmt::format("{} ({:X})", rom.name, rom.hash && rom.hash->hash.crc32enabled ? rom.hash->hash.crc32 : 0));
               }
             }
           }
