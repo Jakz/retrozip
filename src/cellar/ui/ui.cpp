@@ -1,157 +1,454 @@
 #include "ui.h"
 
-#include "nana/gui.hpp"
-#include "nana/gui/widgets/label.hpp"
-#include "nana/gui/widgets/treebox.hpp"
-#include "nana/gui/widgets/toolbar.hpp"
-#include "nana/gui/widgets/textbox.hpp"
-#include "nana/gui/place.hpp"
-
-#include "cellar/fs/cellar_fs.h"
 #include "cellar/database.h"
+#include "cellar/fs/cellar_fs.h"
 #include "data/meta.h"
+#include "tbx/base/strings.h"
+#include "imgui.h"
+#include "backends/imgui_impl_glfw.h"
+#include "backends/imgui_impl_opengl3.h"
+
+#include <GLFW/glfw3.h>
+
+#include <algorithm>
+#include <iostream>
+#include <unordered_map>
 
 using namespace cellar;
 
-UserInterface::UserInterface(Kernel* kernel, const std::string& name) :
-  KernelModule(kernel, name),
-  _form(), _console(_form), _toolbar(_form)
-
-{ }
-
-void UserInterface::rebuildToolbar(nana::toolbar& toolbar)
+namespace
 {
-  toolbar.clear();
+  constexpr int WindowWidth = 1280;
+  constexpr int WindowHeight = 800;
+  constexpr const char* GlSlVersion = "#version 130";
 
-  auto toggleFuse = toolbar.append(kernel()->vfs()->isRunning() ? "Stop VFS" : "Start VFS");
-  toggleFuse.answerer([&](auto&) {
-    if (kernel()->vfs()->isRunning())
+  void glfwErrorCallback(int error, const char* description)
+  {
+    std::cerr << "GLFW error " << error << ": " << description << std::endl;
+  }
+
+  size_t romCount(const DatFile& dat)
+  {
+    size_t count = 0;
+    for (const auto& game : dat.games)
+      count += game.roms.size();
+    return count;
+  }
+
+  std::string crcText(const DatRom& rom)
+  {
+    if (!rom.hash || !rom.hash->hash.crc32enabled)
+      return "-";
+
+    return fmt::format("{:08X}", rom.hash->hash.crc32);
+  }
+
+  std::string sizeText(const DatRom& rom)
+  {
+    if (!rom.hash || !rom.hash->hash.sizeEnabled)
+      return "-";
+
+    return strings::humanReadableSize(rom.hash->hash.size, true, 2);
+  }
+
+}
+
+UserInterface::UserInterface(Kernel* kernel, const std::string& name) :
+  KernelModule(kernel, name)
+{
+}
+
+UserInterface::~UserInterface()
+{
+  destroyWindow();
+}
+
+bool UserInterface::createWindow()
+{
+  glfwSetErrorCallback(glfwErrorCallback);
+
+  if (!glfwInit())
+    return false;
+
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+
+  _window = glfwCreateWindow(WindowWidth, WindowHeight, "RetroZip Cellar", nullptr, nullptr);
+  if (!_window)
+  {
+    glfwTerminate();
+    return false;
+  }
+
+  glfwMakeContextCurrent(_window);
+  glfwSwapInterval(1);
+
+  IMGUI_CHECKVERSION();
+  ImGui::CreateContext();
+
+  ImGuiIO& io = ImGui::GetIO();
+  io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+
+  configureStyle();
+
+  ImGui_ImplGlfw_InitForOpenGL(_window, true);
+  ImGui_ImplOpenGL3_Init(GlSlVersion);
+
+  return true;
+}
+
+void UserInterface::destroyWindow()
+{
+  if (!_window)
+    return;
+
+  ImGui_ImplOpenGL3_Shutdown();
+  ImGui_ImplGlfw_Shutdown();
+  ImGui::DestroyContext();
+
+  glfwDestroyWindow(_window);
+  glfwTerminate();
+  _window = nullptr;
+}
+
+void UserInterface::configureStyle()
+{
+  ImGui::StyleColorsDark();
+
+  ImGuiStyle& style = ImGui::GetStyle();
+  style.WindowRounding = 0.0f;
+  style.ChildRounding = 4.0f;
+  style.FrameRounding = 3.0f;
+  style.GrabRounding = 3.0f;
+  style.TabRounding = 3.0f;
+  style.WindowBorderSize = 0.0f;
+  style.FrameBorderSize = 0.0f;
+  style.ItemSpacing = ImVec2(8.0f, 6.0f);
+  style.WindowPadding = ImVec2(10.0f, 10.0f);
+}
+
+void UserInterface::init()
+{
+  if (!createWindow())
+  {
+    error("Unable to initialize GLFW/ImGui user interface");
+    return;
+  }
+
+  selectRepository();
+
+  while (!glfwWindowShouldClose(_window))
+  {
+    glfwPollEvents();
+
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    drawFrame();
+
+    ImGui::Render();
+
+    int displayWidth = 0;
+    int displayHeight = 0;
+    glfwGetFramebufferSize(_window, &displayWidth, &displayHeight);
+    glViewport(0, 0, displayWidth, displayHeight);
+    glClearColor(0.07f, 0.08f, 0.10f, 1.00f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    glfwSwapBuffers(_window);
+  }
+
+  destroyWindow();
+}
+
+void UserInterface::drawFrame()
+{
+  const ImGuiViewport* viewport = ImGui::GetMainViewport();
+  ImGui::SetNextWindowPos(viewport->WorkPos);
+  ImGui::SetNextWindowSize(viewport->WorkSize);
+
+  constexpr ImGuiWindowFlags flags =
+    ImGuiWindowFlags_NoDecoration |
+    ImGuiWindowFlags_NoMove |
+    ImGuiWindowFlags_NoSavedSettings |
+    ImGuiWindowFlags_NoBringToFrontOnFocus;
+
+  ImGui::Begin("Cellar", nullptr, flags);
+
+  drawToolbar();
+  ImGui::Separator();
+
+  const float browserWidth = std::min(460.0f, ImGui::GetContentRegionAvail().x * 0.42f);
+  const float consoleHeight = 220.0f;
+
+  ImGui::BeginChild("RepositoryBrowser", ImVec2(browserWidth, 0.0f), true);
+  drawRepositoryBrowser();
+  ImGui::EndChild();
+
+  ImGui::SameLine();
+
+  ImGui::BeginGroup();
+  ImGui::BeginChild("Inspector", ImVec2(0.0f, -consoleHeight - ImGui::GetStyle().ItemSpacing.y), true);
+  drawInspector();
+  ImGui::EndChild();
+
+  ImGui::BeginChild("Console", ImVec2(0.0f, 0.0f), true);
+  drawConsole();
+  ImGui::EndChild();
+  ImGui::EndGroup();
+
+  ImGui::End();
+}
+
+void UserInterface::drawToolbar()
+{
+  const bool vfsRunning = kernel()->vfs()->isRunning();
+
+  if (ImGui::Button(vfsRunning ? "Stop VFS" : "Start VFS"))
+  {
+    if (vfsRunning)
       kernel()->vfs()->stop();
     else
       kernel()->vfs()->start();
-    rebuildToolbar(toolbar);
-  });
+  }
 
-  toolbar.separate();
-  toolbar.append("baz");
+  ImGui::SameLine();
+  if (ImGui::Button("Repository"))
+    selectRepository();
 
-  toolbar.textout(0, true);
-  toolbar.textout(2, true);
+  ImGui::SameLine(ImGui::GetWindowWidth() - 260.0f);
+  ImGui::TextDisabled("DATs: %zu | ROM hashes: %zu",
+    kernel()->db()->dats().size(),
+    kernel()->db()->hashesCount());
 }
 
-void UserInterface::init() 
+void UserInterface::drawRepositoryBrowser()
 {
-  nana::place layout(_form);
+  if (ImGui::Selectable("Repository", _selectedTitle == "Repository"))
+    selectRepository();
 
-  _console.typeface(nana::paint::font("Consolas", 10.0f));
-  _console.bgcolor(nana::color(0, 0, 30));
-  _console.fgcolor(nana::color(255, 255, 255));
-  //_console.editable(false);
-  _console.multi_lines(true);
-  _console.events().key_char.connect([&](const nana::arg_keyboard& arg) {
-    if (arg.ctrl && (arg.key == 0x03))
-      return;
-    arg.ignore = true;
-  });
-
-  rebuildToolbar(_toolbar);
-
-
-  nana::treebox tree(_form);
-  layout.div("vertical <toolbar weight=28> <tree> <console weight=200>");
-  layout["toolbar"] << _toolbar;
-  layout["tree"] << tree;
-  layout["console"] << _console;
+  ImGui::SeparatorText("Systems");
 
   std::unordered_map<const meta::Company*, std::vector<const meta::System*>> systemsByCompany;
   for (const auto& system : meta::Repository::i()->systems())
     systemsByCompany[system.company()].push_back(&system);
 
-  /* sort each system by company alphabetically */
-  for (auto& [company, systems] : systemsByCompany)
-  {
-    std::sort(systems.begin(), systems.end(), [](const auto& a, const auto& b) {
-      return a->name() < b->name();
-    });
-  }
-
-
-  tree.insert("systems", "Systems");
-
+  std::vector<const meta::Company*> companies;
+  companies.reserve(systemsByCompany.size());
   for (const auto& [company, systems] : systemsByCompany)
+    companies.push_back(company);
+
+  std::sort(companies.begin(), companies.end(), [](const auto& lhs, const auto& rhs) {
+    return lhs->name() < rhs->name();
+  });
+
+  for (const auto* company : companies)
   {
-    auto companyItem = tree.insert("systems/" + company->ident(), company->name());
-    for (const auto& system : systems)
+    auto& systems = systemsByCompany[company];
+    std::sort(systems.begin(), systems.end(), [](const auto& lhs, const auto& rhs) {
+      return lhs->name() < rhs->name();
+    });
+
+    if (ImGui::TreeNodeEx(company->ident().c_str(), ImGuiTreeNodeFlags_DefaultOpen, "%s", company->name().c_str()))
     {
-      auto systemItem = tree.insert("systems/" + company->ident() + "/" + system->ident(), system->longName());
+      for (const auto* system : systems)
+        drawSystemNode(*system);
 
-      auto icon = nana::paint::image(R"(C:\Users\Jack\Documents\dev\retrozip\projects\msvc2017\icons\)" + system->shortName() + ".bmp");
-
-      if (!icon.empty())
-      {
-        auto& iconSet = tree.icon("icons/" + system->shortName());
-        iconSet.normal = icon;
-        systemItem.icon("icons/" + system->shortName());
-      }
-
-
-      for (const auto& dat : kernel()->db()->dats())
-      {
-        if (dat.second.system == system)
-        {
-          auto datItem = tree.insert(systemItem, systemItem.key() + "/" + dat.second.name, dat.second.name);
-
-          for (const auto& game : dat.second.games)
-          {
-            if (game.hasSingleRom())
-            {
-              /* directly add rom instead that nest it into game */
-              auto romItem = tree.insert(datItem, systemItem.key() + "/" + dat.second.name + "/" + game.name, game[0].name);
-            }
-            else
-            {
-              auto gameItem = tree.insert(datItem, systemItem.key() + "/" + dat.second.name + "/" + game.name, game.name);
-
-              for (const auto& rom : game.roms)
-              {
-				tree.insert(gameItem, gameItem.key() + "/" + rom.name, fmt::format("{} ({:X})", rom.name, rom.hash && rom.hash->hash.crc32enabled ? rom.hash->hash.crc32 : 0));
-              }
-            }
-          }
-        }
-      }
+      ImGui::TreePop();
     }
   }
+}
 
-  /*
-  tree.insert("Consoles", "Systems");
-  tree.insert("Consoles/Nintendo", "Nintendo");
-  tree.insert("Consoles/Sega", "Sega");
+void UserInterface::drawSystemNode(const meta::System& system)
+{
+  size_t datCount = 0;
+  for (const auto& [name, dat] : kernel()->db()->dats())
+    if (dat.system == &system)
+      ++datCount;
 
-  auto item = tree.insert("Consoles/Nintendo/NES", "Nintendo NES");
-  tree.insert("Consoles/Nintendo/SNES", "Nintento SNES");
-  tree.insert("Consoles/Sega/MegaDrive", "MegaDrive");
+  ImGuiTreeNodeFlags flags = datCount == 0 ? ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen : 0;
+  const bool open = ImGui::TreeNodeEx(system.ident().c_str(), flags, "%s (%zu)", system.longName().c_str(), datCount);
 
-  auto& iconSet = tree.icon("test");
-  iconSet.normal = nes_icon;
+  if (ImGui::IsItemClicked())
+    selectSystem(system);
 
+  if (open && datCount > 0)
+  {
+    std::vector<const DatFile*> dats;
+    for (const auto& [name, dat] : kernel()->db()->dats())
+      if (dat.system == &system)
+        dats.push_back(&dat);
 
-  //auto id = tree.icon("icons/nes_icon.png");
-  item.icon("test");*/
-  
-  layout.collocate();
+    std::sort(dats.begin(), dats.end(), [](const auto* lhs, const auto* rhs) {
+      return lhs->name < rhs->name;
+    });
 
-  auto size = nana::size(1280, 800);
+    for (const auto* dat : dats)
+      drawDatNode(*dat);
 
-  auto screen = nana::screen::primary_monitor_size();
-  _form.move(nana::rectangle((screen.width - size.width) / 2, (screen.height - size.height) / 2, size.width, size.height));
+    ImGui::TreePop();
+  }
+}
 
-  _form.show();
-  nana::exec();
+void UserInterface::drawDatNode(const DatFile& dat)
+{
+  ImGui::PushID(&dat);
+  const bool open = ImGui::TreeNodeEx("dat", 0, "%s (%zu games)", dat.name.c_str(), dat.games.size());
+
+  if (ImGui::IsItemClicked())
+    selectDat(dat);
+
+  if (open)
+  {
+    for (const auto& game : dat.games)
+      drawGameNode(game);
+
+    ImGui::TreePop();
+  }
+
+  ImGui::PopID();
+}
+
+void UserInterface::drawGameNode(const Game& game)
+{
+  ImGui::PushID(&game);
+
+  if (game.hasSingleRom())
+  {
+    drawRomLeaf(game[0]);
+    ImGui::PopID();
+    return;
+  }
+
+  const bool open = ImGui::TreeNodeEx("game", 0, "%s (%zu roms)", game.name.c_str(), game.roms.size());
+
+  if (ImGui::IsItemClicked())
+    selectGame(game);
+
+  if (open)
+  {
+    for (const auto& rom : game.roms)
+      drawRomLeaf(rom);
+
+    ImGui::TreePop();
+  }
+
+  ImGui::PopID();
+}
+
+void UserInterface::drawRomLeaf(const DatRom& rom)
+{
+  ImGui::PushID(&rom);
+  ImGui::TreeNodeEx("rom", ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen, "%s", rom.name.c_str());
+
+  if (ImGui::IsItemClicked())
+    selectRom(rom);
+
+  ImGui::PopID();
+}
+
+void UserInterface::drawInspector()
+{
+  ImGui::TextUnformatted(_selectedTitle.c_str());
+  ImGui::Separator();
+  ImGui::TextWrapped("%s", _selectedDetails.c_str());
+}
+
+void UserInterface::drawConsole()
+{
+  ImGui::TextUnformatted("Console");
+  ImGui::SameLine(ImGui::GetWindowWidth() - 86.0f);
+  if (ImGui::SmallButton("Clear"))
+    _consoleMessages.clear();
+
+  ImGui::Separator();
+
+  ImGui::BeginChild("ConsoleScroll", ImVec2(0.0f, 0.0f), false, ImGuiWindowFlags_HorizontalScrollbar);
+  for (const auto& message : _consoleMessages)
+    ImGui::TextUnformatted(message.c_str());
+
+  if (_scrollConsoleToBottom)
+  {
+    ImGui::SetScrollHereY(1.0f);
+    _scrollConsoleToBottom = false;
+  }
+  ImGui::EndChild();
+}
+
+void UserInterface::selectRepository()
+{
+  size_t games = 0;
+  size_t roms = 0;
+
+  for (const auto& [name, dat] : kernel()->db()->dats())
+  {
+    games += dat.games.size();
+    roms += romCount(dat);
+  }
+
+  _selectedTitle = "Repository";
+  _selectedDetails = fmt::format(
+    "{} DAT files\n{} games\n{} ROM entries\n{} unique hash records",
+    kernel()->db()->dats().size(),
+    games,
+    roms,
+    kernel()->db()->hashesCount());
+}
+
+void UserInterface::selectSystem(const meta::System& system)
+{
+  size_t dats = 0;
+  size_t games = 0;
+  size_t roms = 0;
+
+  for (const auto& [name, dat] : kernel()->db()->dats())
+  {
+    if (dat.system != &system)
+      continue;
+
+    ++dats;
+    games += dat.games.size();
+    roms += romCount(dat);
+  }
+
+  _selectedTitle = system.longName();
+  _selectedDetails = fmt::format(
+    "Short name: {}\nIdentifier: {}\nCompany: {}\nDAT files: {}\nGames: {}\nROM entries: {}",
+    system.shortName(),
+    system.ident(),
+    system.company()->name(),
+    dats,
+    games,
+    roms);
+}
+
+void UserInterface::selectDat(const DatFile& dat)
+{
+  _selectedTitle = dat.name;
+  _selectedDetails = fmt::format(
+    "Folder: {}\nSystem: {}\nGames: {}\nROM entries: {}",
+    dat.folderName,
+    dat.system ? dat.system->longName() : "Unknown",
+    dat.games.size(),
+    romCount(dat));
+}
+
+void UserInterface::selectGame(const Game& game)
+{
+  _selectedTitle = game.name;
+  _selectedDetails = fmt::format("{} ROM entries", game.roms.size());
+}
+
+void UserInterface::selectRom(const DatRom& rom)
+{
+  _selectedTitle = rom.name;
+  _selectedDetails = fmt::format("CRC32: {}\nSize: {}", crcText(rom), sizeText(rom));
 }
 
 void UserInterface::appendConsoleMessage(const std::string& message)
 {
-  _console.append(message, true);
-  _console.append("\n", true);
+  _consoleMessages.push_back(message);
+  _scrollConsoleToBottom = true;
 }

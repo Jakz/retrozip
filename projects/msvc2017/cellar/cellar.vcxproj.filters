@@ -25,6 +25,12 @@
     <Filter Include="src\cellar\ui">
       <UniqueIdentifier>{4a122d47-88e9-47d0-832a-8a7ef01eff3e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="libs\imgui">
+      <UniqueIdentifier>{dbd3ad87-41a8-44dc-aa25-16750480d20e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libs\imgui\backends">
+      <UniqueIdentifier>{fd1af241-a926-443f-8f63-32520e8be156}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\cellar.cpp">
@@ -65,6 +71,27 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\cellar\fs\cellar_fs.cpp">
       <Filter>src\cellar\fs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\libs\imgui\imgui.cpp">
+      <Filter>libs\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\libs\imgui\imgui_demo.cpp">
+      <Filter>libs\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\libs\imgui\imgui_draw.cpp">
+      <Filter>libs\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\libs\imgui\imgui_tables.cpp">
+      <Filter>libs\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\libs\imgui\imgui_widgets.cpp">
+      <Filter>libs\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\libs\imgui\backends\imgui_impl_glfw.cpp">
+      <Filter>libs\imgui\backends</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\libs\imgui\backends\imgui_impl_opengl3.cpp">
+      <Filter>libs\imgui\backends</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
